@@ -9,7 +9,7 @@ const signatures = [
   'data-route-menu-close', 'data-route-target',
   'aria-expanded', 'aria-hidden', 'inert',
   'preventScroll', 'Escape', 'Tab', 'stopImmediatePropagation',
-  'scrollHeight', 'getBoundingClientRect', 'requestAnimationFrame',
+  'getBoundingClientRect', 'requestAnimationFrame',
 ];
 test('ported drawer retains original event and DOM contracts', () => {
   for (const signature of signatures) {

@@ -18,7 +18,8 @@
     "test:v22-drawer": "node --test tests/v22-drawer-source.test.mjs",
     "test:v22-scene": "node --test tests/v22-source-scene.test.mjs",
     "test:v22-navigation": "node --test tests/v22-static-navigation.test.mjs",
-    "test:v22-ui": "node --test tests/v22-ui-v8.test.mjs"
+    "test:v22-ui": "node --test tests/v22-ui-v8.test.mjs",
+    "test:v22-ui-fixes": "node --test tests/v22-ui-fixes-v11.test.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",

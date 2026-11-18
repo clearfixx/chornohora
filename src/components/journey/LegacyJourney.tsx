@@ -1,7 +1,7 @@
 'use client';
 
 import {useState} from 'react';
-import {Link} from '@/i18n/navigation';
+import {JourneyLocaleNav} from './JourneyLocaleNav';
 
 type Props = {locale: 'uk' | 'en'};
 
@@ -13,11 +13,7 @@ type Props = {locale: 'uk' | 'en'};
 export function LegacyJourney({locale}: Props) {
   const [ready, setReady] = useState(false);
   return <main className="legacy-journey">
-    <nav className="legacy-journey__locale" aria-label={locale === 'uk' ? 'Мова' : 'Language'}>
-      <Link href="/" locale="uk" aria-current={locale === 'uk' ? 'page' : undefined}>UA</Link>
-      <span aria-hidden="true">/</span>
-      <Link href="/" locale="en" aria-current={locale === 'en' ? 'page' : undefined}>EN</Link>
-    </nav>
+    <JourneyLocaleNav locale={locale} />
     {!ready && <p className="legacy-journey__loading" role="status">
       {locale === 'uk' ? 'Завантаження подорожі…' : 'Loading journey…'}
     </p>}

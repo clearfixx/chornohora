@@ -21,7 +21,16 @@ export function getV22SourceScene() {
   const fallback = source.slice(staticStart + staticMarker.length, staticEnd);
   const sceneStart = fallback.indexOf('<div data-canvas-height="8000"');
   if (sceneStart < 0) throw new Error('Approved v22 static canvas missing');
-  const scene = fallback.slice(sceneStart);
+  // DCLogic resolves {{accent}} from its approved component default. The static
+  // fallback has no DC runtime, so resolve only this original visual binding.
+  const propsMatch = source.match(/data-props='([^']+)'/);
+  if (!propsMatch) throw new Error('Approved v22 component props missing');
+  const props = JSON.parse(propsMatch[1]) as {accent?: {default?: string}};
+  const accent = props.accent?.default;
+  if (!accent || !/^#[0-9a-fA-F]{6}$/.test(accent)) {
+    throw new Error('Approved v22 accent default missing or invalid');
+  }
+  const scene = fallback.slice(sceneStart).replaceAll('{{accent}}', accent);
 
   const drawerStart = source.indexOf('<div class="route-menu-scrim"');
   const drawerEnd = source.indexOf('</aside>', drawerStart);

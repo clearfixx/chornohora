@@ -17,12 +17,10 @@ export function V22SourceInteraction({
   html,
   drawerHtml,
   inlineCss,
-  interactive = false,
 }: {
   html: string;
   drawerHtml: string;
   inlineCss: string;
-  interactive?: boolean;
 }) {
   const sceneRef = useRef<HTMLDivElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -40,7 +38,7 @@ export function V22SourceInteraction({
     drawer.innerHTML = drawerHtml;
 
     let dispose = () => {};
-    if (interactive) {
+    {
       const scroll = new V22ScrollController();
       scroll.mount();
       const unmountDrawer = mountV22RouteDrawer();
@@ -61,7 +59,7 @@ export function V22SourceInteraction({
       drawer.replaceChildren();
       style.remove();
     };
-  }, [html, drawerHtml, inlineCss, interactive]);
+  }, [html, drawerHtml, inlineCss]);
 
   return (
     <>

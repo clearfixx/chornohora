@@ -35,3 +35,22 @@ a {color: inherit;}
 @media (prefers-reduced-motion: reduce) {
   .legacy-journey__locale {scroll-behavior: auto;}
 }
+
+/*
+ * v22 native comparison: original runtime computes larger desktop CTA boxes
+ * than the extracted static fallback. Values measured in Chromium at
+ * 1440×900 and 390×900; keep this scoped to native only.
+ * Do not change approved original iframe styles.
+ */
+[data-v22-source-scene] .hero-actions .hero-secondary {
+  min-height: 44px;
+}
+@media (min-width: 701px) {
+  [data-v22-source-scene] .hero-actions .hero-primary {
+    min-width: 270px;
+  }
+  [data-v22-source-scene] .hero-actions .hero-secondary {
+    min-width: 235px;
+    min-height: 52px;
+  }
+}

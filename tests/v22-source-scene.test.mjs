@@ -15,7 +15,7 @@ test('approved source has stable exact DOM extraction boundaries', () => {
   assert.ok(fragment.includes('class="stage"'));
   assert.ok(fragment.includes('class="fx hiker"'));
   assert.ok(fragment.includes('id="route-drawer"'));
-  assert.ok((fragment.match(/<svg\\b/g) ?? []).length > 20);
+  assert.ok((fragment.match(/<svg\b/g) ?? []).length > 20);
 });
 test('React comparison route does not replace original SVG paths or run both runtimes', () => {
   assert.match(loader, /readFileSync\(SOURCE/);

@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import {spawn, spawnSync} from 'node:child_process';
 import {once} from 'node:events';
-import {mkdtempSync, rmSync} from 'node:fs';
+import {mkdirSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
@@ -17,6 +17,8 @@ if (!browser) throw new Error('Chrome/Chromium required');
 const port = 3188;
 const debugPort = 9338;
 const profile = mkdtempSync(join(tmpdir(), 'chornohora-cdp-'));
+const screenshots = join(process.cwd(), 'artifacts', 'v22-browser');
+mkdirSync(screenshots, {recursive: true});
 const server = spawn('pnpm', ['start', '--port', String(port)], {
   detached: true, stdio: 'ignore',
 });
@@ -46,6 +48,10 @@ const evaluate = async expression => {
   const result = await command('Runtime.evaluate', {expression, returnByValue: true, awaitPromise: true});
   if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
   return result.result.result.value;
+};
+const capture = async (locale, width, mode, name) => {
+  const result = await command('Page.captureScreenshot', {format: 'png', captureBeyondViewport: false});
+  writeFileSync(join(screenshots, `${locale}-${width}-${mode}-${name}.png`), Buffer.from(result.result.data, 'base64'));
 };
 const check = async (locale, width) => {
   await command('Emulation.setDeviceMetricsOverride', {width, height: 900, deviceScaleFactor: 1, mobile: width < 700});
@@ -79,6 +85,7 @@ const check = async (locale, width) => {
     assert.ok(Number.isFinite(x) && x >= previousX, `hiker must progress monotonically at ${name}`);
     previousX = x;
     assert.deepEqual(state.active, expectedStop === null ? [] : [expectedStop], `wrong active summit at ${name} ${locale}/${width}`);
+    await capture(locale, width, 'native', name);
     console.log(`CDP ${locale}/${width} ${name}: ${JSON.stringify(state)}`);
   }
   const reverse = await evaluate(`(async () => {
@@ -88,6 +95,31 @@ const check = async (locale, width) => {
   })()`);
   assert.equal(reverse.started, false, `route panel failed to hide on reverse scroll: ${locale}/${width}`);
   assert.deepEqual(reverse.active, [], `active summit not cleared on reverse scroll: ${locale}/${width}`);
+  await command('Page.navigate', {url: `http://127.0.0.1:${port}/${locale}`});
+  let originalReady = false;
+  for (let i = 0; i < 100; i++) {
+    originalReady = await evaluate(`(() => {
+      const frame = document.querySelector('iframe[src="/legacy/index.html"]');
+      return !!frame?.contentDocument?.querySelector('.track .stage');
+    })()`);
+    if (originalReady) break;
+    await delay(150);
+  }
+  assert.ok(originalReady, `approved v22 iframe failed to load: ${locale}/${width}`);
+  for (const [name, p] of [['hero', 0], ['hoverla', .21], ['brebeneskul', .42], ['nesamovyte', .63], ['petros', .83]]) {
+    await evaluate(`(async () => {
+      const frame = document.querySelector('iframe[src="/legacy/index.html"]');
+      const doc = frame.contentDocument;
+      const win = frame.contentWindow;
+      const track = doc.querySelector('.track');
+      const stage = track.querySelector('.stage');
+      const top = track.getBoundingClientRect().top + win.scrollY;
+      const travel = track.offsetHeight - stage.offsetHeight;
+      win.scrollTo({top: ${name === 'hero' ? '0' : `top + travel * ${p}`}, behavior: 'instant'});
+      await new Promise(r => win.requestAnimationFrame(() => win.requestAnimationFrame(r)));
+    })()`);
+    await capture(locale, width, 'original', name);
+  }
 };
 try {
   for (let i = 0; i < 80; i++) {

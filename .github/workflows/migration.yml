@@ -23,6 +23,7 @@ jobs:
       - run: pnpm test:journey
       - run: pnpm test:source
       - run: pnpm inventory:v22
+      - run: pnpm extract:v22-svg
       - name: Audit approved v22 resources when present
         run: |
           if test -f public/legacy/index.html; then

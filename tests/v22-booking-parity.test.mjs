@@ -7,8 +7,8 @@ const port = readFileSync('src/lib/v22-demo-booking.ts', 'utf8');
 const host = readFileSync('src/components/journey/V22SourceInteraction.tsx', 'utf8');
 
 test('original DC demo booking handlers are exactly sent/reset state transitions', () => {
-  assert.match(source, /submit:\(e\)=>\{e.preventDefault\(\);this.setState\(\{sent:true\}\)\}/);
-  assert.match(source, /reset:\(\)=>this.setState\(\{sent:false\}\)/);
+  assert.match(source, /submit:\s*\(e\)\s*=>\s*\{\s*if \(e && e.preventDefault\) e.preventDefault\(\); this.setState\(\{ sent: true \}\); \}/);
+  assert.match(source, /reset:\s*\(\)\s*=>\s*this.setState\(\{ sent: false \}\)/);
   assert.match(port, /render\(true\)/);
   assert.match(port, /render\(false\)/);
   assert.match(port, /event.preventDefault\(\)/);

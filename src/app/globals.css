@@ -1,0 +1,5 @@
+@import 'tailwindcss';
+:root {color-scheme: dark; font-family: system-ui, sans-serif; background: #100a2d; color: #f7f0e6;}
+* {box-sizing: border-box;}
+body {margin: 0;}
+a {color: inherit;}

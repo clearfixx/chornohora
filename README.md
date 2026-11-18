@@ -1,12 +1,17 @@
 # Чорногора — Чотири неба
 
-Illustrated mountain journey landing page. Migrating the approved v22 prototype to Next.js, TypeScript, Motion, and UA/EN localization with `next-intl`.
+Migration of the approved v22 illustrated mountain journey to Next.js 16, React 19, TypeScript, `next-intl`, Motion and pnpm.
 
-## Development policy
+**Development status:** scaffold only; not yet the finished animated site. Production on Vercel is gated on visual and interaction parity with v22.
 
-- Keep `main` stable; implement migration in feature branches and review by pull request.
-- The approved v22 HTML is the visual and interaction reference; do not redesign it during migration.
-- Preserve seamless scenery, walker/tree occlusion, progress synchronization, and the approved right-side 3D menu.
-- Production Vercel deployment follows completed migration, browser regression tests, and a successful build.
+## Run
 
-**Status:** migration in progress; not deployed. See the migration branch for initial app setup.
+```bash
+corepack enable
+pnpm install
+pnpm dev
+```
+
+Open `http://localhost:3000/uk` or `/en`.
+
+See [docs/MIGRATION.md](docs/MIGRATION.md) for requirements and testing criteria. The complete v22 legacy source is not yet committed: it must be imported before animation migration; do not treat the current placeholder as the product.

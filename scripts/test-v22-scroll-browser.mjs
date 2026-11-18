@@ -143,6 +143,12 @@ const check = async (locale, width) => {
       expanded: toggle.getAttribute('aria-expanded'),
       focus: document.activeElement === drawer.querySelector('.route-drawer-close'),
       activeTag: document.activeElement?.outerHTML?.slice(0, 180),
+      closeButton: drawer.querySelector('.route-drawer-close')?.outerHTML?.slice(0, 180),
+      visibility: getComputedStyle(drawer).visibility,
+      display: getComputedStyle(drawer).display,
+      buttonVisibility: getComputedStyle(drawer.querySelector('.route-drawer-close')).visibility,
+      drawerInert: drawer.inert,
+      wrapperInert: drawer.parentElement?.inert,
     };
     const drawerOpened = drawerOpenState.body && drawerOpenState.aria === 'false'
       && drawerOpenState.expanded === 'true' && drawerOpenState.focus;

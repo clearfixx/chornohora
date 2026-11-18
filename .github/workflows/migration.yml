@@ -42,3 +42,4 @@ jobs:
           fi
       - run: pnpm build
       - run: pnpm test:browser
+      - run: pnpm test:browser-scroll

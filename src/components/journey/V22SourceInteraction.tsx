@@ -6,6 +6,7 @@ import {mountV22RouteDrawer} from '@/lib/v22-route-drawer';
 import {mountV22StaticNavigation} from '@/lib/v22-static-navigation';
 import {mountV22UI} from '@/lib/v22-ui-v8';
 import {mountV22UIFixes} from '@/lib/v22-ui-fixes-v11';
+import {mountV22DemoBooking} from '@/lib/v22-demo-booking';
 
 /**
  * The original static fallback is legacy HTML, not React-owned JSX.
@@ -45,7 +46,9 @@ export function V22SourceInteraction({
       const unmountNavigation = mountV22StaticNavigation(scene, scroll);
       const unmountUI = mountV22UI();
       const unmountUIFixes = mountV22UIFixes();
+      const unmountBooking = mountV22DemoBooking(scene);
       dispose = () => {
+        unmountBooking();
         unmountUIFixes();
         unmountUI();
         unmountNavigation();

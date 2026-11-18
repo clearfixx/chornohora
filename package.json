@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test:journey": "node --experimental-strip-types --test tests/journey.test.mjs",
     "test:source": "node --test tests/source.test.mjs",
-    "audit:v22": "node scripts/audit-v22.mjs"
+    "audit:v22": "node scripts/audit-v22.mjs",
+    "inventory:v22": "node scripts/inventory-v22.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",

@@ -63,7 +63,9 @@ const check = async (locale, width) => {
     return {top: track.getBoundingClientRect().top + scrollY, travel: track.offsetHeight - stage.offsetHeight};
   })()`);
   assert.ok(geometry.travel > 200, `no scrollable travel: ${locale}/${width}`);
-  for (const [name, p] of [['hero', 0], ['hoverla', .21], ['brebeneskul', .42], ['nesamovyte', .63], ['petros', .83]]) {
+  const peaks = [['hero', 0, null], ['hoverla', .21, '1'], ['brebeneskul', .42, '2'], ['nesamovyte', .63, '3'], ['petros', .83, '4']];
+  let previousX = -1;
+  for (const [name, p, expectedStop] of peaks) {
     const state = await evaluate(`(async () => {
       window.scrollTo({top: ${name === 'hero' ? 0 : `(${geometry.top} + ${geometry.travel} * ${p})`}, behavior: 'instant'});
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -73,9 +75,19 @@ const check = async (locale, width) => {
     })()`);
     assert.equal(state.started, name !== 'hero', `route panel mismatch at ${name} ${locale}/${width}`);
     assert.ok(state.x.endsWith('px'), `hiker position missing at ${name}`);
-    assert.ok(state.active.length <= 1, `multiple active route stops at ${name}`);
+    const x = Number.parseFloat(state.x);
+    assert.ok(Number.isFinite(x) && x >= previousX, `hiker must progress monotonically at ${name}`);
+    previousX = x;
+    assert.deepEqual(state.active, expectedStop === null ? [] : [expectedStop], `wrong active summit at ${name} ${locale}/${width}`);
     console.log(`CDP ${locale}/${width} ${name}: ${JSON.stringify(state)}`);
   }
+  const reverse = await evaluate(`(async () => {
+    window.scrollTo({top: 0, behavior: 'instant'});
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    return {started: document.body.classList.contains('route-started'), active: [...document.querySelectorAll('.route-ui-v6 .stop.is-active')].map(el => el.dataset.peak)};
+  })()`);
+  assert.equal(reverse.started, false, `route panel failed to hide on reverse scroll: ${locale}/${width}`);
+  assert.deepEqual(reverse.active, [], `active summit not cleared on reverse scroll: ${locale}/${width}`);
 };
 try {
   for (let i = 0; i < 80; i++) {

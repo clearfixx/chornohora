@@ -40,6 +40,7 @@ jobs:
           else
             echo "::warning::Approved v22 source files are not committed; visual parity remains blocked."
           fi
+      - run: pnpm test:v22-ghost
       - run: pnpm build
       - run: pnpm test:browser
       - run: pnpm test:browser-scroll

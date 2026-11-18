@@ -24,6 +24,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test:journey
       - run: pnpm test:source
+      - run: pnpm test:source
       - name: Audit approved v22 resources when present
         run: |
           if test -f public/legacy/index.html; then

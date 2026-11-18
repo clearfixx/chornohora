@@ -19,6 +19,7 @@ const debugPort = 9338;
 const profile = mkdtempSync(join(tmpdir(), 'chornohora-cdp-'));
 const screenshots = join(process.cwd(), 'artifacts', 'v22-browser');
 mkdirSync(screenshots, {recursive: true});
+const geometrySamples = [];
 const server = spawn('pnpm', ['start', '--port', String(port)], {
   detached: true, stdio: 'ignore',
 });
@@ -53,6 +54,35 @@ const capture = async (locale, width, mode, name) => {
   const result = await command('Page.captureScreenshot', {format: 'png', captureBeyondViewport: false});
   writeFileSync(join(screenshots, `${locale}-${width}-${mode}-${name}.png`), Buffer.from(result.result.data, 'base64'));
 };
+const sampleGeometry = async (locale, width, mode, name) => {
+  const data = await evaluate(`(() => {
+    const doc = ${mode === 'original' ? "document.querySelector('iframe[src=\"/legacy/index.html\"]').contentDocument" : 'document'};
+    const win = doc.defaultView;
+    const selectors = {
+      heroButtons: '.hero button, .hero a, .hero .btn',
+      routePanel: '.route-ui-v6',
+      routeStops: '.route-ui-v6 .stop',
+      hiker: '.track .stage .hiker',
+      stage: '.track .stage',
+      drawer: '.route-menu, .route-drawer',
+    };
+    const rect = element => {
+      const r = element.getBoundingClientRect();
+      return {x: +r.x.toFixed(2), y: +r.y.toFixed(2), width: +r.width.toFixed(2), height: +r.height.toFixed(2)};
+    };
+    return {
+      scrollY: win.scrollY,
+      elements: Object.fromEntries(Object.entries(selectors).map(([key, selector]) => [
+        key, [...doc.querySelectorAll(selector)].slice(0, 8).map(element => ({
+          tag: element.tagName.toLowerCase(),
+          text: (element.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 70),
+          rect: rect(element),
+        })),
+      ])),
+    };
+  })()`);
+  geometrySamples.push({locale, width, mode, name, ...data});
+};
 const check = async (locale, width) => {
   await command('Emulation.setDeviceMetricsOverride', {width, height: 900, deviceScaleFactor: 1, mobile: width < 700});
   await command('Page.navigate', {url: `http://127.0.0.1:${port}/${locale}?preview=native`});
@@ -85,6 +115,7 @@ const check = async (locale, width) => {
     assert.ok(Number.isFinite(x) && x >= previousX, `hiker must progress monotonically at ${name}`);
     previousX = x;
     assert.deepEqual(state.active, expectedStop === null ? [] : [expectedStop], `wrong active summit at ${name} ${locale}/${width}`);
+    await sampleGeometry(locale, width, 'native', name);
     await capture(locale, width, 'native', name);
     console.log(`CDP ${locale}/${width} ${name}: ${JSON.stringify(state)}`);
   }
@@ -118,6 +149,7 @@ const check = async (locale, width) => {
       win.scrollTo({top: ${name === 'hero' ? '0' : `top + travel * ${p}`}, behavior: 'instant'});
       await new Promise(r => win.requestAnimationFrame(() => win.requestAnimationFrame(r)));
     })()`);
+    await sampleGeometry(locale, width, 'original', name);
     await capture(locale, width, 'original', name);
   }
 };
@@ -147,6 +179,8 @@ try {
   await command('Page.enable');
   await command('Runtime.enable');
   for (const locale of ['uk', 'en']) for (const width of [1440, 390]) await check(locale, width);
+  writeFileSync(join(screenshots, 'geometry.json'), JSON.stringify({samples: geometrySamples}, null, 2));
+  console.log('Saved geometry measurements:', geometrySamples.length);
 } finally {
   ws?.close();
   const browserExit = chrome.exitCode === null ? once(chrome, 'exit') : Promise.resolve();

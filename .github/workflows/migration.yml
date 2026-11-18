@@ -22,6 +22,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test:journey
       - run: pnpm test:source
+      - run: pnpm test:v22-scroll
       - run: pnpm inventory:v22
       - run: pnpm extract:v22-svg
       - name: Audit approved v22 resources when present

@@ -25,7 +25,8 @@
     "test:v22-routes": "node --test tests/v22-single-route.test.mjs",
     "test:browser": "node scripts/smoke-native-browser.mjs",
     "test:browser-scroll": "node scripts/test-v22-scroll-browser.mjs",
-    "test:geometry": "node scripts/compare-v22-geometry.mjs"
+    "test:geometry": "node scripts/compare-v22-geometry.mjs",
+    "test:v22-ghost": "node --test tests/v22-ghost-titles.test.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",

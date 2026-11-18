@@ -59,7 +59,7 @@ const sampleGeometry = async (locale, width, mode, name) => {
     const doc = ${mode === 'original' ? "document.querySelector('iframe[src=\"/legacy/index.html\"]').contentDocument" : 'document'};
     const win = doc.defaultView;
     const selectors = {
-      heroButtons: '.hero button, .hero a, .hero .btn',
+      heroButtons: '.hero-actions .cta, .hero-actions a',
       routePanel: '.route-ui-v6',
       routeStops: '.route-ui-v6 .stop',
       hiker: '.track .stage .hiker',
@@ -115,6 +115,8 @@ const check = async (locale, width) => {
     assert.ok(Number.isFinite(x) && x >= previousX, `hiker must progress monotonically at ${name}`);
     previousX = x;
     assert.deepEqual(state.active, expectedStop === null ? [] : [expectedStop], `wrong active summit at ${name} ${locale}/${width}`);
+    // Route panel uses CSS transitions: measure only after they settle.
+    await delay(650);
     await sampleGeometry(locale, width, 'native', name);
     await capture(locale, width, 'native', name);
     console.log(`CDP ${locale}/${width} ${name}: ${JSON.stringify(state)}`);
@@ -149,6 +151,9 @@ const check = async (locale, width) => {
       win.scrollTo({top: ${name === 'hero' ? '0' : `top + travel * ${p}`}, behavior: 'instant'});
       await new Promise(r => win.requestAnimationFrame(() => win.requestAnimationFrame(r)));
     })()`);
+    // Original DCLogic may finish a frame after the scroll event; give it
+    // the same settling interval as the native controller.
+    await delay(650);
     await sampleGeometry(locale, width, 'original', name);
     await capture(locale, width, 'original', name);
   }

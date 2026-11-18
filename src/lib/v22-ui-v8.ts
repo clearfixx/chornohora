@@ -11,7 +11,7 @@ export function mountV22UI(): () => void {
       if((cs.overflowY==='auto'||cs.overflowY==='scroll')&&n.scrollHeight>n.clientHeight+2)return n;
       n=n.parentElement;
     }
-    return document.scrollingElement||document.documentElement;
+    return (document.scrollingElement || document.documentElement) as HTMLElement;
   }
   function update(){
     raf=0;

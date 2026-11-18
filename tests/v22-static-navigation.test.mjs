@@ -16,8 +16,7 @@ test('every original static DC navigation binding is handled', () => {
   assert.deepEqual(portNames, sourceNames);
   assert.equal(sourceNames.length, 6);
 });
-test('only interactive scene mounts navigation; cleanup is explicit', () => {
-  assert.match(component, /if \(interactive\)/);
+test('the single parity scene mounts navigation and cleans up', () => {
   assert.match(component, /mountV22StaticNavigation\(scene, scroll\)/);
   assert.match(component, /unmountNavigation\(\)/);
   assert.match(bridge, /scene.removeEventListener\('click', onClick\)/);

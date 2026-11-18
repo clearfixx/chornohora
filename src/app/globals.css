@@ -1,5 +1,37 @@
 @import 'tailwindcss';
-:root {color-scheme: dark; font-family: system-ui, sans-serif; background: #100a2d; color: #f7f0e6;}
+
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+  background: #100a2d;
+  color: #f7f0e6;
+}
+
 * {box-sizing: border-box;}
 body {margin: 0;}
 a {color: inherit;}
+
+.legacy-journey {position: relative; width: 100%; min-height: 100dvh;}
+.legacy-journey__frame {display: block; width: 100%; height: 100dvh; border: 0;}
+.legacy-journey__locale {
+  position: fixed;
+  z-index: 1000;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  border: 1px solid rgb(255 255 255 / .18);
+  border-radius: 999px;
+  padding: .65rem .9rem;
+  background: rgb(16 10 45 / .9);
+  color: #f7f0e6;
+  font-size: .75rem;
+  letter-spacing: .08em;
+}
+.legacy-journey__locale a[aria-current='page'] {color: #f3b47b; font-weight: 700;}
+.legacy-journey__locale a:focus-visible {outline: 2px solid #f3b47b; outline-offset: 4px;}
+.legacy-journey__loading {position: absolute; inset: 45% 0 auto; text-align: center; pointer-events: none;}
+@media (prefers-reduced-motion: reduce) {
+  .legacy-journey__locale {scroll-behavior: auto;}
+}

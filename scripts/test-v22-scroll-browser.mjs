@@ -136,10 +136,15 @@ const check = async (locale, width) => {
     const drawer = document.querySelector('#route-drawer');
     if (!toggle || !drawer) return {error: 'drawer controls missing'};
     toggle.click();
-    const drawerOpened = document.body.classList.contains('route-menu-open')
-      && drawer.getAttribute('aria-hidden') === 'false'
-      && toggle.getAttribute('aria-expanded') === 'true'
-      && document.activeElement === drawer.querySelector('.route-drawer-close');
+    const drawerOpenState = {
+      body: document.body.classList.contains('route-menu-open'),
+      aria: drawer.getAttribute('aria-hidden'),
+      expanded: toggle.getAttribute('aria-expanded'),
+      focus: document.activeElement === drawer.querySelector('.route-drawer-close'),
+      activeTag: document.activeElement?.outerHTML?.slice(0, 180),
+    };
+    const drawerOpened = drawerOpenState.body && drawerOpenState.aria === 'false'
+      && drawerOpenState.expanded === 'true' && drawerOpenState.focus;
     document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
     const drawerClosed = !document.body.classList.contains('route-menu-open')
       && drawer.getAttribute('aria-hidden') === 'true'
@@ -171,10 +176,11 @@ const check = async (locale, width) => {
     const bookingConfirmed = form.hidden && !success.hidden;
     success.querySelector('button[type="button"]').click();
     const bookingReset = !form.hidden && success.hidden && form.elements.namedItem('name').value === '';
-    return {drawerOpened, drawerClosed, drawerNavigated, tooltipShown, tooltipClosed,
+    return {drawerOpened, drawerOpenState, drawerClosed, drawerNavigated, tooltipShown, tooltipClosed,
       beforeSubmit, invalidPrevented, valid, bookingConfirmed, bookingReset};
   })()`);
   for (const [key, value] of Object.entries(interactions)) {
+    if (key === 'drawerOpenState') continue;
     assert.equal(value, true, `native interaction ${key} failed at ${locale}/${width}: ${JSON.stringify(interactions)}`);
   }
   console.log(`CDP native interactions ${locale}/${width}: ${JSON.stringify(interactions)}`);

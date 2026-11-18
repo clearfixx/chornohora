@@ -54,6 +54,31 @@ const capture = async (locale, width, mode, name) => {
   const result = await command('Page.captureScreenshot', {format: 'png', captureBeyondViewport: false});
   writeFileSync(join(screenshots, `${locale}-${width}-${mode}-${name}.png`), Buffer.from(result.result.data, 'base64'));
 };
+const checkGhostTitle = async (locale, width, mode, name, expectedPeak) => {
+  if (!expectedPeak) return;
+  const state = await evaluate(`(() => {
+    const doc = ${mode === 'original' ? "document.querySelector('iframe[src=\"/legacy/index.html\"]').contentDocument" : 'document'};
+    const title = doc.querySelector('.track .ghost.g${expectedPeak}');
+    if (!title) return {missing: true};
+    const r = title.getBoundingClientRect();
+    const viewWidth = doc.defaultView.innerWidth;
+    const visibleWidth = Math.max(0, Math.min(r.right, viewWidth) - Math.max(r.left, 0));
+    const css = doc.defaultView.getComputedStyle(title);
+    return {
+      text: title.textContent.trim(),
+      opacity: Number(css.opacity),
+      visibleFraction: r.width > 0 ? visibleWidth / r.width : 0,
+      rect: {left: r.left, right: r.right, width: r.width},
+      viewport: viewWidth,
+      stroke: css.webkitTextStrokeWidth,
+    };
+  })()`);
+  console.log(`GHOST ${locale}/${width}/${mode}/${name}: ${JSON.stringify(state)}`);
+  assert.ok(!state.missing, `outline title missing: ${locale}/${mode}/${name}`);
+  assert.ok(state.opacity > 0.5, `outline title invisible: ${locale}/${width}/${mode}/${name}: ${JSON.stringify(state)}`);
+  assert.ok(state.visibleFraction >= 0.9, `outline title clipped horizontally: ${locale}/${width}/${mode}/${name}: ${JSON.stringify(state)}`);
+  assert.equal(state.stroke, '2px', `outline stroke missing: ${locale}/${mode}/${name}`);
+};
 const sampleGeometry = async (locale, width, mode, name) => {
   const data = await evaluate(`(() => {
     const doc = ${mode === 'original' ? "document.querySelector('iframe[src=\"/legacy/index.html\"]').contentDocument" : 'document'};
@@ -117,6 +142,7 @@ const check = async (locale, width) => {
     assert.deepEqual(state.active, expectedStop === null ? [] : [expectedStop], `wrong active summit at ${name} ${locale}/${width}`);
     // Route panel uses CSS transitions: measure only after they settle.
     await delay(650);
+    await checkGhostTitle(locale, width, 'native', name, expectedStop);
     await sampleGeometry(locale, width, 'native', name);
     await capture(locale, width, 'native', name);
     console.log(`CDP ${locale}/${width} ${name}: ${JSON.stringify(state)}`);
@@ -217,6 +243,7 @@ const check = async (locale, width) => {
     // Original DCLogic may finish a frame after the scroll event; give it
     // the same settling interval as the native controller.
     await delay(650);
+    await checkGhostTitle(locale, width, 'original', name, ({hoverla: '1', brebeneskul: '2', nesamovyte: '3', petros: '4'})[name]);
     await sampleGeometry(locale, width, 'original', name);
     await capture(locale, width, 'original', name);
   }

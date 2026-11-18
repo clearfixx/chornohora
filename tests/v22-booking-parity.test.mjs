@@ -12,16 +12,18 @@ test('original DC demo booking handlers are exactly sent/reset state transitions
   assert.match(port, /render\(true\)/);
   assert.match(port, /render\(false\)/);
   assert.match(port, /event.preventDefault\(\)/);
-  assert.match(port, /form.closest\('sc-if'\)/);
-  assert.match(port, /formBranch\?\.nextElementSibling/);
-  assert.match(port, /formBranch.hidden = sent/);
-  assert.match(port, /successBranch.hidden = !sent/);
+  assert.match(port, /form.nextElementSibling/);
+  assert.match(port, /form.hidden = sent/);
+  assert.match(port, /success.hidden = !sent/);
 });
 test('fallback has form and success panel; port does not claim a backend', () => {
   const marker = '<sc-if data-dc-static="" value="{{ false }}">';
   const fallback = source.slice(source.indexOf(marker), source.indexOf('</sc-if></x-dc>'));
   assert.match(fallback, /<form style=/);
   assert.match(fallback, /Заявку надіслано/);
+  const booking = fallback.slice(fallback.indexOf('id="book"'));
+  assert.ok(booking.indexOf('</form>') < booking.indexOf('Заявку надіслано'));
+  assert.doesNotMatch(booking.slice(0, booking.indexOf('</form>')), /<sc-if/);
   assert.match(port, /does not send or store personal data/);
   assert.match(host, /mountV22DemoBooking\(scene\)/);
   assert.match(host, /unmountBooking\(\)/);

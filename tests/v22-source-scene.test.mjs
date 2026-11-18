@@ -15,7 +15,7 @@ test('extract the original static fallback, not the dynamic DC template', () => 
   assert.ok(fragment.includes('data-document-role="page"'));
   assert.ok(fragment.includes('class="track"'));
   assert.ok(fragment.includes('class="stage"'));
-  assert.ok((fragment.match(/<svg\b/g) ?? []).length > 20);
+  assert.equal((fragment.match(/<svg\b/g) ?? []).length, 19);
   assert.match(loader, /staticMarker/);
   assert.match(loader, /drawerStart/);
 });

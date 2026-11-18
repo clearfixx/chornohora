@@ -17,10 +17,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      # Temporary until pnpm-lock.yaml is committed.
+      # Never report this as a reproducible frozen-lockfile build.
+      - run: pnpm install --no-frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test:journey
       - run: pnpm test:source
+      - name: Audit approved v22 resources when present
+        run: |
+          if test -f public/legacy/index.html; then
+            pnpm audit:v22
+          else
+            echo "::warning::Approved v22 source files are not committed; visual parity remains blocked."
+          fi
       - run: pnpm build

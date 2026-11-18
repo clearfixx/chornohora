@@ -1,15 +1,11 @@
 #!/usr/bin/env node
-/**
- * Validate the approved v22 document and every local file reference.
- * No third-party packages required.
- */
-import {existsSync, readFileSync, readdirSync, statSync} from 'node:fs';
-import {join, resolve, dirname, extname} from 'node:path';
+import {existsSync, readFileSync, readdirSync} from 'node:fs';
+import {dirname, isAbsolute, join, relative, resolve, sep} from 'node:path';
 
 const root = resolve(process.argv[2] ?? 'public/legacy');
 const htmlPath = join(root, 'index.html');
 if (!existsSync(htmlPath)) {
-  console.error('Missing v22 source: ' + htmlPath);
+  console.error('Missing approved v22 source: ' + htmlPath);
   process.exit(1);
 }
 const html = readFileSync(htmlPath, 'utf8');
@@ -19,7 +15,7 @@ const required = [
   'assets/ui-v8.js', 'assets/ui-fixes-v11.js',
   'assets/chornohora-mark.png',
   ...Array.from({length: 6}, (_, i) => 'assets/instagram-' + (i + 1) + '.svg'),
-  ...[3,4,5,6].map(i => 'assets/font-' + i + '.woff2'),
+  ...[3, 4, 5, 6].map(i => 'assets/font-' + i + '.woff2'),
 ];
 const errors = [];
 for (const name of required) {
@@ -29,37 +25,39 @@ for (const id of ['govla', 'brebeneskul', 'nesamovyte', 'petros']) {
   if (!html.includes('id="' + id + '"')) errors.push('Missing route anchor: ' + id);
 }
 if (!html.includes('<x-dc')) errors.push('Missing original x-dc animation root');
+
 const references = new Set();
 function inspect(content, file) {
-  // Check quoted relative assets in HTML/CSS/JS; skip absolute URLs, hashes, data, templates.
   const regex = /(?:src|href|poster)=["']([^"']+)["']|url\(\s*["']?([^)'"]+)["']?\s*\)/g;
   for (const match of content.matchAll(regex)) {
-    const value = (match[1] || match[2]).split(/[?#]/)[0];
+    const raw = match[1] || match[2];
+    const value = raw.split(/[?#]/)[0];
     if (!value || /^(?:https?:|data:|blob:|mailto:|tel:|#|\/\/|\/)/i.test(value)) continue;
     if (value.includes('{{') || value.includes('${')) continue;
-    const path = resolve(dirname(file), value);
-    if (!path.startsWith(root + '/')) {
+    const target = resolve(dirname(file), decodeURIComponent(value));
+    const rel = relative(root, target);
+    if (rel === '..' || rel.startsWith('..' + sep) || isAbsolute(rel)) {
       errors.push('Asset path escapes source directory: ' + value);
-    } else {
-      references.add(path);
-      if (!existsSync(path)) errors.push('Broken reference in ' + file.slice(root.length + 1) + ': ' + value);
+      continue;
+    }
+    references.add(target);
+    if (!existsSync(target)) {
+      errors.push('Broken reference in ' + relative(root, file) + ': ' + value);
     }
   }
 }
 inspect(html, htmlPath);
-for (const file of ['styles.css']) {
-  const path = join(root, file);
-  if (existsSync(path)) inspect(readFileSync(path, 'utf8'), path);
-}
+const cssPath = join(root, 'styles.css');
+if (existsSync(cssPath)) inspect(readFileSync(cssPath, 'utf8'), cssPath);
 let fileCount = 0;
-function countFiles(dir) {
-  for (const item of readdirSync(dir, {withFileTypes: true})) {
-    const file = join(dir, item.name);
-    if (item.isDirectory()) countFiles(file);
-    else if (item.isFile()) fileCount++;
+function walk(dir) {
+  for (const entry of readdirSync(dir, {withFileTypes: true})) {
+    const file = join(dir, entry.name);
+    if (entry.isDirectory()) walk(file);
+    else if (entry.isFile()) fileCount++;
   }
 }
-countFiles(root);
+walk(root);
 if (errors.length) {
   for (const error of errors) console.error('FAIL:', error);
   process.exit(1);

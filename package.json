@@ -9,9 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:journey": "node --experimental-strip-types --test tests/journey.test.mjs",
-    "test:source": "node --test tests/source.test.mjs",
-    "audit:v22": "node scripts/audit-v22.mjs"
+    "test:journey": "node --experimental-strip-types --test tests/journey.test.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",

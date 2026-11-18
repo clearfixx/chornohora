@@ -19,6 +19,11 @@ test('extract the original static fallback, not the dynamic DC template', () => 
   assert.match(loader, /staticMarker/);
   assert.match(loader, /drawerStart/);
 });
+test('approved default accent is resolved from original DC component props', () => {
+  const props = JSON.parse(source.match(/data-props='([^']+)'/)?.[1] ?? '{}');
+  assert.equal(props.accent.default, '#FFE14D');
+  assert.ok(loader.includes("replaceAll('{{accent}}', accent)"));
+});
 test('independent original route drawer is extracted separately', () => {
   assert.ok(source.includes('<aside id="route-drawer"'));
   assert.match(page, /drawerHtml/);

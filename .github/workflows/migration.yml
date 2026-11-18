@@ -29,6 +29,7 @@ jobs:
       - run: pnpm test:v22-ui
       - run: pnpm test:v22-ui-fixes
       - run: pnpm test:v22-booking
+      - run: pnpm test:v22-dom
       - run: pnpm inventory:v22
       - run: pnpm extract:v22-svg
       - name: Audit approved v22 resources when present

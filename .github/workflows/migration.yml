@@ -25,6 +25,7 @@ jobs:
       - run: pnpm test:v22-scroll
       - run: pnpm test:v22-drawer
       - run: pnpm test:v22-scene
+      - run: pnpm test:v22-navigation
       - run: pnpm inventory:v22
       - run: pnpm extract:v22-svg
       - name: Audit approved v22 resources when present

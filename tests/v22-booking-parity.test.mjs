@@ -32,6 +32,7 @@ test('fallback has form and success panel; port does not claim a backend', () =>
 test('one parity route remains, production still uses original v22', () => {
   const page = readFileSync('src/app/[locale]/page.tsx', 'utf8');
   assert.match(page, /LegacyJourney/);
-  const parity = readFileSync('src/app/[locale]/source-interactive/page.tsx', 'utf8');
+  const parity = readFileSync('src/app/[locale]/page.tsx', 'utf8');
   assert.match(parity, /V22SourceInteraction/);
+  assert.match(parity, /preview === 'native'/);
 });

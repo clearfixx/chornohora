@@ -8,6 +8,7 @@ export function mountV22RouteDrawer(): () => void {
   const points = [.21, .42, .63, .83];
   let lastFocus: Element | null = null;
   let lastScroll = 0;
+  let focusFrame = 0;
   const drawer = document.getElementById('route-drawer');
   const body = document.body;
   if (!drawer) return () => {};
@@ -26,10 +27,16 @@ export function mountV22RouteDrawer(): () => void {
       el.setAttribute('aria-expanded', 'true');
       el.setAttribute('aria-label', 'Закрити меню');
     });
-    drawer.querySelector<HTMLElement>('.route-drawer-close')?.focus({preventScroll: true});
+    // Visibility transitions from hidden to visible. Chromium may reject
+    // focus in the same task that starts that transition.
+    focusFrame = requestAnimationFrame(() => {
+      focusFrame = 0;
+      if (isOpen()) drawer.querySelector<HTMLElement>('.route-drawer-close')?.focus({preventScroll: true});
+    });
   }
   function close(restoreFocus = true) {
     if (!drawer || !isOpen()) return;
+    if (focusFrame) { cancelAnimationFrame(focusFrame); focusFrame = 0; }
     body.classList.remove('route-menu-open');
     drawer.setAttribute('inert', '');
     drawer.setAttribute('aria-hidden', 'true');
@@ -124,6 +131,7 @@ export function mountV22RouteDrawer(): () => void {
 
   return () => {
     close(false);
+    if (focusFrame) cancelAnimationFrame(focusFrame);
     document.removeEventListener('click', click, true);
     document.removeEventListener('keydown', keydown);
     window.removeEventListener('wheel', wheel, true);

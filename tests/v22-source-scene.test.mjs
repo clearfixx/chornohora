@@ -4,7 +4,7 @@ import test from 'node:test';
 
 const source = readFileSync('public/legacy/index.html', 'utf8');
 const loader = readFileSync('src/lib/v22-source-scene.ts', 'utf8');
-const page = readFileSync('src/app/[locale]/source-interactive/page.tsx', 'utf8');
+const page = readFileSync('src/app/[locale]/page.tsx', 'utf8');
 
 test('extract the original static fallback, not the dynamic DC template', () => {
   const marker = '<sc-if data-dc-static="" value="{{ false }}">';

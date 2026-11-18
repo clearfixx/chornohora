@@ -12,6 +12,10 @@ test('original DC demo booking handlers are exactly sent/reset state transitions
   assert.match(port, /render\(true\)/);
   assert.match(port, /render\(false\)/);
   assert.match(port, /event.preventDefault\(\)/);
+  assert.match(port, /form.closest\('sc-if'\)/);
+  assert.match(port, /formBranch\?\.nextElementSibling/);
+  assert.match(port, /formBranch.hidden = sent/);
+  assert.match(port, /successBranch.hidden = !sent/);
 });
 test('fallback has form and success panel; port does not claim a backend', () => {
   const marker = '<sc-if data-dc-static="" value="{{ false }}">';

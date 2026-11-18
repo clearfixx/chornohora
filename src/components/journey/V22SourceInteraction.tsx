@@ -3,6 +3,7 @@
 import {useEffect, useRef} from 'react';
 import {V22ScrollController} from '@/lib/v22-scroll-controller';
 import {mountV22RouteDrawer} from '@/lib/v22-route-drawer';
+import {mountV22StaticNavigation} from '@/lib/v22-static-navigation';
 
 /**
  * The original static fallback is legacy HTML, not React-owned JSX.
@@ -41,7 +42,9 @@ export function V22SourceInteraction({
       const scroll = new V22ScrollController();
       scroll.mount();
       const unmountDrawer = mountV22RouteDrawer();
+      const unmountNavigation = mountV22StaticNavigation(scene, scroll);
       dispose = () => {
+        unmountNavigation();
         unmountDrawer();
         scroll.unmount();
       };

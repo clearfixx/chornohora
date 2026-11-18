@@ -20,7 +20,7 @@ test('ported drawer retains original event and DOM contracts', () => {
 test('ported drawer retains exact route positions and transition delay', () => {
   assert.match(original, /\.21,\.42,\.63,\.83/);
   assert.match(port, /\.21, \.42, \.63, \.83/);
-  assert.match(original, /\}, 80\)/);
+  assert.ok(original.includes('), 80)'));
   assert.match(port, /\}, 80\)/);
 });
 test('ported drawer is not mounted while original script is active', () => {

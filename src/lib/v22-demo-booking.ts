@@ -8,20 +8,21 @@ export function mountV22DemoBooking(scene: HTMLElement): () => void {
   const book = scene.querySelector<HTMLElement>('#book');
   const form = book?.querySelector<HTMLFormElement>('form');
   if (!form) return () => {};
-  // Original v22 places form and success panel in separate sibling <sc-if> nodes.
-  const formBranch = form.closest('sc-if');
-  const successBranch = formBranch?.nextElementSibling;
-  if (!(formBranch instanceof HTMLElement) || !(successBranch instanceof HTMLElement)) return () => {};
-  const reset = successBranch.querySelector<HTMLButtonElement>('button[type="button"]');
+  // The approved STATIC fallback contains a plain <form> followed by a
+  // sibling success <div>. The dynamic DC branch uses <sc-if> wrappers,
+  // but those wrappers are deliberately not part of this extracted scene.
+  const success = form.nextElementSibling;
+  if (!(success instanceof HTMLElement)) return () => {};
+  const reset = success.querySelector<HTMLButtonElement>('button[type="button"]');
   if (!reset) return () => {};
-  const formDisplay = formBranch.style.display;
-  const successDisplay = successBranch.style.display;
+  const formDisplay = form.style.display;
+  const successDisplay = success.style.display;
 
   const render = (sent: boolean) => {
-    formBranch.style.display = sent ? 'none' : formDisplay;
-    successBranch.style.display = sent ? successDisplay : 'none';
-    formBranch.hidden = sent;
-    successBranch.hidden = !sent;
+    form.style.display = sent ? 'none' : formDisplay;
+    success.style.display = sent ? successDisplay : 'none';
+    form.hidden = sent;
+    success.hidden = !sent;
   };
   const submit = (event: SubmitEvent) => {
     event.preventDefault();
@@ -38,9 +39,9 @@ export function mountV22DemoBooking(scene: HTMLElement): () => void {
   return () => {
     form.removeEventListener('submit', submit);
     reset?.removeEventListener('click', again);
-    formBranch.hidden = false;
-    successBranch.hidden = false;
-    formBranch.style.display = formDisplay;
-    successBranch.style.display = successDisplay;
+    form.hidden = false;
+    success.hidden = false;
+    form.style.display = formDisplay;
+    success.style.display = successDisplay;
   };
 }

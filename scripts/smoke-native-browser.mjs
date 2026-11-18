@@ -11,7 +11,7 @@ const candidates = ['google-chrome', 'chromium', 'chromium-browser'];
 const browser = candidates.find(bin => spawnSync('which', [bin], {stdio: 'ignore'}).status === 0);
 if (!browser) throw new Error('Chrome/Chromium is required for browser smoke checks');
 const port = 3187;
-const server = spawn('pnpm', ['start', '--port', String(port)], {stdio: 'pipe', env: {...process.env, PORT: String(port)}});
+const server = spawn('pnpm', ['start', '--port', String(port)], {stdio: 'pipe', detached: true, env: {...process.env, PORT: String(port)}});
 let serverOutput = '';
 server.stdout.on('data', data => {serverOutput += String(data);});
 server.stderr.on('data', data => {serverOutput += String(data);});
@@ -51,5 +51,10 @@ try {
     console.log(`Browser smoke OK: /${locale} and /${locale}?preview=native`);
   }
 } finally {
-  server.kill('SIGTERM');
+  // pnpm launches Next.js as a child process; terminate the entire group.
+  if (server.pid) {
+    try { process.kill(-server.pid, 'SIGTERM'); } catch { server.kill('SIGTERM'); }
+  }
+  server.stdout.destroy();
+  server.stderr.destroy();
 }

@@ -25,7 +25,12 @@ test('independent original route drawer is extracted separately', () => {
 });
 test('React comparison route does not execute both original and ported runtimes', () => {
   assert.match(loader, /readFileSync\(SOURCE/);
-  assert.match(page, /dangerouslySetInnerHTML/);
+  const host = readFileSync('src/components/journey/V22SourceInteraction.tsx', 'utf8');
+  assert.match(page, /V22SourceInteraction/);
+  assert.match(host, /scene.innerHTML = html/);
+  assert.match(host, /drawer.innerHTML = drawerHtml/);
+  assert.match(host, /useEffect/);
+  assert.doesNotMatch(host, /dangerouslySetInnerHTML/);
   assert.doesNotMatch(page, /V22ScrollController|mountV22RouteDrawer|runtime-0/);
   assert.match(page, /\/legacy\/styles.css/);
 });

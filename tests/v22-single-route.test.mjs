@@ -15,6 +15,13 @@ test('default canonical landing preserves the approved original', () => {
   assert.match(home, /getV22SourceScene\(\)/);
   assert.match(home, /<V22SourceInteraction/);
 });
+test('original and native mode share one locale control', () => {
+  const nav = readFileSync('src/components/journey/JourneyLocaleNav.tsx', 'utf8');
+  const legacy = readFileSync('src/components/journey/LegacyJourney.tsx', 'utf8');
+  assert.match(nav, /legacy-journey__locale/);
+  assert.match(legacy, /<JourneyLocaleNav/);
+  assert.match(home, /<JourneyLocaleNav/);
+});
 test('preview mode never mounts both original runtime and port together', () => {
   const host = readFileSync('src/components/journey/V22SourceInteraction.tsx', 'utf8');
   assert.doesNotMatch(host, /<iframe|runtime-0\.js/);

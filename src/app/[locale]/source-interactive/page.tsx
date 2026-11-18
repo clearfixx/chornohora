@@ -15,7 +15,6 @@ export default function SourceInteractivePage() {
         html={html}
         drawerHtml={drawerHtml}
         inlineCss={inlineCss}
-        interactive={true}
       />
     </>
   );

@@ -22,7 +22,8 @@
     "test:v22-ui-fixes": "node --test tests/v22-ui-fixes-v11.test.mjs",
     "test:v22-booking": "node --test tests/v22-booking-parity.test.mjs",
     "test:v22-dom": "node --test tests/v22-static-dom-contract.test.mjs",
-    "test:v22-routes": "node --test tests/v22-single-route.test.mjs"
+    "test:v22-routes": "node --test tests/v22-single-route.test.mjs",
+    "test:browser": "node scripts/smoke-native-browser.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",

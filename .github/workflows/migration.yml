@@ -17,13 +17,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      # Temporary until pnpm-lock.yaml is committed.
-      # Never report this as a reproducible frozen-lockfile build.
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test:journey
-      - run: pnpm test:source
       - run: pnpm test:source
       - name: Audit approved v22 resources when present
         run: |

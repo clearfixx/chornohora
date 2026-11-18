@@ -5,6 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import {spawn, spawnSync} from 'node:child_process';
+import {once} from 'node:events';
 import {mkdtempSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -104,7 +105,13 @@ try {
   for (const locale of ['uk', 'en']) for (const width of [1440, 390]) await check(locale, width);
 } finally {
   ws?.close();
-  chrome.kill('SIGTERM');
+  const browserExit = chrome.exitCode === null ? once(chrome, 'exit') : Promise.resolve();
+  if (chrome.exitCode === null) chrome.kill('SIGTERM');
   if (server.pid) { try { process.kill(-server.pid, 'SIGTERM'); } catch { server.kill('SIGTERM'); } }
-  rmSync(profile, {recursive: true, force: true});
+  await Promise.race([browserExit, delay(5000)]);
+  // Chrome may flush profile files briefly after exit. Retry transient races.
+  for (let attempt = 0; attempt < 8; attempt++) {
+    try { rmSync(profile, {recursive: true, force: true, maxRetries: 5, retryDelay: 100}); break; }
+    catch (error) { if (attempt === 7) throw error; await delay(250); }
+  }
 }

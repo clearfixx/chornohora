@@ -28,14 +28,20 @@ async function ready() {
   throw new Error('Next.js server did not become ready: ' + serverOutput);
 }
 async function dump(path) {
-  const result = spawnSync(browser, [
+  let lastError = '';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const result = spawnSync(browser, [
     '--headless=new', '--no-sandbox', '--disable-gpu',
     '--disable-dev-shm-usage', '--hide-scrollbars',
     '--virtual-time-budget=7000', '--dump-dom',
     `http://127.0.0.1:${port}${path}`,
   ], {encoding: 'utf8', timeout: 45000, maxBuffer: 10 * 1024 * 1024});
-  if (result.status !== 0) throw new Error(`Chrome failed for ${path}: ${result.stderr.slice(-3000)}`);
-  return result.stdout;
+    if (result.status === 0 && result.stdout.includes('<html')) return result.stdout;
+    lastError = `status=${result.status}, signal=${result.signal}, stderr=${result.stderr?.slice(-1200)}, stdoutBytes=${result.stdout?.length ?? 0}`;
+    console.warn(`Chrome attempt ${attempt + 1} failed for ${path}: ${lastError}`);
+    await delay(800 * (attempt + 1));
+  }
+  throw new Error(`Chrome failed for ${path} after retries: ${lastError}`);
 }
 try {
   await ready();

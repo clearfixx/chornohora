@@ -128,6 +128,56 @@ const check = async (locale, width) => {
   })()`);
   assert.equal(reverse.started, false, `route panel failed to hide on reverse scroll: ${locale}/${width}`);
   assert.deepEqual(reverse.active, [], `active summit not cleared on reverse scroll: ${locale}/${width}`);
+  // Exercise real DOM event handlers in the native implementation, not only
+  // static markup and scroll positions. All form values are synthetic.
+  const interactions = await evaluate(`(async () => {
+    const nextFrame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const toggle = document.querySelector('[data-route-menu-toggle]');
+    const drawer = document.querySelector('#route-drawer');
+    if (!toggle || !drawer) return {error: 'drawer controls missing'};
+    toggle.click();
+    const drawerOpened = document.body.classList.contains('route-menu-open')
+      && drawer.getAttribute('aria-hidden') === 'false'
+      && toggle.getAttribute('aria-expanded') === 'true'
+      && document.activeElement === drawer.querySelector('.route-drawer-close');
+    document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+    const drawerClosed = !document.body.classList.contains('route-menu-open')
+      && drawer.getAttribute('aria-hidden') === 'true'
+      && drawer.hasAttribute('inert')
+      && toggle.getAttribute('aria-expanded') === 'false';
+    toggle.click();
+    drawer.querySelector('[data-route-target="0"]').click();
+    const drawerNavigated = !document.body.classList.contains('route-menu-open');
+    await new Promise(resolve => setTimeout(resolve, 130));
+    window.scrollTo({top: 0, behavior: 'instant'});
+    await nextFrame();
+    const stop = document.querySelector('.route-ui-v6 .stop');
+    stop?.dispatchEvent(new FocusEvent('focusin', {bubbles: true}));
+    const tooltipShown = !!document.querySelector('.route-floating-tooltip');
+    document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+    const tooltipClosed = !document.querySelector('.route-floating-tooltip');
+    const form = document.querySelector('#book form');
+    const success = form?.nextElementSibling;
+    if (!form || !success) return {drawerOpened, drawerClosed, drawerNavigated, tooltipShown, tooltipClosed, error: 'booking DOM missing'};
+    const beforeSubmit = !form.hidden && success.hidden;
+    const invalidPrevented = !form.checkValidity();
+    form.elements.namedItem('name').value = 'Тест';
+    form.elements.namedItem('tel').value = '+380000000000';
+    form.elements.namedItem('date').value = '2027-06-01';
+    form.elements.namedItem('people').value = '2';
+    form.elements.namedItem('consent').checked = true;
+    const valid = form.checkValidity();
+    form.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}));
+    const bookingConfirmed = form.hidden && !success.hidden;
+    success.querySelector('button[type="button"]').click();
+    const bookingReset = !form.hidden && success.hidden && form.elements.namedItem('name').value === '';
+    return {drawerOpened, drawerClosed, drawerNavigated, tooltipShown, tooltipClosed,
+      beforeSubmit, invalidPrevented, valid, bookingConfirmed, bookingReset};
+  })()`);
+  for (const [key, value] of Object.entries(interactions)) {
+    assert.equal(value, true, `native interaction ${key} failed at ${locale}/${width}: ${JSON.stringify(interactions)}`);
+  }
+  console.log(`CDP native interactions ${locale}/${width}: ${JSON.stringify(interactions)}`);
   await command('Page.navigate', {url: `http://127.0.0.1:${port}/${locale}`});
   let originalReady = false;
   for (let i = 0; i < 100; i++) {

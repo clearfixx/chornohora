@@ -136,7 +136,7 @@ const check = async (locale, width) => {
     const drawer = document.querySelector('#route-drawer');
     if (!toggle || !drawer) return {error: 'drawer controls missing'};
     toggle.click();
-    await nextFrame();
+    await new Promise(resolve => setTimeout(resolve, 720));
     const drawerOpenState = {
       body: document.body.classList.contains('route-menu-open'),
       aria: drawer.getAttribute('aria-hidden'),

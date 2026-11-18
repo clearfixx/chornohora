@@ -14,7 +14,8 @@
     "audit:v22": "node scripts/audit-v22.mjs",
     "inventory:v22": "node scripts/inventory-v22.mjs",
     "extract:v22-svg": "node scripts/extract-v22-svg.mjs",
-    "test:v22-scroll": "node --test tests/v22-scroll-source.test.mjs"
+    "test:v22-scroll": "node --test tests/v22-scroll-source.test.mjs",
+    "test:v22-drawer": "node --test tests/v22-drawer-source.test.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",

@@ -34,8 +34,7 @@ for locale in ("uk", "en"):
             # Exclude a narrow right-hand strip to reduce scrollbar false positives.
             crop = (0, 0, max(1, original.width - 18), original.height)
             difference = ImageChops.difference(original.crop(crop), native.crop(crop))
-            histogram = difference.histogram()
-            mean_error = sum(i * histogram[i] for i in range(256)) / (difference.width * difference.height * 3)
+            mean_error = sum(ImageStat.Stat(difference).mean) / 3
             # Count pixels with a visually meaningful channel difference.
             diff_pixels = sum(1 for pixel in difference.getdata() if max(pixel) >= 24)
             fraction = diff_pixels / (difference.width * difference.height)

@@ -74,7 +74,7 @@ const checkGhostTitle = async (locale, width, mode, name, expectedPeak) => {
       stageHeight: doc.querySelector('.track .stage').getBoundingClientRect().height,
       mountainZ: Number(doc.defaultView.getComputedStyle(doc.querySelector('.track .stage .ly.l1')).zIndex),
       titleZ: Number(css.zIndex),
-      centerOffset: (r.left + r.right) / 2 - viewWidth / 2,
+      centerOffset: (r.left + r.right) / 2 - (() => { const stage = doc.querySelector('.track .stage').getBoundingClientRect(); return (stage.left + stage.right) / 2; })(),
       topFraction: r.top / doc.querySelector('.track .stage').getBoundingClientRect().height,
     };
   })()`);

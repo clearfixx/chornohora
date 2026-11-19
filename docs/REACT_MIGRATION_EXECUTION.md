@@ -74,7 +74,7 @@ Apply module boundaries by feature, keep React visual components declarative, an
 - BLOCKING: x-dc and legacy assets execute outside React — remove from production runtime.
 - BLOCKING: v22-ui-v8 and v22-ui-fixes-v11 each write stop state — eliminate both after React replacement.
 - BLOCKING: V22ScrollController and new JourneyController cannot be mounted together.
-- BLOCKING: English content inside original scene is not localized.
+- LEGACY ONLY: The immutable original iframe contains untranslated Ukrainian scene copy on the English route; the separate React replacement now renders localized content including accessible gallery and social labels. Do not alter the frozen source for parity.
 - BLOCKING: Native mode needs manual browser acceptance for touch, reverse scroll, drawer and Hero.
 - RESOLVED IN REACT BRANCH: The 228-line, ~41 KB imported JSX monolith was replaced with feature components for stage, navbar, Hero, sky, mountain/cloud layers, forest, locations, booking, footer and drawer. Original SVG geometry is retained; complete visual parity remains to be verified.
 - RESOLVED IN REACT BRANCH: The nine plain `<img>` elements in React-owned markup were converted to Next `<Image>` with their original explicit dimensions. The immutable legacy reference still contains its historical HTML images intentionally.
@@ -95,7 +95,7 @@ Apply module boundaries by feature, keep React visual components declarative, an
 
 ## Status
 
-The React store and controller are now mounted in the isolated `?preview=react` route. The original static scene and drawer have been converted to checked-in JSX, and React controls route navigation and menu state. Chromium compares original/native/React frames at fixed checkpoints. The canonical iframe and older `?preview=native` DOM adapter remain only as reference/compatibility modes. Traveler, route progress, location tooltips and drawer behavior are React-owned, but the booking behavior and full UA/EN translation remain unfinished; the imported JSX monolith and plain React `<img>` tags have been removed, but component naming, booking functionality, locale content and full browser parity still need work. The intermittent scroll issue and the CI scroll test are still open, so no architectural or visual completion is claimed.
+The React store and controller are now mounted in the isolated `?preview=react` route. The original static scene and drawer have been converted to checked-in JSX, and React controls route navigation and menu state. Chromium compares original/native/React frames at fixed checkpoints. The canonical iframe and older `?preview=native` DOM adapter remain only as reference/compatibility modes. Traveler, route progress, location tooltips, drawer and demonstration-only booking draft are React-owned and localized in UA/EN, including form validation, draft editing and copy. The imported JSX monolith and plain React `<img>` tags have been removed. The React preview has independent scene styles, but is not the canonical landing. A real booking backend, final human visual acceptance and manual repeated Petros↔footer reverse-scroll testing remain incomplete. The intermittent scroll issue and the CI scroll test are still open, so no architectural or visual completion is claimed.
 
 ## User-requested visual upgrade (separate from frozen v22 parity)
 

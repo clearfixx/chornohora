@@ -857,12 +857,15 @@ const check = async (locale, width) => {
     const before = await evaluate("window.scrollY");
     const clicked = await evaluate("(() => { const cue = document.querySelector('[data-react-journey] a.mouse'); if (!cue) return false; cue.click(); return true; })()");
     assert.ok(clicked, 'React scene scroll cue missing');
-    await delay(300);
+    // The journey animation starts with cubic easing: at 300 ms of a
+    // ~4.1 s travel, movement can legitimately be only one CSS pixel.
+    // Sample after the acceleration phase while still well before arrival.
+    await delay(900);
     const halfway = await evaluate("window.scrollY");
-    await delay(4800);
+    await delay(4300);
     const finish = await evaluate("window.scrollY");
     const destination = reactGeometry.top + reactGeometry.travel * .21;
-    assert.ok(halfway > before + 1 && halfway < destination * .65,
+    assert.ok(halfway > before + 15 && halfway < destination * .65,
       `React journey jumped or did not ease: ${JSON.stringify({before, halfway, destination})}`);
     assert.ok(Math.abs(finish - destination) < 60,
       `React journey failed to finish: ${JSON.stringify({finish, destination})}`);

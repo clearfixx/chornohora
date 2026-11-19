@@ -16,6 +16,7 @@ export function JourneyBookingForm() {
   const t = useTranslations('Journey');
   const formRef = useRef<HTMLFormElement>(null);
   const [draft, setDraft] = useState<RequestDraft | null>(null);
+  const [savedDraft, setSavedDraft] = useState<RequestDraft | null>(null);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
 
   const onPrepare = (event: FormEvent<HTMLFormElement>) => {
@@ -24,10 +25,12 @@ export function JourneyBookingForm() {
     if (!form.reportValidity()) return;
     const values = new FormData(form);
     const get = (name: string) => String(values.get(name) ?? '').trim();
-    setDraft({
+    const nextDraft = {
       name: get('name'), phone: get('tel'), email: get('email'),
       date: get('date'), people: get('people'), message: get('message'),
-    });
+    };
+    setSavedDraft(nextDraft);
+    setDraft(nextDraft);
     setCopyState('idle');
   };
   const summary = draft ? [
@@ -70,17 +73,17 @@ export function JourneyBookingForm() {
   );
 
   return <form ref={formRef} onSubmit={onPrepare} style={{display:'flex',flexDirection:'column',gap:'18px'}}>
-    <div className="fld"><label htmlFor="f-name">{t('bookingName')}</label><input autoComplete="name" id="f-name" name="name" placeholder={t('bookingNamePlaceholder')} required type="text" maxLength={120}/></div>
+    <div className="fld"><label htmlFor="f-name">{t('bookingName')}</label><input autoComplete="name" id="f-name" name="name" defaultValue={savedDraft?.name} placeholder={t('bookingNamePlaceholder')} required type="text" maxLength={120}/></div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(200px,100%),1fr))',gap:'18px'}}>
-      <div className="fld"><label htmlFor="f-tel">{t('bookingPhone')}</label><input autoComplete="tel" id="f-tel" name="tel" placeholder="+380" required type="tel" maxLength={40}/></div>
-      <div className="fld"><label htmlFor="f-mail">{t('bookingEmail')}</label><input autoComplete="email" id="f-mail" name="email" placeholder="name@mail.com" type="email" maxLength={254}/></div>
+      <div className="fld"><label htmlFor="f-tel">{t('bookingPhone')}</label><input autoComplete="tel" id="f-tel" name="tel" defaultValue={savedDraft?.phone} placeholder="+380" required type="tel" maxLength={40}/></div>
+      <div className="fld"><label htmlFor="f-mail">{t('bookingEmail')}</label><input autoComplete="email" id="f-mail" name="email" defaultValue={savedDraft?.email} placeholder="name@mail.com" type="email" maxLength={254}/></div>
     </div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(200px,100%),1fr))',gap:'18px'}}>
-      <div className="fld"><label htmlFor="f-date">{t('bookingDate')}</label><input id="f-date" name="date" required type="date"/></div>
-      <div className="fld"><label htmlFor="f-n">{t('bookingPeople')}</label><input id="f-n" max="12" min="1" name="people" required type="number" defaultValue="2"/></div>
+      <div className="fld"><label htmlFor="f-date">{t('bookingDate')}</label><input id="f-date" name="date" defaultValue={savedDraft?.date} required type="date"/></div>
+      <div className="fld"><label htmlFor="f-n">{t('bookingPeople')}</label><input id="f-n" max="12" min="1" name="people" required type="number" defaultValue={savedDraft?.people ?? "2"}/></div>
     </div>
-    <div className="fld"><label htmlFor="f-msg">{t('bookingMessage')}</label><textarea id="f-msg" name="message" maxLength={2000} placeholder={t('bookingMessagePlaceholder')}/></div>
-    <label className="chk"><input name="consent" required type="checkbox"/><span>{t('bookingConsent')}</span></label>
+    <div className="fld"><label htmlFor="f-msg">{t('bookingMessage')}</label><textarea id="f-msg" name="message" defaultValue={savedDraft?.message} maxLength={2000} placeholder={t('bookingMessagePlaceholder')}/></div>
+    <label className="chk"><input name="consent" defaultChecked={Boolean(savedDraft)} required type="checkbox"/><span>{t('bookingConsent')}</span></label>
     <button className="cta" style={{width:'100%',justifyContent:'center',border:'0',cursor:'pointer',background:'#FFE14D'}} type="submit">{t('bookingPrepare')}</button>
     <p style={{margin:0,font:'400 14px/1.4 Onest,system-ui,sans-serif',color:'#4A3E80'}}>{t('bookingResponseUnknown')}</p>
     <p style={{margin:0,font:'400 13px/1.4 Onest,system-ui,sans-serif',color:'#4A3E80'}}>{t('bookingPreviewNotice')}</p>

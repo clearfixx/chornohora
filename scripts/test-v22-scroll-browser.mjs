@@ -491,6 +491,32 @@ const check = async (locale, width) => {
   await checkGhostContinuity(locale, width, 'original');
   await checkRealInputScroll(locale, width, 'original');
   await checkTouchScroll(locale, width, 'original');
+
+  // Experimental React JSX renderer: gather the exact same scene checkpoints.
+  // This is diagnostic evidence, not automatic approval of parity or interactions.
+  await command('Page.navigate', {url: `http://127.0.0.1:${port}/${locale}?preview=react`});
+  let reactReady = false;
+  for (let attempt = 0; attempt < 100; attempt++) {
+    reactReady = await evaluate("!!document.querySelector('[data-v22-source-scene] .track .stage')");
+    if (reactReady) break;
+    await delay(150);
+  }
+  assert.ok(reactReady, `React JSX stage failed to render: ${locale}/${width}`);
+  const reactGeometry = await evaluate(`(() => {
+    const track = document.querySelector('[data-v22-source-scene] .track');
+    const stage = track.querySelector('.stage');
+    return {top: track.getBoundingClientRect().top + scrollY, travel: track.offsetHeight - stage.offsetHeight};
+  })()`);
+  assert.ok(reactGeometry.travel > 200, `React JSX track is not scrollable: ${locale}/${width}`);
+  for (const [name, p] of [['hero', 0], ['hoverla', .21], ['brebeneskul', .42], ['nesamovyte', .63], ['petros', .83]]) {
+    await evaluate(`(async () => {
+      window.scrollTo({top: ${name === 'hero' ? '0' : `(${reactGeometry.top} + ${reactGeometry.travel} * ${p})`}, behavior: 'instant'});
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    })()`);
+    await delay(650);
+    await capture(locale, width, 'react', name);
+  }
+  console.log(`Captured React JSX parity checkpoints: ${locale}/${width}`);
 };
 try {
   for (let i = 0; i < 80; i++) {

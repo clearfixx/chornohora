@@ -39,3 +39,15 @@ test('React comparison route does not execute both original and ported runtimes'
   assert.doesNotMatch(page, /V22ScrollController|mountV22RouteDrawer|runtime-0/);
   assert.match(page, /\/legacy\/styles.css/);
 });
+
+test('React preview loads CSS externally, never injects source CSS into a style element', () => {
+  assert.match(page, /href="\/v22-react-scene\.css"/);
+  assert.doesNotMatch(page, /<style>\{inlineCss\}<\/style>/);
+  const helmet = source.slice(source.indexOf('<helmet>'), source.indexOf('</helmet>'));
+  const originalRules = [...helmet.matchAll(/<style>([\s\S]*?)<\/style>/g)]
+    .map((match) => match[1].replace(/url\((["']?)assets\//g, 'url($1/legacy/assets/').replace(/\r\n?/g, '\n'))
+    .join('\n');
+  const committed = readFileSync('public/v22-react-scene.css', 'utf8').replace(/\r\n?/g, '\n');
+  assert.equal(committed, originalRules, 'checked-in React stylesheet must match both original CSS blocks');
+  assert.doesNotMatch(committed, /<\/style\s*>|<style\s*>/i);
+});

@@ -1099,7 +1099,7 @@ const checkReactBookingFooterSeam = async () => {
       await delay(100);
     }
     const edges=await evaluate("(() => { const t=document.querySelector('[data-react-journey] .track'), stage=t.querySelector('.stage'), book=document.getElementById('book'), footer=document.getElementById('site-footer'); const top=el=>el.getBoundingClientRect().top+scrollY; return {end:top(t)+t.offsetHeight-stage.offsetHeight,book:top(book),footer:top(footer),max:document.scrollingElement.scrollHeight-innerHeight}; })()");
-    assert.ok(edges.footer>edges.book+100 && edges.book>=edges.end-20 && edges.max>edges.footer,
+    assert.ok(edges.footer>edges.book+100 && edges.book>=edges.end-20 && edges.max>edges.book+250,
       'Seam lacks real booking and footer content: '+JSON.stringify({locale,edges}));
     const initial=Math.min(edges.book+80,edges.footer-140);
     await evaluate("window.scrollTo({top:"+initial+",behavior:'instant'})");

@@ -1,43 +1,32 @@
 'use client';
 
-import {useCallback, useEffect, useState, type RefObject} from 'react';
-import {getJourneyState, getStopScrollTop, type JourneyStopId} from '@/lib/journey';
+import {useCallback, useEffect, useState, useSyncExternalStore, type RefObject} from 'react';
+import {JourneyController} from '@/engine/journey-controller';
+import {JourneyStore} from '@/engine/journey-store';
+import type {JourneyStopId} from '@/lib/journey';
 
+/**
+ * One controller per React journey. The browser owns physical scrolling;
+ * components read the same immutable snapshot through useSyncExternalStore.
+ * The old iframe and static compatibility adapters never mount this hook.
+ */
 export function useJourneyProgress(trackRef: RefObject<HTMLElement | null>) {
-  const [progress, setProgress] = useState(0);
+  const [store] = useState(() => new JourneyStore());
+  const [controller, setController] = useState<JourneyController | null>(null);
+  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
 
   useEffect(() => {
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const track = trackRef.current;
-      if (!track) return;
-      const rect = track.getBoundingClientRect();
-      const travel = Math.max(1, track.offsetHeight - window.innerHeight);
-      const value = Math.max(0, Math.min(1, -rect.top / travel));
-      setProgress((previous) => Math.abs(previous - value) >= 0.0005 ? value : previous);
-    };
-    const schedule = () => {if (!frame) frame = requestAnimationFrame(update);};
-    schedule();
-    window.addEventListener('scroll', schedule, {passive: true});
-    window.addEventListener('resize', schedule);
-    return () => {
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [trackRef]);
-
-  const navigateToStop = useCallback((id: JourneyStopId) => {
     const track = trackRef.current;
     if (!track) return;
-    const trackTop = track.getBoundingClientRect().top + window.scrollY;
-    const top = getStopScrollTop(trackTop, track.offsetHeight, window.innerHeight, id);
-    window.scrollTo({
-      top,
-      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
-    });
-  }, [trackRef]);
+    const instance = new JourneyController(track, store);
+    const dispose = instance.mount();
+    setController(instance);
+    return () => {
+      dispose();
+      setController(null);
+    };
+  }, [trackRef, store]);
 
-  return {...getJourneyState(progress), navigateToStop};
+  const navigateToStop = useCallback((id: JourneyStopId) => controller?.navigate(id), [controller]);
+  return {...snapshot, navigateToStop};
 }

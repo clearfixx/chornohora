@@ -572,6 +572,11 @@ const check = async (locale, width) => {
     await delay(100);
     assert.equal(await evaluate("!!document.querySelector('[data-react-route-tooltip]')"), false,
       'tooltip did not close on Escape');
+    // Focus can invoke browser scroll restoration long after the hover check.
+    // Clear it before independently testing scroll checkpoints/animations.
+    await evaluate("document.activeElement?.blur()");
+    await delay(80);
+
   }
 
   // Real wheel input must update the shared store, traveler and active

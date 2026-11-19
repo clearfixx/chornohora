@@ -1,9 +1,9 @@
 name: Next.js migration checks
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feat/nextjs-migration]
   push:
-    branches: [feat/nextjs-migration]
+    branches: [feat/nextjs-migration, feat/react-journey-engine]
 permissions:
   contents: read
 jobs:

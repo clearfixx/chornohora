@@ -1,5 +1,5 @@
-import {getStopScrollTop, type JourneyStopId} from '../lib/journey';
-import {JourneyStore} from './journey-store';
+import {getStopScrollTop, type JourneyStopId} from '../lib/journey.ts';
+import {JourneyStore} from './journey-store.ts';
 
 /**
  * Browser adapter for a React-owned journey scene.

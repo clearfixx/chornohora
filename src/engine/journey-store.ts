@@ -1,4 +1,4 @@
-import {getJourneyState, type JourneyStopId} from '../lib/journey';
+import {getJourneyState, type JourneyStopId} from '../lib/journey.ts';
 
 export type JourneySnapshot = ReturnType<typeof getJourneyState> & {
   isNavigating: boolean;

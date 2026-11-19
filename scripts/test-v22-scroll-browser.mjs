@@ -220,7 +220,6 @@ const checkTouchScroll = async (locale, width, mode) => {
     await new Promise(resolve => win.requestAnimationFrame(() => win.requestAnimationFrame(resolve)));
   })()`);
   await delay(300);
-  await command('Emulation.setTouchEmulationEnabled', {enabled: true, maxTouchPoints: 1});
   try {
     const before = await measure();
     const forward = [before];
@@ -251,7 +250,7 @@ const checkTouchScroll = async (locale, width, mode) => {
     }
     console.log(`INPUT TOUCH ${locale}/${width}/${mode}: ${JSON.stringify({forward, reverse})}`);
   } finally {
-    await command('Emulation.setTouchEmulationEnabled', {enabled: false});
+    // Touch emulation is enabled before navigation for mobile test cases.
   }
 };
 const sampleGeometry = async (locale, width, mode, name) => {
@@ -285,6 +284,7 @@ const sampleGeometry = async (locale, width, mode, name) => {
 };
 const check = async (locale, width) => {
   await command('Emulation.setDeviceMetricsOverride', {width, height: 900, deviceScaleFactor: 1, mobile: width < 700});
+  await command('Emulation.setTouchEmulationEnabled', {enabled: width < 700, maxTouchPoints: 1});
   await command('Page.navigate', {url: `http://127.0.0.1:${port}/${locale}?preview=native`});
   let mounted = false;
   for (let i = 0; i < 100; i++) {

@@ -71,6 +71,11 @@ const checkGhostTitle = async (locale, width, mode, name, expectedPeak) => {
       rect: {left: r.left, right: r.right, width: r.width},
       viewport: viewWidth,
       stroke: css.webkitTextStrokeWidth,
+      stageHeight: doc.querySelector('.track .stage').getBoundingClientRect().height,
+      mountainZ: Number(doc.defaultView.getComputedStyle(doc.querySelector('.track .stage .ly.l1')).zIndex),
+      titleZ: Number(css.zIndex),
+      centerOffset: (r.left + r.right) / 2 - viewWidth / 2,
+      topFraction: r.top / doc.querySelector('.track .stage').getBoundingClientRect().height,
     };
   })()`);
   console.log(`GHOST ${locale}/${width}/${mode}/${name}: ${JSON.stringify(state)}`);
@@ -78,6 +83,9 @@ const checkGhostTitle = async (locale, width, mode, name, expectedPeak) => {
   assert.ok(state.opacity > 0.5, `outline title invisible: ${locale}/${width}/${mode}/${name}: ${JSON.stringify(state)}`);
   assert.ok(state.visibleFraction >= 0.9, `outline title clipped horizontally: ${locale}/${width}/${mode}/${name}: ${JSON.stringify(state)}`);
   assert.equal(state.stroke, '2px', `outline stroke missing: ${locale}/${mode}/${name}`);
+  assert.ok(Math.abs(state.centerOffset) <= 1, `outline title not horizontally centered: ${locale}/${width}/${mode}/${name}: ${JSON.stringify(state)}`);
+  assert.ok(state.topFraction >= 0.2 && state.topFraction <= 0.5, `outline title outside sky composition: ${locale}/${width}/${mode}/${name}: ${JSON.stringify(state)}`);
+  assert.ok(state.mountainZ > state.titleZ, `mountains must render above outline title: ${locale}/${mode}/${name}`);
 };
 const sampleGeometry = async (locale, width, mode, name) => {
   const data = await evaluate(`(() => {

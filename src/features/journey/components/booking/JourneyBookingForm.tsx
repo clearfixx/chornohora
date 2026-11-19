@@ -17,11 +17,15 @@ export function JourneyBookingForm() {
   const t = useTranslations('Journey');
   const formRef = useRef<HTMLFormElement>(null);
   const previewTitleRef = useRef<HTMLHeadingElement>(null);
-  const [minimumDate, setMinimumDate] = useState<string>();
   const [draft, setDraft] = useState<RequestDraft | null>(null);
   const [savedDraft, setSavedDraft] = useState<RequestDraft | null>(null);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
-  useEffect(() => { setMinimumDate(localISODate()); }, []);
+  useEffect(() => {
+    // Set a browser-local minimum after hydration; no server/client date
+    // mismatch, nor a state update just to configure a native input.
+    const input = formRef.current?.querySelector<HTMLInputElement>('input[name="date"]');
+    if (input) input.min = localISODate();
+  }, [draft]);
   useEffect(() => { if (draft) previewTitleRef.current?.focus({preventScroll: true}); }, [draft]);
 
   const onPrepare = (event: FormEvent<HTMLFormElement>) => {
@@ -90,7 +94,7 @@ export function JourneyBookingForm() {
       <div className="fld"><label htmlFor="f-mail">{t('bookingEmail')}</label><input autoComplete="email" id="f-mail" name="email" defaultValue={savedDraft?.email} placeholder="name@mail.com" type="email" maxLength={254}/></div>
     </div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(200px,100%),1fr))',gap:'18px'}}>
-      <div className="fld"><label htmlFor="f-date">{t('bookingDate')}</label><input id="f-date" name="date" defaultValue={savedDraft?.date} min={minimumDate} onChange={event => event.currentTarget.setCustomValidity("")} required type="date"/></div>
+      <div className="fld"><label htmlFor="f-date">{t('bookingDate')}</label><input id="f-date" name="date" defaultValue={savedDraft?.date} onFocus={event => { event.currentTarget.min = localISODate(); }} onChange={event => event.currentTarget.setCustomValidity("")} required type="date"/></div>
       <div className="fld"><label htmlFor="f-n">{t('bookingPeople')}</label><input id="f-n" max="12" min="1" name="people" required type="number" defaultValue={savedDraft?.people ?? "2"}/></div>
     </div>
     <div className="fld"><label htmlFor="f-msg">{t('bookingMessage')}</label><textarea id="f-msg" name="message" defaultValue={savedDraft?.message} maxLength={2000} placeholder={t('bookingMessagePlaceholder')}/></div>

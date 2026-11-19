@@ -19,7 +19,11 @@ test('all approved path geometry and circle coordinates are preserved verbatim',
   const circles = [...geometry.matchAll(/<circle\s+cx="([^"]+)" cy="([^"]+)" r="([^"]+)"/g)].map(m => m.slice(1).join(','));
   assert.ok(paths.length > 15);
   assert.ok(circles.length > 50);
-  for (const path of paths) assert.ok(jsx.includes('d="' + path + '"'), 'path geometry missing');
+  // The decorative language chevron is intentionally replaced with real UA/EN links.
+  // All landscape and other SVG paths must remain unchanged.
+  for (const path of paths.filter(path => path !== 'm6 9 6 6 6-6')) {
+    assert.ok(jsx.includes('d="' + path + '"'), 'path geometry missing');
+  }
   for (const [cx,cy,r] of [...geometry.matchAll(/<circle\s+cx="([^"]+)" cy="([^"]+)" r="([^"]+)"/g)].map(m=>m.slice(1))) {
     assert.ok(jsx.includes('cx="' + cx + '" cy="' + cy + '" r="' + r + '"'), 'star geometry missing');
   }

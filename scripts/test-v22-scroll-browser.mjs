@@ -136,6 +136,64 @@ const checkGhostContinuity = async (locale, width, mode) => {
     console.log(`GHOST CONTINUITY ${locale}/${width}/${mode}/peak${index + 1}: ${JSON.stringify(samples)}`);
   }
 };
+// Exercise actual browser input rather than only window.scrollTo checkpoints.
+// Mouse-wheel events are dispatched through CDP; mobile touch input is tested
+// separately below. We check both forward and reverse scroll progression.
+const checkRealInputScroll = async (locale, width, mode) => {
+  const frameExpr = mode === 'original'
+    ? "document.querySelector('iframe[src=\"/legacy/index.html\"]').contentWindow"
+    : 'window';
+  const reset = async () => {
+    await evaluate(`(async () => {
+      const win = ${frameExpr};
+      win.scrollTo({top: 0, behavior: 'instant'});
+      await new Promise(resolve => win.requestAnimationFrame(() => win.requestAnimationFrame(resolve)));
+    })()`);
+    await delay(180);
+  };
+  const measure = () => evaluate(`(() => {
+    const win = ${frameExpr};
+    const doc = win.document;
+    const track = doc.querySelector('.track');
+    const stage = track.querySelector('.stage');
+    const hiker = stage.querySelector('.hiker');
+    return {
+      y: win.scrollY,
+      progress: Math.max(0, Math.min(1, (win.scrollY - (track.getBoundingClientRect().top + win.scrollY)) / (track.offsetHeight - stage.offsetHeight))),
+      hikerX: Number.parseFloat(hiker.style.getPropertyValue('--hiker-x')),
+      active: [...doc.querySelectorAll('.route-ui-v6 .stop.is-active')].map(el => el.dataset.peak),
+    };
+  })()`);
+  await reset();
+  const forward = [await measure()];
+  const x = Math.round(width / 2);
+  const y = 420;
+  for (let i = 0; i < 8; i++) {
+    await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x, y, deltaX: 0, deltaY: 430});
+    await delay(110);
+    forward.push(await measure());
+  }
+  assert.ok(forward.at(-1).y > forward[0].y + 200,
+    `wheel input did not scroll ${locale}/${width}/${mode}: ${JSON.stringify(forward)}`);
+  for (let i = 1; i < forward.length; i++) {
+    assert.ok(forward[i].y >= forward[i - 1].y - 2,
+      `forward wheel scroll reversed unexpectedly: ${locale}/${width}/${mode}`);
+  }
+  const reverse = [await measure()];
+  for (let i = 0; i < 8; i++) {
+    await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x, y, deltaX: 0, deltaY: -430});
+    await delay(110);
+    reverse.push(await measure());
+  }
+  assert.ok(reverse.at(-1).y < reverse[0].y - 200,
+    `reverse wheel input did not scroll ${locale}/${width}/${mode}: ${JSON.stringify(reverse)}`);
+  for (let i = 1; i < reverse.length; i++) {
+    assert.ok(reverse[i].y <= reverse[i - 1].y + 2,
+      `reverse wheel scroll moved forward unexpectedly: ${locale}/${width}/${mode}`);
+  }
+  console.log(`INPUT WHEEL ${locale}/${width}/${mode}: ${JSON.stringify({forward, reverse})}`);
+  await reset();
+};
 const sampleGeometry = async (locale, width, mode, name) => {
   const data = await evaluate(`(() => {
     const doc = ${mode === 'original' ? "document.querySelector('iframe[src=\"/legacy/index.html\"]').contentDocument" : 'document'};
@@ -205,6 +263,7 @@ const check = async (locale, width) => {
     console.log(`CDP ${locale}/${width} ${name}: ${JSON.stringify(state)}`);
   }
   await checkGhostContinuity(locale, width, 'native');
+  await checkRealInputScroll(locale, width, 'native');
   const reverse = await evaluate(`(async () => {
     window.scrollTo({top: 0, behavior: 'instant'});
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -306,6 +365,7 @@ const check = async (locale, width) => {
     await capture(locale, width, 'original', name);
   }
   await checkGhostContinuity(locale, width, 'original');
+  await checkRealInputScroll(locale, width, 'original');
 };
 try {
   for (let i = 0; i < 80; i++) {

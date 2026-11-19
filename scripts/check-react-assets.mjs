@@ -3,7 +3,8 @@
  * React runtime gets its own approved artwork/fonts, not URLs under the old
  * legacy runtime. This check leaves all v22 source assets untouched.
  */
-import {readFileSync, existsSync} from 'node:fs';
+import {readFileSync, existsSync, readdirSync} from 'node:fs';
+import {scanReactImports} from './check-react-ownership.mjs';
 import {resolve} from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const filenames = [
@@ -12,13 +13,13 @@ const filenames = [
   'instagram-1.svg','instagram-2.svg','instagram-3.svg',
   'instagram-4.svg','instagram-5.svg','instagram-6.svg',
 ];
-const codeFiles = [
-  'src/features/journey/components/JourneyNavbar.tsx',
-  'src/features/journey/components/JourneyDrawer.tsx',
-  'src/features/journey/components/JourneyFooter.tsx',
-  'public/react-journey.css',
-];
+const reactSources = scanReactImports().files;
+const codeFiles = [...reactSources, 'public/react-journey.css'];
 const problems = [];
+const copied = readdirSync(resolve(root,'public/journey/assets')).sort();
+if (copied.join(',') !== [...filenames].sort().join(',')) {
+  problems.push('React media directory contains unexpected assets or legacy scripts: ' + copied.join(', '));
+}
 for (const filename of filenames) {
   const original = resolve(root, 'public/legacy/assets', filename);
   const destination = resolve(root, 'public/journey/assets', filename);
@@ -34,7 +35,7 @@ for (const file of codeFiles) {
   const content = readFileSync(resolve(root,file),'utf8');
   if (content.includes('/legacy/assets/')) problems.push('React still references legacy assets: '+file);
 }
-for (const file of ['public/react-journey.css', ...codeFiles.slice(0,3)]) {
+for (const file of codeFiles) {
   const content = readFileSync(resolve(root,file),'utf8');
   for (const match of content.matchAll(/\/journey\/assets\/([a-zA-Z0-9_.-]+)/g)) {
     const name = match[1];
@@ -46,5 +47,5 @@ if (problems.length) {
   console.error('React asset isolation failed:\n'+problems.map(x=>' - '+x).join('\n'));
   process.exitCode = 1;
 } else {
-  console.log('React asset isolation passed: '+filenames.length+' byte-identical assets, no legacy runtime asset URLs.');
+  console.log('React asset isolation passed: '+filenames.length+' byte-identical assets, '+reactSources.length+' React source modules scanned, no legacy runtime asset URLs.');
 }

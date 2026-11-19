@@ -1084,6 +1084,72 @@ const checkReactIntermediateJourney = async () => {
 };
 
 
+
+// Production seam acceptance: the last peak is not the end of the document.
+// Exercise real wheel travel through booking and footer in BOTH locales.
+// No animation constants are changed by this regression gate.
+const checkReactBookingFooterSeam = async () => {
+  for (const locale of ['uk', 'en']) {
+    await command('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    await command('Emulation.setTouchEmulationEnabled',{enabled:false});
+    await command('Page.navigate',{url:'http://127.0.0.1:'+port+'/'+locale+'?preview=react'});
+    for(let n=0;n<80;n++){
+      if(await evaluate("!!document.querySelector('[data-react-journey] .track[data-journey-ready]')")) break;
+      if(n===79) throw Error('Seam route not ready: '+locale);
+      await delay(100);
+    }
+    const edges=await evaluate("(() => { const t=document.querySelector('[data-react-journey] .track'), stage=t.querySelector('.stage'), book=document.getElementById('book'), footer=document.getElementById('site-footer'); const top=el=>el.getBoundingClientRect().top+scrollY; return {end:top(t)+t.offsetHeight-stage.offsetHeight,book:top(book),footer:top(footer),max:document.scrollingElement.scrollHeight-innerHeight}; })()");
+    assert.ok(edges.footer>edges.book+100 && edges.book>=edges.end-20 && edges.max>edges.footer,
+      'Seam lacks real booking and footer content: '+JSON.stringify({locale,edges}));
+    const initial=Math.min(edges.book+80,edges.footer-140);
+    await evaluate("window.scrollTo({top:"+initial+",behavior:'instant'})");
+    await delay(180);
+    const established=await evaluate('scrollY');
+    assert.ok(Math.abs(established-initial)<15,
+      'Failed to establish booking input checkpoint: '+JSON.stringify({locale,edges,initial,established}));
+    const goingDown=[established];
+    for (let i=0;i<12;i++){
+      await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:520,y:430,deltaY:120,deltaX:0});
+      await delay(32);
+      goingDown.push(await evaluate('scrollY'));
+    }
+    await delay(700);
+    goingDown.push(await evaluate('scrollY'));
+    assert.ok(goingDown.at(-1)>established+200,
+      'Wheel could not continue from booking toward footer: '+JSON.stringify({locale,edges,goingDown}));
+    for(let i=1;i<goingDown.length;i++){
+      assert.ok(goingDown[i]>=goingDown[i-1]-2,
+        'Forward wheel oscillation below Petros: '+JSON.stringify({locale,goingDown}));
+    }
+    const beforeReverse=goingDown.at(-1);
+    const goingUp=[beforeReverse];
+    for(let i=0;i<18;i++){
+      await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:520,y:430,deltaY:-120,deltaX:0});
+      await delay(32);
+      goingUp.push(await evaluate('scrollY'));
+    }
+    await delay(750);
+    goingUp.push(await evaluate('scrollY'));
+    assert.ok(goingUp.at(-1)<beforeReverse-350,
+      'Reverse wheel stuck below Petros: '+JSON.stringify({locale,edges,goingUp}));
+    for(let i=1;i<goingUp.length;i++){
+      assert.ok(goingUp[i]<=goingUp[i-1]+2,
+        'Reverse wheel oscillation toward Petros: '+JSON.stringify({locale,goingUp}));
+    }
+    // Re-enter the stage from below using the wheel alone; a scrollbar drag
+    // does not count as passing the seam acceptance.
+    for(let i=0;i<12;i++){
+      await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:520,y:430,deltaY:-120,deltaX:0});
+      await delay(30);
+    }
+    await delay(750);
+    const reentered=await evaluate('scrollY');
+    assert.ok(reentered<edges.end-100,
+      'Wheel did not re-enter the mountain journey from booking: '+JSON.stringify({locale,edges,reentered}));
+    console.log('BOOKING FOOTER SEAM '+locale+' '+JSON.stringify({edges,established,down:beforeReverse,up:goingUp.at(-1),reentered}));
+  }
+};
+
 // Stress: browser-owned scroll operations must override wheel easing.
 const checkReactScrollOwnershipStress = async () => {
   await command('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
@@ -1294,6 +1360,7 @@ try {
   await command('Runtime.enable');
   for (const locale of ['uk', 'en']) for (const width of [1440, 390]) await check(locale, width);
   await checkReactIntermediateJourney();
+  await checkReactBookingFooterSeam();
   await checkReactScrollOwnershipStress();
   await checkReactResponsiveAndMotion();
   writeFileSync(join(screenshots, 'geometry.json'), JSON.stringify({samples: geometrySamples}, null, 2));

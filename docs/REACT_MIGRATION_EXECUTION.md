@@ -141,3 +141,7 @@ The React import graph now has a mandatory automated boundary check. Old control
 ## React static asset isolation — 2026-11-19
 
 React no longer requests local fonts, the brand mark or gallery illustrations from `/legacy/assets/`. Eleven **byte-identical** approved binary assets are copied to `public/journey/assets/` (four WOFF2 fonts, one PNG logo and six SVG illustrations). Legacy JavaScript runtimes are explicitly **not** copied. The generated React stylesheet rewrites only static asset URLs to `/journey/assets/`, leaving every rule, animation, and the immutable reference CSS intact. React-owned JSX image sources use the new directory, and `pnpm check:react-assets` verifies both content identity and absence of old runtime asset URL dependencies. Remote Google Fonts URLs remain as originally authored; this migration does not change font fallback behavior. The old v22 iframe/native comparisons continue using their frozen paths.
+
+## Booking/footer real-wheel regression
+
+A new acceptance scenario starts from a verified booking checkpoint (rather than guessing that `scrollTo` already settled), then drives physical Chromium wheel gestures down and back. It checks strict directional monotonicity, actual scroll progress, and re-entry into the animated scene from below. Runs in UA and EN; approved timing constants are intentionally unchanged. This is test automation, not a claim that all trackpads can no longer reproduce the historical intermittent issue.

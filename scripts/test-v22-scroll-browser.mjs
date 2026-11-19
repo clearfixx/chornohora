@@ -576,14 +576,21 @@ const check = async (locale, width) => {
     assert.ok(Math.abs(opened.scroll - beforeMenu) < 3,
       `opening drawer changed scroll position: ${JSON.stringify({beforeMenu, opened})}`);
     await evaluate("document.querySelector('#route-drawer .route-drawer-close').click()");
-    await delay(720);
-    const closed = await evaluate(`(() => ({
-      opened: document.body.classList.contains('route-menu-open'),
-      transform: getComputedStyle(document.querySelector('[data-react-journey] .track .stage')).transform,
-      scroll: scrollY,
-    }))()`);
+    // CSS transitions depend on actual compositor frames. A fixed 720 ms
+    // sleep occasionally catches a near-identity matrix3d a frame before the
+    // transition truly finishes. Require the exact final state, with a bound.
+    let closed;
+    for (let attempt = 0; attempt < 35; attempt++) {
+      closed = await evaluate(`(() => ({
+        opened: document.body.classList.contains('route-menu-open'),
+        transform: getComputedStyle(document.querySelector('[data-react-journey] .track .stage')).transform,
+        scroll: scrollY,
+      }))()`);
+      if (!closed.opened && closed.transform === 'none') break;
+      await delay(60);
+    }
     assert.equal(closed.opened, false, 'React drawer failed to close');
-    assert.equal(closed.transform, 'none', 'perspective effect not reset on close');
+    assert.equal(closed.transform, 'none', 'perspective effect not reset on close within 2.1 s');
     assert.ok(Math.abs(closed.scroll - beforeMenu) < 3,
       `closing drawer changed scroll: ${JSON.stringify({beforeMenu, closed})}`);
   }

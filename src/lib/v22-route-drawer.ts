@@ -1,11 +1,12 @@
+import type {V22ScrollController, V22Target} from './v22-scroll-controller';
+
 /**
  * React lifecycle adapter for the original v19 route drawer.
  * Source of truth: public/legacy/assets/route-menu-v19.js.
  * This module is intentionally not mounted until the original drawer DOM is
  * migrated. The approved original script remains unchanged.
  */
-export function mountV22RouteDrawer(): () => void {
-  const points = [.21, .42, .63, .83];
+export function mountV22RouteDrawer(controller: V22ScrollController): () => void {
   let lastFocus: Element | null = null;
   let lastScroll = 0;
   let focusTimer = 0;
@@ -52,32 +53,15 @@ export function mountV22RouteDrawer(): () => void {
     }
   }
 
-  const pending = new Set<number>();
   function navigate(target: string) {
+    const routes: Record<string, V22Target> = {
+      '0': 'govla', '1': 'brebeneskul',
+      '2': 'nesamovyte', '3': 'petros', book: 'book',
+    };
+    const route = routes[target];
+    if (!route) return;
     close(false);
-    const track = document.querySelector<HTMLElement>('.track');
-    if (!track) return;
-    const sc = scrollEl();
-    const stage = track.querySelector<HTMLElement>('.stage');
-    let y = 0;
-    if (target === 'book') {
-      const book = document.getElementById('book');
-      if (!book) return;
-      y = sc.scrollTop + book.getBoundingClientRect().top - 24;
-    } else {
-      const idx = Number(target);
-      if (!Number.isInteger(idx) || idx < 0 || idx >= points.length) return;
-      const distance = track.offsetHeight - (stage ? stage.offsetHeight : 0);
-      y = sc.scrollTop + track.getBoundingClientRect().top + distance * points[idx];
-    }
-    // Identical v19 timing; tracked only to prevent callbacks after unmount.
-    requestAnimationFrame(() => {
-      const id = window.setTimeout(() => {
-        pending.delete(id);
-        window.scrollTo({top: Math.max(0, y), behavior: 'smooth'});
-      }, 80);
-      pending.add(id);
-    });
+    controller.navigate(route);
   }
 
   const click = (e: MouseEvent) => {
@@ -138,8 +122,6 @@ export function mountV22RouteDrawer(): () => void {
     document.removeEventListener('click', click, true);
     document.removeEventListener('keydown', keydown);
     window.removeEventListener('wheel', wheel, true);
-    for (const id of pending) window.clearTimeout(id);
-    pending.clear();
     void lastScroll; // retained as part of the original v19 state contract
   };
 }

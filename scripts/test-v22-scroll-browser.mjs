@@ -541,6 +541,39 @@ const check = async (locale, width) => {
     }
 
   }
+  // React tooltips are rendered into a body portal, outside the animated
+  // scene stacking context that hides the original v22 .stop-card elements.
+  if (locale === 'uk' && width === 1440) {
+    await evaluate(`window.scrollTo({top: ${reactGeometry.top} + ${reactGeometry.travel} * .42, behavior: 'instant'})`);
+    await delay(750);
+    const hoverPoint = await evaluate(`(() => {
+      const r = document.querySelector('[data-react-journey] .stop[data-peak="2"]').getBoundingClientRect();
+      return {x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2)};
+    })()`);
+    await command('Input.dispatchMouseEvent', {type: 'mouseMoved', x: hoverPoint.x, y: hoverPoint.y});
+    await delay(150);
+    const hover = await evaluate(`(() => {
+      const tip = document.querySelector('[data-react-route-tooltip="2"]');
+      return {present: !!tip, visible: tip && getComputedStyle(tip).visibility === 'visible',
+        text: tip?.textContent || '', role: tip?.getAttribute('role')};
+    })()`);
+    assert.ok(hover.present && hover.visible && hover.text.includes('Бребенескул') &&
+      hover.text.includes('1 801 м') && hover.role === 'tooltip',
+      `React hover tooltip missing: ${JSON.stringify(hover)}`);
+    await command('Input.dispatchMouseEvent', {type: 'mouseMoved', x: 10, y: 400});
+    await delay(150);
+    assert.equal(await evaluate("!!document.querySelector('[data-react-route-tooltip]')"), false,
+      'tooltip did not hide on pointer leave');
+    await evaluate("document.querySelector('[data-react-journey] .stop[data-peak=\"2\"]').focus()");
+    await delay(100);
+    assert.equal(await evaluate("!!document.querySelector('[data-react-route-tooltip=\"2\"]')"), true,
+      'tooltip did not open on keyboard focus');
+    await command('Input.dispatchKeyEvent', {type: 'keyDown', key: 'Escape', code: 'Escape'});
+    await delay(100);
+    assert.equal(await evaluate("!!document.querySelector('[data-react-route-tooltip]')"), false,
+      'tooltip did not close on Escape');
+  }
+
   // Real wheel input must update the shared store, traveler and active
   // route without requiring any click or programmatic navigation.
   if (locale === 'uk' && width === 1440) {

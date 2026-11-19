@@ -25,3 +25,5 @@ pnpm typecheck
 pnpm build
 pnpm test:browser
 ```
+
+React location cards use a React portal for hover and keyboard-focus tooltips, preserving the original four descriptions while avoiding animated-scene clipping. Escape, pointer leave and scrolling dismiss the tooltip.\n

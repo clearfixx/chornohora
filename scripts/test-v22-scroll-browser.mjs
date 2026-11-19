@@ -580,6 +580,31 @@ const check = async (locale, width) => {
     assert.ok(!reverse.started && reverse.route === 'hidden' && reverse.hiker === 'hidden',
       `Hero failed to hide route and hiker: ${JSON.stringify(reverse)}`);
   }
+  // The last peak is NOT the end of the page. Wheel must cross the journey
+  // boundary and reveal content below it without using the scrollbar thumb.
+  if (locale === 'uk' && width === 1440) {
+    await evaluate(`window.scrollTo({top: ${reactGeometry.top} + ${reactGeometry.travel} * .83, behavior: 'instant'})`);
+    await delay(350);
+    const start = await evaluate('window.scrollY');
+    const pageMax = await evaluate('document.scrollingElement.scrollHeight - document.scrollingElement.clientHeight');
+    assert.ok(pageMax > reactGeometry.top + reactGeometry.travel + 100, 'no post-journey content to reach');
+    for (let i = 0; i < 26; i++) {
+      await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x: 600, y: 420, deltaY: 120, deltaX: 0});
+      await delay(24);
+    }
+    await delay(650);
+    const after = await evaluate('window.scrollY');
+    assert.ok(after > reactGeometry.top + reactGeometry.travel + 60,
+      `wheel stuck in Petros scene: ${JSON.stringify({start, after, boundary: reactGeometry.top + reactGeometry.travel, pageMax})}`);
+    // Re-enter the scene by rolling backward from below it.
+    for (let i = 0; i < 12; i++) {
+      await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x: 600, y: 420, deltaY: -120, deltaX: 0});
+      await delay(24);
+    }
+    await delay(650);
+    const back = await evaluate('window.scrollY');
+    assert.ok(back < after - 80, 'reverse wheel did not return toward journey');
+  }
   // A click must animate through intermediate positions, not jump instantly.
   // The following checks run in real Chromium with browser input/event handling.
   if (locale === 'uk' && width === 1440) {

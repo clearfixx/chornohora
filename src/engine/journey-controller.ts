@@ -84,13 +84,26 @@ export class JourneyController {
     const top = this.trackTop(scroller);
     const end = top + this.getTravel();
     const now = scroller.scrollTop;
-    // Allow the normal page to continue before and after the visual journey.
+    // Let wheel input leave the animated route in BOTH directions. Clamping
+    // the destination to its end caused a wheel trap on the last night scene.
     if ((now <= top && event.deltaY < 0) || (now >= end && event.deltaY > 0) ||
-        now < top - 1 || now > end + 1) return;
+        now < top - 1 || now > end + 1) {
+      this.cancelWheel();
+      return;
+    }
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? scroller.clientHeight : 1;
-    const delta = Math.max(-140, Math.min(140, event.deltaY * unit * 0.72));
+    const lastPeak = top + this.getTravel() * 0.83;
+    // The final scene remains visible while the last portion of the journey
+    // can be traversed without dozens of tiny wheel turns.
+    const leavingNight = event.deltaY > 0 && now >= lastPeak;
+    const delta = leavingNight
+      ? Math.max(-320, Math.min(320, event.deltaY * unit * 1.8))
+      : Math.max(-140, Math.min(140, event.deltaY * unit * 0.72));
     if (!delta) return;
-    const target = Math.min(end, Math.max(top, (this.wheelFrame ? this.wheelTarget : now) + delta));
+    const maxScroll = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    const target = Math.min(maxScroll, Math.max(0, (this.wheelFrame ? this.wheelTarget : now) + delta));
+    // A target past the travel boundary is intentional: the scroll must reach
+    // the booking/footer after the last scene, instead of sticking at 100%.
     if (Math.abs(target - now) < 0.1) return;
     event.preventDefault();
     this.wheelTarget = target;

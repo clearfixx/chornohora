@@ -220,7 +220,7 @@ const checkTouchScroll = async (locale, width, mode) => {
     await new Promise(resolve => win.requestAnimationFrame(() => win.requestAnimationFrame(resolve)));
   })()`);
   await delay(300);
-  try {
+  {
     const before = await measure();
     const forward = [before];
     for (let i = 0; i < 5; i++) {
@@ -230,6 +230,27 @@ const checkTouchScroll = async (locale, width, mode) => {
       });
       await delay(220);
       forward.push(await measure());
+    }
+    if (forward.at(-1).y <= before.y + 200) {
+      const diagnostics = await evaluate(`(() => {
+        const win = ${frameExpr};
+        const doc = win.document;
+        const el = doc.elementFromPoint(25, 700);
+        const track = doc.querySelector('.track');
+        const ancestors = [];
+        for (let node = track; node && ancestors.length < 8; node = node.parentElement) {
+          const css = win.getComputedStyle(node);
+          ancestors.push({tag: node.tagName, className: String(node.className).slice(0, 90),
+            overflowY: css.overflowY, touchAction: css.touchAction,
+            scrollTop: node.scrollTop, scrollHeight: node.scrollHeight, clientHeight: node.clientHeight});
+        }
+        return {innerWidth: win.innerWidth, innerHeight: win.innerHeight,
+          viewport: {width: win.visualViewport?.width, height: win.visualViewport?.height, scale: win.visualViewport?.scale},
+          touchPoints: win.navigator.maxTouchPoints, scrollY: win.scrollY,
+          scrollingElement: doc.scrollingElement?.tagName,
+          hit: el?.outerHTML?.slice(0, 250), ancestors};
+      })()`);
+      console.error(`TOUCH DIAGNOSTICS ${locale}/${width}/${mode}: ${JSON.stringify(diagnostics)}`);
     }
     assert.ok(forward.at(-1).y > before.y + 200,
       `touch swipe up did not scroll ${locale}/${mode}: ${JSON.stringify(forward)}`);
@@ -249,8 +270,6 @@ const checkTouchScroll = async (locale, width, mode) => {
         `hiker lost position during touch scroll ${locale}/${mode}: ${JSON.stringify(sample)}`);
     }
     console.log(`INPUT TOUCH ${locale}/${width}/${mode}: ${JSON.stringify({forward, reverse})}`);
-  } finally {
-    // Touch emulation is enabled before navigation for mobile test cases.
   }
 };
 const sampleGeometry = async (locale, width, mode, name) => {

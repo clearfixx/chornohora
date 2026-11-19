@@ -2,7 +2,7 @@
  * This is a checked-in React JSX stage, NOT an HTML injection.
  * Interaction wiring and visual/browser acceptance are separate migration gates.
  */
-import type * as React from 'react';
+import type * as React from &apos;react&apos;;
 
 export function NativeV22StageMarkup() {
   return (
@@ -82,7 +82,7 @@ export function NativeV22StageMarkup() {
 <aside className="card show k1"><ul>
 <li><b>Старт</b><span>Стежка від Заросляка біля Ворохти. Підйом займає кілька годин.</span></li>
 <li><b>Вид</b><span>У ясну погоду видно весь Чорногірський хребет.</span></li>
-<li><b>Одяг</b><span>Теплий шар обов'язковий: на вершині завжди вітряно.</span></li>
+<li><b>Одяг</b><span>Теплий шар обов&apos;язковий: на вершині завжди вітряно.</span></li>
 </ul></aside>
 <section className="place show r2" style={{"left":"6vw","top":"112px","width":"min(920px,88vw)","zIndex":"12"} as React.CSSProperties}>
 <div style={{"display":"flex","flexWrap":"wrap","gap":"10px"} as React.CSSProperties}><span className="pill" style={{"background":"#fff","color":"#0A2C7A"} as React.CSSProperties}>День</span><span className="pill alt a2 r2" style={{"background":"rgba(5,20,90,.45)","color":"#fff"} as React.CSSProperties}></span></div>
@@ -90,7 +90,7 @@ export function NativeV22StageMarkup() {
 <p className="lead">Найвисокогірніше озеро країни. Холодна вода, тиша й обід на камінні.</p>
 </section>
 <aside className="card show k2"><ul>
-<li><b>Озеро</b><span>Лежить під однойменною горою, серед кам'яних розсипів і полонин.</span></li>
+<li><b>Озеро</b><span>Лежить під однойменною горою, серед кам&apos;яних розсипів і полонин.</span></li>
 <li><b>Привал</b><span>Тут робимо довгу зупинку, обідаємо й відпочиваємо.</span></li>
 <li><b>Вода</b><span>Дуже холодна навіть улітку: купання лише для сміливих.</span></li>
 </ul></aside>
@@ -127,7 +127,7 @@ export function NativeV22StageMarkup() {
 <div style={{"position":"relative","zIndex":"3","maxWidth":"1240px","margin":"0 auto","display":"grid","gridTemplateColumns":"repeat(auto-fit,minmax(min(420px,100%),1fr))","gap":"56px","alignItems":"start"} as React.CSSProperties}>
 <div>
 <h2 style={{"margin":"0 0 20px","font":"800 clamp(30px,4.4vw,64px)/1.05 Unbounded,Onest,system-ui,sans-serif","overflowWrap":"anywhere"} as React.CSSProperties}>Забронюйте місце на гребені</h2>
-<p style={{"margin":"0 0 36px","maxWidth":"460px","font":"400 20px/1.5 Onest,system-ui,sans-serif"} as React.CSSProperties}>Залиште заявку. Ми зв'яжемося, уточнимо дати й відповімо на всі запитання.</p>
+<p style={{"margin":"0 0 36px","maxWidth":"460px","font":"400 20px/1.5 Onest,system-ui,sans-serif"} as React.CSSProperties}>Залиште заявку. Ми зв&apos;яжемося, уточнимо дати й відповімо на всі запитання.</p>
 <dl style={{"margin":"0","display":"flex","flexDirection":"column","gap":"14px","maxWidth":"460px"} as React.CSSProperties}>
 <div style={{"display":"flex","justifyContent":"space-between","gap":"16px","paddingBottom":"14px","borderBottom":"1px solid rgba(255,255,255,.3)"} as React.CSSProperties}><dt style={{"font":"400 18px/1.3 Onest,system-ui,sans-serif"} as React.CSSProperties}>Тривалість</dt><dd style={{"margin":"0","font":"700 18px/1.3 Onest,system-ui,sans-serif"} as React.CSSProperties}>[КІЛЬКІСТЬ ДНІВ]</dd></div>
 <div style={{"display":"flex","justifyContent":"space-between","gap":"16px","paddingBottom":"14px","borderBottom":"1px solid rgba(255,255,255,.3)"} as React.CSSProperties}><dt style={{"font":"400 18px/1.3 Onest,system-ui,sans-serif"} as React.CSSProperties}>Група</dt><dd style={{"margin":"0","font":"700 18px/1.3 Onest,system-ui,sans-serif"} as React.CSSProperties}>[РОЗМІР ГРУПИ]</dd></div>
@@ -136,7 +136,7 @@ export function NativeV22StageMarkup() {
 </div>
 <div style={{"boxSizing":"border-box","background":"#fff","color":"#1B0B5A","borderRadius":"28px","padding":"36px","boxShadow":"0 30px 80px rgba(20,8,70,.35)"} as React.CSSProperties}>
 <form style={{"display":"flex","flexDirection":"column","gap":"18px"} as React.CSSProperties}>
-<div className="fld"><label htmlFor="f-name">Ім'я</label><input autoComplete="name" id="f-name" name="name" placeholder="Як до вас звертатися" required={true} type="text"/></div>
+<div className="fld"><label htmlFor="f-name">Ім&apos;я</label><input autoComplete="name" id="f-name" name="name" placeholder="Як до вас звертатися" required={true} type="text"/></div>
 <div style={{"display":"grid","gridTemplateColumns":"repeat(auto-fit,minmax(min(200px,100%),1fr))","gap":"18px"} as React.CSSProperties}>
 <div className="fld"><label htmlFor="f-tel">Телефон</label><input autoComplete="tel" id="f-tel" name="tel" placeholder="+380" required={true} type="tel"/></div>
 <div className="fld"><label htmlFor="f-mail">Пошта</label><input autoComplete="email" id="f-mail" name="email" placeholder="name@mail.com" type="email"/></div>
@@ -152,7 +152,7 @@ export function NativeV22StageMarkup() {
 </form>
 <div style={{"display":"flex","flexDirection":"column","alignItems":"flex-start","gap":"16px","padding":"24px 0"} as React.CSSProperties}>
 <h3 style={{"margin":"0","font":"800 clamp(26px,3vw,38px)/1.1 Unbounded,Onest,system-ui,sans-serif"} as React.CSSProperties}>Заявку надіслано</h3>
-<p style={{"margin":"0","font":"400 18px/1.5 Onest,system-ui,sans-serif"} as React.CSSProperties}>Ми зв'яжемося з вами протягом [ЧАС ВІДПОВІДІ], щоб уточнити дати й деталі походу.</p>
+<p style={{"margin":"0","font":"400 18px/1.5 Onest,system-ui,sans-serif"} as React.CSSProperties}>Ми зв&apos;яжемося з вами протягом [ЧАС ВІДПОВІДІ], щоб уточнити дати й деталі походу.</p>
 <button className="cta" style={{"border":"0","cursor":"pointer","background":"#EFEAFF"} as React.CSSProperties} type="button">Надіслати ще одну заявку</button>
 </div>
 </div>

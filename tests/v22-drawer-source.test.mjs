@@ -9,7 +9,6 @@ const signatures = [
   'data-route-menu-close', 'data-route-target',
   'aria-expanded', 'aria-hidden', 'inert',
   'preventScroll', 'Escape', 'Tab', 'stopImmediatePropagation',
-  'getBoundingClientRect', 'requestAnimationFrame',
 ];
 test('ported drawer retains original event and DOM contracts', () => {
   for (const signature of signatures) {
@@ -17,11 +16,15 @@ test('ported drawer retains original event and DOM contracts', () => {
     assert.ok(port.includes(signature), 'port lacks ' + signature);
   }
 });
-test('ported drawer retains exact route positions and transition delay', () => {
+test('ported drawer delegates route positions and animation to the shared controller', () => {
+  const controller = readFileSync('src/lib/v22-scroll-controller.ts', 'utf8');
   assert.match(original, /\.21,\.42,\.63,\.83/);
-  assert.match(port, /\.21, \.42, \.63, \.83/);
-  assert.ok(original.includes('), 80)'));
-  assert.match(port, /\}, 80\)/);
+  assert.match(controller, /govla: \[0\.21, 0\]/);
+  assert.match(controller, /brebeneskul: \[0\.42, 1\]/);
+  assert.match(controller, /nesamovyte: \[0\.63, 2\]/);
+  assert.match(controller, /petros: \[0\.83, 3\]/);
+  assert.match(port, /controller\.navigate\(route\)/);
+  assert.doesNotMatch(port, /window\.scrollTo/);
 });
 test('ported drawer is not mounted while original script is active', () => {
   const page = readFileSync('src/app/[locale]/page.tsx', 'utf8');

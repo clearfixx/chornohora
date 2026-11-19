@@ -1,7 +1,7 @@
 'use client';
 
-import {useState} from 'react';
-import {JourneyLocaleNav} from './JourneyLocaleNav';
+import {useEffect, useRef, useState} from 'react';
+import {mountV22LanguageNav} from '@/lib/v22-language-nav';
 
 type Props = {locale: 'uk' | 'en'};
 
@@ -12,13 +12,20 @@ type Props = {locale: 'uk' | 'en'};
  */
 export function LegacyJourney({locale}: Props) {
   const [ready, setReady] = useState(false);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const disposeRef = useRef<() => void>(() => {});
+  useEffect(() => () => disposeRef.current(), []);
   return <main className="legacy-journey">
-    <JourneyLocaleNav locale={locale} />
     {!ready && <p className="legacy-journey__loading" role="status">
       {locale === 'uk' ? 'Завантаження подорожі…' : 'Loading journey…'}
     </p>}
     <iframe title={locale === 'uk' ? 'Чорногора — Чотири неба' : 'Chornohora — Four Skies'}
-      src="/legacy/index.html" className="legacy-journey__frame"
-      onLoad={() => setReady(true)} />
+      ref={frameRef} src="/legacy/index.html" className="legacy-journey__frame"
+      onLoad={() => {
+        disposeRef.current();
+        const doc = frameRef.current?.contentDocument;
+        if (doc) disposeRef.current = mountV22LanguageNav(doc, locale, false);
+        setReady(true);
+      }} />
   </main>;
 }

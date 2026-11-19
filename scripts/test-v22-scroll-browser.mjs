@@ -220,14 +220,24 @@ const checkTouchScroll = async (locale, width, mode) => {
     await new Promise(resolve => win.requestAnimationFrame(() => win.requestAnimationFrame(resolve)));
   })()`);
   await delay(300);
+  // Explicit CDP touch stream is more portable in headless Chromium than
+  // Input.synthesizeScrollGesture, which can report success without scrolling.
+  const swipe = async (fromY, toY) => {
+    const x = 25;
+    await command('Input.dispatchTouchEvent', {type: 'touchStart', touchPoints: [{x, y: fromY, id: 1}]});
+    const steps = 12;
+    for (let i = 1; i <= steps; i++) {
+      const y = fromY + (toY - fromY) * i / steps;
+      await command('Input.dispatchTouchEvent', {type: 'touchMove', touchPoints: [{x, y, id: 1}]});
+      await delay(20);
+    }
+    await command('Input.dispatchTouchEvent', {type: 'touchEnd', touchPoints: []});
+  };
   {
     const before = await measure();
     const forward = [before];
     for (let i = 0; i < 5; i++) {
-      await command('Input.synthesizeScrollGesture', {
-        x: 25, y: 700, yDistance: -450, xDistance: 0,
-        speed: 900, gestureSourceType: 'touch',
-      });
+      await swipe(700, 250);
       await delay(220);
       forward.push(await measure());
     }
@@ -256,10 +266,7 @@ const checkTouchScroll = async (locale, width, mode) => {
       `touch swipe up did not scroll ${locale}/${mode}: ${JSON.stringify(forward)}`);
     const reverse = [await measure()];
     for (let i = 0; i < 5; i++) {
-      await command('Input.synthesizeScrollGesture', {
-        x: 25, y: 250, yDistance: 450, xDistance: 0,
-        speed: 900, gestureSourceType: 'touch',
-      });
+      await swipe(250, 700);
       await delay(220);
       reverse.push(await measure());
     }

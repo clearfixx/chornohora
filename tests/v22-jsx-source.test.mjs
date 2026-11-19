@@ -4,6 +4,8 @@ import test from 'node:test';
 
 const source = readFileSync('public/legacy/index.html', 'utf8');
 const jsx = readFileSync('src/components/journey/NativeV22Markup.tsx', 'utf8');
+const motion = readFileSync('src/components/journey/ReactJourneyMotion.tsx', 'utf8');
+const allJsx = jsx + '\n' + motion;
 const marker = '<sc-if data-dc-static="" value="{{ false }}">';
 const fallback = source.slice(source.indexOf(marker), source.indexOf('</sc-if></x-dc>', source.indexOf(marker)));
 const geometry = fallback.slice(fallback.indexOf('<div data-canvas-height="8000"'));
@@ -22,10 +24,10 @@ test('all approved path geometry and circle coordinates are preserved verbatim',
   // The decorative language chevron is intentionally replaced with real UA/EN links.
   // All landscape and other SVG paths must remain unchanged.
   for (const path of paths.filter(path => path !== 'm6 9 6 6 6-6')) {
-    assert.ok(jsx.includes('d="' + path + '"'), 'path geometry missing');
+    assert.ok(allJsx.includes('d="' + path + '"'), 'path geometry missing');
   }
   for (const [cx,cy,r] of [...geometry.matchAll(/<circle\s+cx="([^"]+)" cy="([^"]+)" r="([^"]+)"/g)].map(m=>m.slice(1))) {
-    assert.ok(jsx.includes('cx="' + cx + '" cy="' + cy + '" r="' + r + '"'), 'star geometry missing');
+    assert.ok(allJsx.includes('cx="' + cx + '" cy="' + cy + '" r="' + r + '"'), 'star geometry missing');
   }
 });
 
@@ -33,4 +35,13 @@ test('native markup retains original scene and navigation landmarks', () => {
   for (const token of ['govla','brebeneskul','nesamovyte','petros','data-route-target','data-journey-action','route-drawer','data-canvas-height']) {
     assert.ok(jsx.includes(token), 'missing ' + token);
   }
+});
+
+test('React traveler and four-stop progress panel subscribe independently to the same journey store', () => {
+  assert.match(jsx, /<ReactRouteIndicator store=\{store\}/);
+  assert.match(jsx, /<ReactHiker store=\{store\}/);
+  assert.match(motion, /useSyncExternalStore\(store\.subscribe, store\.getSnapshot, store\.getServerSnapshot\)/);
+  assert.match(motion, /getRouteFill\(progress, centers\)/);
+  assert.match(motion, /className=\{stopClass\(progress, activeIndex/);
+  assert.match(motion, /--hiker-x/);
 });

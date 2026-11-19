@@ -1,6 +1,6 @@
 'use client';
 
-import {useCallback, useEffect, useSyncExternalStore, type RefObject} from 'react';
+import {useCallback, useEffect, useState, useSyncExternalStore, type RefObject} from 'react';
 import {JourneyController} from '@/engine/journey-controller';
 import {JourneyStore} from '@/engine/journey-store';
 import type {JourneyStopId} from '@/lib/journey';

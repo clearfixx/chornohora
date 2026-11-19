@@ -226,7 +226,7 @@ const checkTouchScroll = async (locale, width, mode) => {
     const forward = [before];
     for (let i = 0; i < 5; i++) {
       await command('Input.synthesizeScrollGesture', {
-        x: Math.floor(width / 2), y: 500, yDistance: -450, xDistance: 0,
+        x: 25, y: 700, yDistance: -450, xDistance: 0,
         speed: 900, gestureSourceType: 'touch',
       });
       await delay(220);
@@ -237,7 +237,7 @@ const checkTouchScroll = async (locale, width, mode) => {
     const reverse = [await measure()];
     for (let i = 0; i < 5; i++) {
       await command('Input.synthesizeScrollGesture', {
-        x: Math.floor(width / 2), y: 400, yDistance: 450, xDistance: 0,
+        x: 25, y: 250, yDistance: 450, xDistance: 0,
         speed: 900, gestureSourceType: 'touch',
       });
       await delay(220);

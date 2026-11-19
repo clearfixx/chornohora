@@ -42,4 +42,4 @@ The first engine implementation is staged separately from the old v22 preview. T
 
 ## Status
 
-The first delivered engine/store is intentionally NOT connected to the source HTML preview. It is infrastructure for the JSX migration, not proof that the architectural debt is paid.
+The React store and controller are now mounted in the isolated `?preview=react` route. The original static scene and drawer have been converted to checked-in JSX, and React controls route navigation and menu state. Chromium compares original/native/React frames at fixed checkpoints. The canonical iframe and older `?preview=native` DOM adapter remain only as reference/compatibility modes. Dynamic traveler/progress/tooltip/booking behavior and full UA/EN translation are outstanding; no architectural or visual completion is claimed.

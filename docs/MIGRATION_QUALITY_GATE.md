@@ -1,28 +1,43 @@
 # Migration quality gate
 
-The GitHub feature branch contains a Next.js shell and an optional preservation iframe, not a completed native v22 implementation.
+Last verified: 2026-11-19. Migration branch: `feat/nextjs-migration`.
+The React extraction is under review in Draft PR #2 (`feat/react-journey-engine`).
 
-## Checks
+## Current facts
 
-```powershell
-pnpm install --no-frozen-lockfile
+- `pnpm-lock.yaml` is committed. CI installs with `pnpm install --frozen-lockfile`.
+- Approved v22 source assets are committed under `public/legacy` and must remain unchanged during migration.
+- `main` contains the repository bootstrap, not the completed landing.
+- The canonical `/uk` and `/en` still use the original v22 iframe.
+- `?preview=native` uses extracted source markup and imperative compatibility adapters. It is **not** a completed React migration.
+- `?preview=react` mounts checked-in JSX and a new observable journey engine. This experimental implementation is **not** signed off.
+- CI has source, unit, Chromium geometry, scroll, touch, interaction and screenshot comparison checks. A passing CI run alone does not constitute final human visual acceptance.
+
+## Mandatory checks
+
+```sh
+pnpm install --frozen-lockfile
 pnpm lint
 pnpm typecheck
 pnpm test:journey
+pnpm test:jsx-source
 pnpm test:source
+pnpm audit:v22
 pnpm build
+pnpm test:browser
+pnpm test:browser-scroll
+pnpm test:geometry
 ```
 
-When `public/legacy/index.html` is present, `pnpm audit:v22` validates all required source assets, route anchors and local file references.
+GitHub Actions runs the full sequence and saves visual comparison artifacts. Inspect the most recent run before declaring any check green.
 
-**CI caveat:** the current repository does not include `pnpm-lock.yaml`. The workflow temporarily uses `--no-frozen-lockfile` and does not enable pnpm caching. This makes the checks runnable but not reproducible. Commit the lockfile and restore `--frozen-lockfile` before release.
+## Blocking acceptance criteria
 
-## Release blockers
+1. Fully React-owned JSX for all scene, navbar, drawer, tooltip, booking and footer interactions.
+2. No runtime dependence on `x-dc`, `iframe`, `innerHTML` or old compatibility controllers in the canonical landing.
+3. Accurate route progress, traveler path/occlusion, animated backgrounds, scene timing, keyboard and touch behavior in the React version.
+4. Complete UA/EN translation of the actual landing content.
+5. Approved visual comparison across original/native/React at desktop and mobile checkpoints, plus continuous reverse scrolling.
+6. Full CI green and a final review; only then merge and switch the canonical route.
 
-1. Commit the 21-file approved v22 source to `public/legacy`.
-2. Complete native React migration with equivalent traveler, tree occlusion, scene timing and drawer behavior.
-3. Translate the actual landing page content to English.
-4. Add browser visual/interaction parity tests.
-5. Run all checks and obtain a green CI result.
-
-The presence of a workflow file is not evidence that GitHub Actions actually ran.
+The old snapshot-based migration documents are superseded by this status and `docs/REACT_MIGRATION_EXECUTION.md`.

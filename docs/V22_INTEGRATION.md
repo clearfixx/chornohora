@@ -1,17 +1,23 @@
-# V22 integration package
+# Approved v22 integration — current state
 
-This branch now contains an **asset-aware** route. It renders the approved v22 scene in an isolated iframe only when `public/legacy/index.html` exists. Without those assets, the original Next.js placeholder remains available and builds safely.
+The approved source archive is already imported into `public/legacy/` (HTML, CSS, images, fonts and runtime assets). The old asset-copy instructions are historical, not an outstanding blocker.
 
-## Required assets
+## Architecture progression
 
-Copy the entire approved v22 source directory into `public/legacy/` preserving its paths: `index.html`, `styles.css`, `assets/`, and `original-v5.html`. Do not omit the binary font or image files. The source archive is `chornohora-illustrated-ui-v22.zip`.
+1. **Reference**: canonical same-origin iframe, unchanged for trustworthy comparisons.
+2. **Compatibility experiment**: `?preview=native`, source HTML inserted into a container and manually wired to ported v22 DOM controllers. This is temporary and carries acknowledged debt.
+3. **React experiment**: `?preview=react`, original static fallback converted to checked-in JSX. Navbar locale links and route/drawer click handling are React-controlled. A single observable journey engine is mounted. Visual parity and remaining interaction migration are still in progress.
 
-The original page remains untranslated; both `/uk` and `/en` currently display the Ukrainian scene. The locale switch affects the surrounding Next.js shell. This limitation must be resolved before claiming full bilingual support.
+The canonical landing is **not** production-ready until step 3 replaces the reference and all imperative compatibility adapters are removed from the shipping app.
 
-## Verification
+## Required engineering work
 
-Run `pnpm lint`, `pnpm typecheck`, `pnpm build` and `pnpm dev`. Compare the original and integrated page at desktop/mobile viewports and multiple scroll positions. Confirm navigation, form, and drawer interactions. Do not merge or deploy to production before parity checks.
+Finish the hiker, layer transitions, route progress, tooltips, booking UI and footer in real React components. Translate all copy via `next-intl`. Then verify Chromium original-vs-React screenshots and continuous scroll/touch/keyboard interactions.
 
-## Native migration
+```sh
+pnpm install --frozen-lockfile
+pnpm lint && pnpm typecheck && pnpm test:journey && pnpm test:jsx-source
+pnpm build && pnpm test:browser && pnpm test:browser-scroll
+```
 
-The temporary iframe is not the final architecture. Move the SVG stage, scroll timeline, route indicator, traveler, navbar, drawer, booking form, and footer into React modules while retaining the approved v22 behavior. The pure timeline primitives under `src/lib` are preparatory and are not yet a replacement for the original animation runtime.
+See `docs/REACT_MIGRATION_EXECUTION.md` for the complete debt ledger and acceptance gates.

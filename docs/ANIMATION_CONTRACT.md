@@ -1,22 +1,26 @@
-# Animation migration contract (v22)
+# Animation migration contract (approved v22)
 
-The approved v22 animation is the reference, not an optional aesthetic guideline.
+The original geometry and timing are a strict visual reference, not an optional aesthetic guideline.
 
-## Timeline ownership
+## Ownership
 
-`useJourneyProgress` samples the actual track element in a passive scroll handler coalesced into requestAnimationFrame. The pure `getJourneyState` selector is shared by scene changes, route progress and traveler. This is a foundation only; it is not yet wired into the legacy scene.
+The React experimental route mounts real JSX (rather than injecting source HTML). `JourneyStore` publishes normalized progress and derived active stop; `JourneyController` samples the browser scroller. `useJourneyProgress` subscribes through `useSyncExternalStore`.
+
+The large JSX stage and drawer are now available under `?preview=react`, but many dynamic subparts remain to be split into React components. Current availability is **not** final animation parity.
 
 ## Do not regress
 
-- Preserve original v22 scroll length, sticky stage, scene gradients and SVG geometry.
-- Preserve traveler position and occlusion ordering at foreground trees.
-- Preserve original transitions and parallax timing; don't approximate with arbitrary Motion keyframes.
-- Keep Hero route progress hidden until first location scene.
-- Keep the right drawer 3D stage transform and Escape/backdrop behavior.
-- Support Ukrainian and English without translating text inside raster assets.
+- Original stage scroll length, gradients, SVG geometry and mountain-layer order.
+- Traveler position, foreground tree occlusion and bobbing.
+- Original transitions and parallax timing, including reverse scrolling.
+- Hero route progress hidden before the first summit.
+- Right-side route drawer behavior, focus, backdrop, Escape and keyboard interactions.
+- UA/EN translations, mobile typography and reduced-motion behavior.
 
-## Verification before release
+## Verification
 
-Compare screenshots at 0%, 10%, 21%, 32%, 42%, 53%, 63%, 73%, 83%, 95%, and 100% of track scroll, at desktop and mobile viewports. Validate drawer and reduced-motion fallback. Require lint, typecheck, build, and browser tests before production deployment.
+Compare Hero, Hoverla, Brebeneskul, Nesamovyte and Petros screenshots for 1440×900 and 390×900 in both locales; also test 0%, 10%, 21%, 32%, 42%, 53%, 63%, 73%, 83%, 95%, 100% track positions.
 
-**Current state:** controller/progress primitives only. The stage and v22 assets have not been ported into React. Do not deploy this scaffold as the finished site.
+Browser CI now produces original/native/React diagnostic screenshot artifacts. Do not infer that the React version is accepted merely because captures exist or CI completes.
+
+See `docs/REACT_MIGRATION_EXECUTION.md` for sign-off requirements.

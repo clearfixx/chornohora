@@ -129,3 +129,7 @@ The React footer gallery now has six properly localized descriptive image altern
 ## React CSS runtime independence — 2026-11-19
 
 The preview now loads only `/react-journey.css` for its historical scene rules (in addition to Next.js global CSS), rather than fetching `/legacy/styles.css` and `/v22-react-scene.css` on each visit. The new stylesheet is a byte-for-byte ordering-preserving concatenation of the two normalized CSS files, including font faces and every timeline keyframe. An automated source contract checks exact equality and asserts that the React route does not reference old stylesheet URLs or invoke HTML source extraction. The immutable v22 baseline, native comparison mode, and their assets are untouched. This is stylesheet-runtime isolation, **not** removal of the original legacy iframe or asset dependencies.
+
+### Reproducible React stylesheet build
+
+Run `pnpm sync:react-css` if the approved stylesheet reference changes in an explicitly authorized future migration step. The command normalizes line endings and writes the existing stylesheet order to `public/react-journey.css` without mutating the frozen inputs. `pnpm check:react-css` performs a read-only comparison and is enforced by GitHub Actions, preventing silent CSS drift. Neither operation modifies the user-approved animation timeline unless the source styles themselves are intentionally changed and reviewed.

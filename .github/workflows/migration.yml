@@ -22,6 +22,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test:journey
       - run: pnpm test:source
+      - run: pnpm check:react-css
       - run: pnpm test:jsx-source
       - run: pnpm test:v22-scroll
       - run: pnpm test:v22-drawer

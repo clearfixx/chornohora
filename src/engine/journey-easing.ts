@@ -17,3 +17,9 @@ export function journeyDuration(distance: number, viewportHeight: number): numbe
   // 12% quicker than the previous preview without changing cubic easing.
   return Math.round(Math.min(4600, Math.max(2300, 1800 + screens * 780)) / 1.12);
 }
+
+/** Detect an external scrollbar, focus or programmatic scroll during wheel easing. */
+export function wheelScrollWasInterrupted(actualTop: number, lastAppliedTop: number | null): boolean {
+  return lastAppliedTop !== null && Number.isFinite(actualTop) &&
+    Math.abs(actualTop - lastAppliedTop) > 80;
+}

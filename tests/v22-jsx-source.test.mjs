@@ -13,6 +13,7 @@ const structureFiles = [
   'src/features/journey/components/JourneyHero.tsx',
   'src/features/journey/components/JourneyLocationContent.tsx',
   'src/features/journey/components/BookingSection.tsx',
+  'src/features/journey/components/booking/JourneyBookingForm.tsx',
   'src/features/journey/components/JourneyFooter.tsx',
   'src/features/journey/components/JourneyDrawer.tsx',
 ];
@@ -130,4 +131,17 @@ test('lunar craters are present, and sunlight rays are retained for daytime', ()
   assert.ok(sky.includes('className="rays"'));
   assert.match(css,/:has\(\.shooting-stars\.is-active\) \.orb \.rays/);
   assert.match(css,/:has\(\.shooting-stars\.is-active\) \.orb \.moon-craters/);
+});
+
+test('React booking prepares a request without falsely reporting submission', () => {
+  const form=readFileSync('src/features/journey/components/booking/JourneyBookingForm.tsx','utf8');
+  const booking=readFileSync('src/features/journey/components/BookingSection.tsx','utf8');
+  for(const token of ['new FormData(form)','event.preventDefault()','form.reportValidity()','navigator.clipboard.writeText','setDraft(null)'])
+    assert.ok(form.includes(token),token);
+  assert.doesNotMatch(form,/fetch\(|window\.location|<form[^>]*action=/);
+  assert.ok(booking.includes('<JourneyBookingForm />'));
+  const ua=JSON.parse(readFileSync('messages/uk.json','utf8'));
+  const en=JSON.parse(readFileSync('messages/en.json','utf8'));
+  for(const key of ['bookingPrepare','bookingPreviewNotice','bookingCopy','bookingNeedsBackend'])
+    assert.ok(ua.Journey[key] && en.Journey[key],key);
 });

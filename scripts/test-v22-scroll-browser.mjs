@@ -196,6 +196,64 @@ const checkRealInputScroll = async (locale, width, mode) => {
   console.log(`INPUT WHEEL ${locale}/${width}/${mode}: ${JSON.stringify({forward, reverse})}`);
   await reset();
 };
+// CDP's synthesizeScrollGesture uses compositor-level touch input, not a
+// scripted scrollTo or synthetic DOM TouchEvent. Exercise mobile swipe up/down.
+const checkTouchScroll = async (locale, width, mode) => {
+  if (width >= 700) return;
+  const frameExpr = mode === 'original'
+    ? "document.querySelector('iframe[src=\"/legacy/index.html\"]').contentWindow"
+    : 'window';
+  const measure = () => evaluate(`(() => {
+    const win = ${frameExpr};
+    const doc = win.document;
+    const track = doc.querySelector('.track');
+    const stage = track.querySelector('.stage');
+    return {
+      y: win.scrollY,
+      active: [...doc.querySelectorAll('.route-ui-v6 .stop.is-active')].map(el => el.dataset.peak),
+      hikerX: Number.parseFloat(stage.querySelector('.hiker').style.getPropertyValue('--hiker-x')),
+    };
+  })()`);
+  await evaluate(`(async () => {
+    const win = ${frameExpr};
+    win.scrollTo({top: 0, behavior: 'instant'});
+    await new Promise(resolve => win.requestAnimationFrame(() => win.requestAnimationFrame(resolve)));
+  })()`);
+  await delay(300);
+  await command('Emulation.setTouchEmulationEnabled', {enabled: true, maxTouchPoints: 1});
+  try {
+    const before = await measure();
+    const forward = [before];
+    for (let i = 0; i < 5; i++) {
+      await command('Input.synthesizeScrollGesture', {
+        x: Math.floor(width / 2), y: 500, yDistance: -450, xDistance: 0,
+        speed: 900, gestureSourceType: 'touch',
+      });
+      await delay(220);
+      forward.push(await measure());
+    }
+    assert.ok(forward.at(-1).y > before.y + 200,
+      `touch swipe up did not scroll ${locale}/${mode}: ${JSON.stringify(forward)}`);
+    const reverse = [await measure()];
+    for (let i = 0; i < 5; i++) {
+      await command('Input.synthesizeScrollGesture', {
+        x: Math.floor(width / 2), y: 400, yDistance: 450, xDistance: 0,
+        speed: 900, gestureSourceType: 'touch',
+      });
+      await delay(220);
+      reverse.push(await measure());
+    }
+    assert.ok(reverse.at(-1).y < reverse[0].y - 200,
+      `touch swipe down did not reverse scroll ${locale}/${mode}: ${JSON.stringify(reverse)}`);
+    for (const sample of [...forward, ...reverse]) {
+      assert.ok(Number.isFinite(sample.hikerX),
+        `hiker lost position during touch scroll ${locale}/${mode}: ${JSON.stringify(sample)}`);
+    }
+    console.log(`INPUT TOUCH ${locale}/${width}/${mode}: ${JSON.stringify({forward, reverse})}`);
+  } finally {
+    await command('Emulation.setTouchEmulationEnabled', {enabled: false});
+  }
+};
 const sampleGeometry = async (locale, width, mode, name) => {
   const data = await evaluate(`(() => {
     const doc = ${mode === 'original' ? "document.querySelector('iframe[src=\"/legacy/index.html\"]').contentDocument" : 'document'};
@@ -266,6 +324,7 @@ const check = async (locale, width) => {
   }
   await checkGhostContinuity(locale, width, 'native');
   await checkRealInputScroll(locale, width, 'native');
+  await checkTouchScroll(locale, width, 'native');
   const reverse = await evaluate(`(async () => {
     window.scrollTo({top: 0, behavior: 'instant'});
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -368,6 +427,7 @@ const check = async (locale, width) => {
   }
   await checkGhostContinuity(locale, width, 'original');
   await checkRealInputScroll(locale, width, 'original');
+  await checkTouchScroll(locale, width, 'original');
 };
 try {
   for (let i = 0; i < 80; i++) {

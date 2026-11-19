@@ -3,7 +3,6 @@ import {join} from 'node:path';
 import {getLocale, getTranslations} from 'next-intl/server';
 import {Link} from '@/i18n/navigation';
 import {LegacyJourney} from '@/components/journey/LegacyJourney';
-import {JourneyLocaleNav} from '@/components/journey/JourneyLocaleNav';
 import {V22SourceInteraction} from '@/components/journey/V22SourceInteraction';
 import {getV22SourceScene} from '@/lib/v22-source-scene';
 
@@ -17,7 +16,7 @@ export default async function HomePage({searchParams}: {searchParams: Promise<{p
     const {preview} = await searchParams;
     if (preview === 'native') {
       const {html, drawerHtml, inlineCss} = getV22SourceScene();
-      return <><link rel="stylesheet" href="/legacy/styles.css" /><V22SourceInteraction html={html} drawerHtml={drawerHtml} inlineCss={inlineCss} /><JourneyLocaleNav locale={locale === "en" ? "en" : "uk"} /></>;
+      return <><link rel="stylesheet" href="/legacy/styles.css" /><V22SourceInteraction html={html} drawerHtml={drawerHtml} inlineCss={inlineCss} locale={locale === "en" ? "en" : "uk"} /></>;
     }
     return <LegacyJourney locale={locale === 'en' ? 'en' : 'uk'} />;
   }

@@ -516,6 +516,36 @@ const check = async (locale, width) => {
     await delay(650);
     await capture(locale, width, 'react', name);
   }
+  // A click must animate through intermediate positions, not jump instantly.
+  // The following checks run in real Chromium with browser input/event handling.
+  if (locale === 'uk' && width === 1440) {
+    await evaluate("window.scrollTo({top: 0, behavior: 'instant'})");
+    await delay(250);
+    const before = await evaluate("window.scrollY");
+    const clicked = await evaluate("(() => { const cue = document.querySelector('[data-react-journey] a.mouse'); if (!cue) return false; cue.click(); return true; })()");
+    assert.ok(clicked, 'React scene scroll cue missing');
+    await delay(300);
+    const halfway = await evaluate("window.scrollY");
+    await delay(2550);
+    const finish = await evaluate("window.scrollY");
+    const destination = reactGeometry.top + reactGeometry.travel * .21;
+    assert.ok(halfway > before + 1 && halfway < destination * .65,
+      `React journey jumped or did not ease: ${JSON.stringify({before, halfway, destination})}`);
+    assert.ok(Math.abs(finish - destination) < 60,
+      `React journey failed to finish: ${JSON.stringify({finish, destination})}`);
+    // Real wheel input should interrupt an active click-based animation.
+    await evaluate("window.scrollTo({top: 0, behavior: 'instant'})");
+    await delay(150);
+    await evaluate("document.querySelector('[data-react-journey] a.mouse').click()");
+    await delay(250);
+    await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x: 600, y: 460, deltaY: -240, deltaX: 0});
+    await delay(350);
+    const interrupted = await evaluate("window.scrollY");
+    await delay(850);
+    const afterInterruption = await evaluate("window.scrollY");
+    assert.ok(Math.abs(afterInterruption - interrupted) < 80,
+      `React journey continued after wheel interrupt: ${JSON.stringify({interrupted, afterInterruption})}`);
+  }
   console.log(`Captured React JSX parity checkpoints: ${locale}/${width}`);
 };
 try {

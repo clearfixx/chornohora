@@ -1,0 +1,21 @@
+/* Approved mobile usability adjustments for the original v22 iframe. */
+body.route-menu-open .track .stage {
+  transform: none !important;
+  filter: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+body.route-menu-open .route-menu-scrim {background: rgba(5,3,20,.68) !important;}
+@media (max-width:700px) {
+  .herosub.hero-ui-v6 {left:4vw !important;right:4vw !important;width:92vw !important;top:clamp(112px,14vh,150px) !important;justify-content:center !important;text-align:center !important;}
+  .hero-ui-v6 .hero-copy {width:100% !important;max-width:100% !important;text-align:center !important;}
+  .hero-ui-v6 .hero-brand-title {font-size:clamp(35px,10.2vw,60px) !important;line-height:1.12 !important;}
+  .hero-ui-v6 .hero-brand-subtitle {font-size:clamp(14px,4.4vw,21px) !important;}
+  .hero-ui-v6 .hero-brand-tagline {font-size:clamp(15px,4vw,18px) !important;line-height:1.55 !important;max-width:34ch;margin-inline:auto !important;}
+  .hero-ui-v6 .hero-actions {display:flex !important;flex-direction:column !important;align-items:stretch !important;gap:12px !important;width:min(100%,330px);margin:22px auto 0 !important;}
+  .hero-ui-v6 .hero-primary,.hero-ui-v6 .hero-secondary {display:flex !important;align-items:center !important;justify-content:center !important;width:100% !important;min-width:0 !important;min-height:52px !important;font-size:14px !important;padding:0 18px !important;text-align:center !important;}
+  .track .place {left:4vw !important;width:92vw !important;text-align:center !important;}
+  .track .place > div:first-child {justify-content:center !important;}
+  .track .place .name {font-size:clamp(30px,8.5vw,48px) !important;line-height:1.15 !important;overflow-wrap:anywhere;text-align:center !important;}
+  .track .place .lead {font-size:clamp(16px,4.3vw,19px) !important;line-height:1.5 !important;max-width:34ch;margin-inline:auto !important;text-align:center !important;}
+}

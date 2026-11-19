@@ -54,6 +54,9 @@ try {
       assert.ok(native.includes(token), `native ${locale} missing ${token}`);
     }
     assert.ok(!native.includes('legacy-journey__frame'), 'native comparison must not mount iframe');
+    const react = await dump(`/${locale}?preview=react`);
+    assert.ok(react.includes('class="track"') && react.includes('class="stage"'), 'React JSX stage missing');
+    assert.ok(!react.includes('legacy-journey__frame'), 'React preview must not use iframe');
     console.log(`Browser smoke OK: /${locale} and /${locale}?preview=native`);
   }
 } finally {

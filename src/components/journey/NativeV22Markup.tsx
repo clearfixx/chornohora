@@ -3,12 +3,37 @@
  * Interaction wiring and visual/browser acceptance are separate migration gates.
  */
 import type * as React from 'react';
+import type {RefObject} from 'react';
+import {Link} from '@/i18n/navigation';
 
-export function NativeV22StageMarkup() {
+type Locale = 'uk' | 'en';
+type StageProps = {
+  trackRef: RefObject<HTMLDivElement | null>;
+  locale: Locale;
+  menuOpen: boolean;
+  onAction: (action: string) => void;
+  onToggleMenu: () => void;
+};
+
+export function NativeV22StageMarkup({trackRef, locale, menuOpen, onAction, onToggleMenu}: StageProps) {
+  const onClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const node = event.target;
+    if (!(node instanceof Element)) return;
+    if (node.closest('[data-route-menu-toggle]')) {
+      event.preventDefault();
+      onToggleMenu();
+      return;
+    }
+    const action = node.closest<HTMLElement>('[data-journey-action]')?.dataset.journeyAction;
+    if (action) {
+      event.preventDefault();
+      onAction(action);
+    }
+  };
   return (
     <>
-<div data-canvas-height="8000" data-canvas-width="1440" data-document-role="page" data-label="Чорногора" style={{"width":"100%","background":"#140B3A","fontFamily":"Onest,system-ui,sans-serif","color":"#fff"} as React.CSSProperties}>
-<div className="track">
+<div onClick={onClick} data-canvas-height="8000" data-canvas-width="1440" data-document-role="page" data-label="Чорногора" style={{"width":"100%","background":"#140B3A","fontFamily":"Onest,system-ui,sans-serif","color":"#fff"} as React.CSSProperties}>
+<div className="track" ref={trackRef}>
 <header className="nav">
 <a aria-label="Чотири неба, на початок" className="logo" href="#start" data-journey-action="goStart">
 <img alt="" className="brand-mark" height="36" src="/legacy/assets/chornohora-mark.png" width="76"/>
@@ -16,7 +41,11 @@ export function NativeV22StageMarkup() {
 </a>
 <nav aria-label="Швидкі дії" className="navlinks nav-actions"><a className="nav-phone" href="tel:+380440000000" aria-label="Демонстраційний номер телефону">+380 (44) 000-00-00</a><a className="nav-book-cta" href="#book" data-journey-action="goBook">Забронювати місце</a></nav>
 
-<span className="nav-language" aria-label="Поточна мова: українська">UA <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg></span><button type="button" aria-label="Відкрити меню" aria-expanded="false" aria-controls="route-drawer" className="nav-menu" data-route-menu-toggle=""><span></span><span></span><span></span></button></header>
+<nav className="nav-language" aria-label={locale === 'uk' ? 'Мова' : 'Language'}>
+  <Link href="/" locale="uk" aria-current={locale === 'uk' ? 'page' : undefined}>UA</Link>
+  <span aria-hidden="true"> / </span>
+  <Link href="/" locale="en" aria-current={locale === 'en' ? 'page' : undefined}>EN</Link>
+</nav><button type="button" aria-label={menuOpen ? 'Закрити меню' : 'Відкрити меню'} aria-expanded={menuOpen} aria-controls="route-drawer" className="nav-menu" data-route-menu-toggle=""><span></span><span></span><span></span></button></header>
 <div className="anc" id="start" style={{"top":"0"} as React.CSSProperties}></div>
 <div className="anc" id="govla" style={{"top":"calc(var(--S) * .21)"} as React.CSSProperties}></div>
 <div className="anc" id="brebeneskul" style={{"top":"calc(var(--S) * .42)"} as React.CSSProperties}></div>
@@ -173,11 +202,31 @@ export function NativeV22StageMarkup() {
   );
 }
 
-export function NativeV22DrawerMarkup() {
+type DrawerProps = {
+  open: boolean;
+  onDismiss: () => void;
+  onNavigate: (target: string) => void;
+};
+
+export function NativeV22DrawerMarkup({open, onDismiss, onNavigate}: DrawerProps) {
+  const onClick = (event: React.MouseEvent<HTMLElement>) => {
+    const node = event.target;
+    if (!(node instanceof Element)) return;
+    if (node.closest('[data-route-menu-close]')) {
+      event.preventDefault();
+      onDismiss();
+      return;
+    }
+    const target = node.closest<HTMLElement>('[data-route-target]')?.dataset.routeTarget;
+    if (target) {
+      event.preventDefault();
+      onNavigate(target);
+    }
+  };
   return (
     <>
-<div className="route-menu-scrim" data-route-menu-close="" aria-hidden="true"></div>
-<aside id="route-drawer" className="route-drawer" aria-label="Навігація маршрутом" aria-hidden="true" inert={true}>
+<div onClick={onClick} className="route-menu-scrim" data-route-menu-close="" aria-hidden="true"></div>
+<aside onClick={onClick} id="route-drawer" className="route-drawer" aria-label="Навігація маршрутом" aria-hidden={!open} inert={!open}>
   <div className="route-drawer-head"><div className="route-drawer-brand"><img src="/legacy/assets/chornohora-mark.png" alt="" width="70" height="38"/><span><b>ЧОРНОГОРА</b><small>ЧОТИРИ НЕБА</small></span></div><button className="route-drawer-close" type="button" aria-label="Закрити меню" data-route-menu-close=""><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>
   <div className="route-drawer-inner"><p className="route-drawer-eyebrow">ЧОТИРИ НЕБА · ОДНА ПОДОРОЖ</p><nav aria-label="Перейти до локації" className="route-drawer-nav">
     <a href="#govla" data-route-target="0" data-journey-action="goGovla"><small>01 / СВІТАНОК</small><span>Говерла</span><b aria-hidden="true">↗</b></a>

@@ -4,6 +4,7 @@ import {getLocale, getTranslations} from 'next-intl/server';
 import {Link} from '@/i18n/navigation';
 import {LegacyJourney} from '@/components/journey/LegacyJourney';
 import {V22SourceInteraction} from '@/components/journey/V22SourceInteraction';
+import {ReactJourneyPreview} from '@/components/journey/ReactJourneyPreview';
 import {getV22SourceScene} from '@/lib/v22-source-scene';
 
 export default async function HomePage({searchParams}: {searchParams: Promise<{preview?: string}>}) {
@@ -14,6 +15,10 @@ export default async function HomePage({searchParams}: {searchParams: Promise<{p
     // One canonical landing route per locale. The native port remains an
     // explicit comparison mode until visual and interaction parity is proven.
     const {preview} = await searchParams;
+    if (preview === 'react') {
+      const {inlineCss} = getV22SourceScene();
+      return <><link rel="stylesheet" href="/legacy/styles.css" /><style>{inlineCss}</style><ReactJourneyPreview locale={locale === 'en' ? 'en' : 'uk'} /></>;
+    }
     if (preview === 'native') {
       const {html, drawerHtml, inlineCss} = getV22SourceScene();
       return <><link rel="stylesheet" href="/legacy/styles.css" /><V22SourceInteraction html={html} drawerHtml={drawerHtml} inlineCss={inlineCss} locale={locale === "en" ? "en" : "uk"} /></>;

@@ -4,15 +4,13 @@ import {useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExtern
 import {createPortal} from 'react-dom';
 import type {CSSProperties, FocusEvent, PointerEvent} from 'react';
 import {ROUTE_STOPS, clampProgress} from '@/lib/journey';
+import {Mountain, MapPin, Droplets, Star} from 'lucide-react';
+import {LocationPreview} from '@/features/journey/components/LocationPreview';
+import {locationTooltips} from '@/features/journey/data/locations';
 import type {JourneyStore} from '@/engine/journey-store';
 
 const anchors = ROUTE_STOPS.map(stop => stop.progress);
-const tooltipData = [
-  {eyebrow: '01 / Світанок', title: 'Говерла', description: 'Найвища вершина Українських Карпат та України. Початок нашої подорожі над хмарами.', height: '2 061 м', coordinates: '48.160° N, 24.500° E'},
-  {eyebrow: '02 / День', title: 'Бребенескул', description: 'Високогірне озеро серед Чорногірського хребта — місце для перепочинку під денним небом.', height: '1 801 м', coordinates: '48.102° N, 24.563° E'},
-  {eyebrow: '03 / Вечір', title: 'Несамовите', description: 'Льодовикове озеро в карпатському високогір’ї. Тут зустрічаємо вечірні барви.', height: '≈1 750 м', coordinates: '48.123° N, 24.541° E'},
-  {eyebrow: '04 / Ніч', title: 'Петрос', description: 'Одна з найвищих вершин Чорногори. Завершення мандрівки під зоряним небом.', height: '2 020 м', coordinates: '48.171° N, 24.421° E'},
-] as const;
+const tooltipData = locationTooltips;
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
 
 export function getRouteFill(progress: number, centers: readonly number[]): number {
@@ -156,13 +154,24 @@ export function ReactRouteIndicator({store}: {store: JourneyStore}) {
     data-react-route-tooltip={activeTooltip + 1}
     style={{left: tooltipPosition.left, top: tooltipPosition.top}}
   >
-    <span className="eyebrow">{tooltipData[activeTooltip].eyebrow}</span>
-    <strong>{tooltipData[activeTooltip].title}</strong>
-    <p>{tooltipData[activeTooltip].description}</p>
-    <span className="facts">
-      <span><b>Висота</b> {tooltipData[activeTooltip].height}</span>
-      <span><b>Координати</b> {tooltipData[activeTooltip].coordinates}</span>
-    </span>
+    <div className="reference-tooltip-layout">
+      <div className="reference-tooltip-preview"><LocationPreview index={activeTooltip}/></div>
+      <div className="reference-tooltip-content">
+        <span className="eyebrow">{tooltipData[activeTooltip].eyebrow}</span>
+        <strong>{tooltipData[activeTooltip].title}</strong>
+        <p>{tooltipData[activeTooltip].description}</p>
+      </div>
+    </div>
+    <ul className="reference-tooltip-facts">
+      <li><Mountain aria-hidden="true" size={20}/><span>{tooltipData[activeTooltip].height}</span></li>
+      <li><MapPin aria-hidden="true" size={20}/><span>{tooltipData[activeTooltip].place}</span></li>
+      <li>
+        {tooltipData[activeTooltip].icon==='star'?<Star aria-hidden="true" size={20}/>:
+          tooltipData[activeTooltip].icon==='water'?<Droplets aria-hidden="true" size={20}/>:
+          <Mountain aria-hidden="true" size={20}/>}
+        <span>{tooltipData[activeTooltip].detail}</span>
+      </li>
+    </ul>
   </div>,
   document.body,
 )}

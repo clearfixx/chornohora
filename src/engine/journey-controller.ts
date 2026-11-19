@@ -47,8 +47,9 @@ export class JourneyController {
     const travel = this.getTravel();
     const value = travel > 0 ? (this.scrollElement.scrollTop - this.trackTop(this.scrollElement)) / travel : 0;
     this.store.setProgress(value);
-    if (this.store.getSnapshot().isNavigating && this.store.getSnapshot().targetStop) {
-      const target = getStopScrollTop(this.trackTop(this.scrollElement), travel, 0, this.store.getSnapshot().targetStop);
+    const navigation = this.store.getSnapshot();
+    if (navigation.isNavigating && navigation.targetStop) {
+      const target = getStopScrollTop(this.trackTop(this.scrollElement), travel, 0, navigation.targetStop);
       if (Math.abs(target - this.scrollElement.scrollTop) < 2) this.endNavigation();
     }
   };

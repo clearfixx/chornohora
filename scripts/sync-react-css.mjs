@@ -10,7 +10,10 @@ import {readFileSync, writeFileSync} from 'node:fs';
 const sources = ['public/legacy/styles.css', 'public/v22-react-scene.css'];
 const destination = 'public/react-journey.css';
 const normalize = value => value.replace(/\r\n?/g, '\n');
-const expected = sources.map(source => normalize(readFileSync(source, 'utf8'))).join('\n');
+// The standalone React build owns its static URLs; the historical extract
+// and frozen legacy styles remain unchanged for reference comparison.
+const expected = sources.map(source => normalize(readFileSync(source, 'utf8')))
+  .join('\n').replaceAll('/legacy/assets/', '/journey/assets/');
 const check = process.argv.includes('--check');
 let current = '';
 try {current = normalize(readFileSync(destination, 'utf8'));} catch (error) {

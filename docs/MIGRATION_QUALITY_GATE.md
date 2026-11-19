@@ -70,3 +70,7 @@ The React preview references `/react-journey.css` instead of separately loading 
 ## React import ownership boundary
 
 `pnpm check:react-ownership` traverses actual local static/dynamic import edges beginning at the ReactJourneyPreview entry, rather than flagging intentionally retained legacy comparison code elsewhere in the repository. It fails if the reachable graph imports old HTML/scroller adapters or uses an iframe, `innerHTML` assignment or `dangerouslySetInnerHTML`. The check separately verifies the server page's `preview=react` branch does not mount legacy HTML/CSS. `pnpm test:react-ownership` covers scanner behavior and guards source-level isolation. Neither gate implies manual visual/scroll acceptance is complete.
+
+## React media isolation
+
+The 11 media resources consumed by React (logo, six gallery SVGs, four local fonts) now live at `/journey/assets/` as byte-identical copies of the approved originals. The React stylesheet sync rewrites legacy asset URLs without changing CSS keyframes or cascade. `pnpm check:react-assets` verifies required files, byte identity, and that React JSX/CSS no longer refers to `/legacy/assets/`. Legacy JavaScript runtime blobs are deliberately excluded. The original v22 asset tree stays immutable.

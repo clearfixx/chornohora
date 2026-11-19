@@ -56,9 +56,10 @@ test('React has independent checked-in CSS with exact immutable legacy rule orde
   const original = readFileSync('public/legacy/styles.css', 'utf8').replace(/\r\n?/g,'\n');
   const scene = readFileSync('public/v22-react-scene.css', 'utf8').replace(/\r\n?/g,'\n');
   const standalone = readFileSync('public/react-journey.css','utf8').replace(/\r\n?/g,'\n');
-  assert.equal(standalone, original+'\n'+scene,
+  assert.equal(standalone, (original+'\n'+scene).replaceAll('/legacy/assets/', '/journey/assets/'),
     'React CSS must retain both former stylesheet contents exactly and in order');
   const reactBranch = page.split("if (preview === 'react')")[1]?.split("if (preview === 'native')")[0] ?? '';
   assert.match(reactBranch, /href="\/react-journey\.css"/);
   assert.doesNotMatch(reactBranch, /href="\/legacy\/styles\.css"|href="\/v22-react-scene\.css"|getV22SourceScene/);
+  assert.doesNotMatch(standalone, /\/legacy\/assets\//);
 });

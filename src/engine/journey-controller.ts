@@ -120,7 +120,7 @@ export class JourneyController {
       return;
     }
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? scroller.clientHeight : 1;
-    const delta = Math.max(-160, Math.min(160, event.deltaY * unit * 0.85));
+    const delta = Math.max(-180, Math.min(180, event.deltaY * unit * 0.95));
     if (!delta) return;
     // Reversing wheel direction must discard pending momentum from the old
     // direction; otherwise two successive inputs can visibly fight each other.

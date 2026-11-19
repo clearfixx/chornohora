@@ -605,6 +605,20 @@ const check = async (locale, width) => {
     await delay(240);
     const atNight = await evaluate("document.querySelector('[data-petros-meteors]')?.classList.contains('is-active')");
     assert.equal(atNight, true, 'meteors should appear at Petros');
+    // A moon visible only after leaving Petros is a scene timing defect.
+    // Check it inside the Petros segment, then again farther into the night.
+    const moonPosition = await evaluate(`(() => {
+      const orb=document.querySelector('[data-react-journey] .orb');
+      const rect=orb.getBoundingClientRect();
+      const stage=document.querySelector('[data-react-journey] .track .stage').getBoundingClientRect();
+      const style=getComputedStyle(orb);
+      return {top:rect.top-stage.top,bottom:rect.bottom-stage.top,
+        stageHeight:stage.height,animation:style.animationName,color:style.backgroundColor};
+    })()`);
+    assert.ok(moonPosition.animation.includes('journey-earlier-petros-moon'),
+      `earlier lunar animation not active: ${JSON.stringify(moonPosition)}`);
+    assert.ok(moonPosition.top >= -80 && moonPosition.top < moonPosition.stageHeight * .38,
+      `moon rises too late at Petros: ${JSON.stringify(moonPosition)}`);
     const moon = await evaluate(`(() => ({
       rays: getComputedStyle(document.querySelector('[data-react-journey] .orb .rays')).opacity,
       craters: getComputedStyle(document.querySelector('[data-react-journey] .orb .moon-craters')).opacity,

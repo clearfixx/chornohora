@@ -12,7 +12,8 @@ export function easeInOutCubic(t: number): number {
  * A single stop typically travels around 2000 CSS pixels.
  */
 export function journeyDuration(distance: number, viewportHeight: number): number {
-  if (!Number.isFinite(distance) || !Number.isFinite(viewportHeight)) return 2800;
+  if (!Number.isFinite(distance) || !Number.isFinite(viewportHeight)) return 2500;
   const screens = Math.abs(distance) / Math.max(1, viewportHeight);
-  return Math.round(Math.min(4600, Math.max(2300, 1800 + screens * 780)));
+  // 12% quicker than the previous preview without changing cubic easing.
+  return Math.round(Math.min(4600, Math.max(2300, 1800 + screens * 780)) / 1.12);
 }

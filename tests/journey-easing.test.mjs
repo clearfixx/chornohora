@@ -16,7 +16,15 @@ test('navigation easing is smooth, monotonic and endpoint-exact', () => {
 
 test('large jumps are slower but bounded; small jumps still animated', () => {
   assert.ok(journeyDuration(2000, 900) > journeyDuration(200, 900));
-  assert.ok(journeyDuration(200, 900) >= 2300);
-  assert.ok(journeyDuration(20000, 900) <= 4600);
-  assert.equal(journeyDuration(Infinity, 900), 2800);
+  assert.ok(journeyDuration(200, 900) >= 2050);
+  assert.ok(journeyDuration(20000, 900) <= 4110);
+  assert.equal(journeyDuration(Infinity, 900), 2500);
+});
+
+test('navigation durations are about twelve percent faster than the previous policy', () => {
+  const oldDuration = distance => Math.min(4600, Math.max(2300, 1800 + (distance / 900) * 780));
+  for (const distance of [100, 1000, 2200, 6000, 15000]) {
+    const ratio = journeyDuration(distance, 900) / oldDuration(distance);
+    assert.ok(ratio > 0.88 && ratio < 0.91, `duration ratio unexpected for ${distance}: ${ratio}`);
+  }
 });

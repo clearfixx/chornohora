@@ -1008,13 +1008,26 @@ const checkReactResponsiveAndMotion = async () => {
     })()`);
     console.log('REDUCED-MOTION-GEOMETRY', JSON.stringify(geometry));
     assert.ok(geometry.reduced, `Chromium did not emulate reduced motion: ${JSON.stringify(geometry)}`);
-    assert.ok(geometry.travel > 200, `Reduced-motion stage has no travel: ${JSON.stringify(geometry)}`);
-    await evaluate("document.querySelector('[data-react-journey] a.mouse')?.click()");
-    await delay(150);
-    const position = await evaluate("window.scrollY");
-    const expected = geometry.top + geometry.travel * .21;
-    assert.ok(Math.abs(position - expected) < 60,
-      `reduced-motion peak navigation should be immediate: ${JSON.stringify({position,expected})}`);
+    assert.ok(geometry.travel <= 1,
+      `Reduced-motion fallback must be stacked rather than sticky: ${JSON.stringify(geometry)}`);
+    const staticState = await evaluate(`(() => ({
+      panels:[...document.querySelectorAll('[data-react-journey] .place')].map(el => ({
+        position:getComputedStyle(el).position, visible:getComputedStyle(el).visibility,
+      })),
+      route:getComputedStyle(document.querySelector('[data-react-journey] .route-ui-v6')).display,
+    }))()`);
+    assert.equal(staticState.panels.length,4,'four accessible static locations required');
+    assert.ok(staticState.panels.every(panel => panel.position === 'relative' && panel.visible === 'visible'),
+      `Reduced-motion locations are hidden: ${JSON.stringify(staticState)}`);
+    assert.equal(staticState.route, 'none','animated route should not display in reduced motion');
+    await evaluate("document.querySelector('[data-react-journey] a.hero-primary')?.click()");
+    await delay(180);
+    const navigation = await evaluate(`(() => {
+      const location=document.querySelector('[data-react-journey] .place.r1');
+      return {scroll:window.scrollY, top:location?.getBoundingClientRect().top};
+    })()`);
+    assert.ok(navigation.scroll > 100 && Math.abs(navigation.top) < 55,
+      `Reduced-motion Hero navigation did not reach first location: ${JSON.stringify(navigation)}`);
     const before = await evaluate('window.scrollY');
     await command('Input.dispatchMouseEvent', {
       type:'mouseWheel', x:600, y:420, deltaY:-160, deltaX:0,
@@ -1022,7 +1035,7 @@ const checkReactResponsiveAndMotion = async () => {
     await delay(300);
     const after = await evaluate('window.scrollY');
     assert.ok(after < before - 10, `native wheel should work with reduced motion: ${JSON.stringify({before,after})}`);
-    console.log(`REDUCED-MOTION ${JSON.stringify({position,expected,before,after})}`);
+    console.log(`REDUCED-MOTION ${JSON.stringify({navigation,before,after,staticState})}`);
   } finally {
     await command('Emulation.setEmulatedMedia', {features: []});
   }

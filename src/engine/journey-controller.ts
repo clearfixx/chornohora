@@ -215,8 +215,21 @@ export class JourneyController {
   /** Animate only intentional, click-initiated navigation. */
   navigate(id: JourneyStopId): void {
     if (!this.mounted) return;
+    const travel = this.getTravel();
+    // Reduced motion and engines without scroll timelines display the four
+    // destinations as vertically stacked content. A percentage of zero travel
+    // would otherwise send every menu action to the start of the page.
+    if (travel <= 1) {
+      const order: JourneyStopId[] = ['govla', 'brebeneskul', 'nesamovyte', 'petros'];
+      const index = order.indexOf(id);
+      const location = index >= 0
+        ? this.track.querySelector<HTMLElement>('.place.r' + (index + 1))
+        : null;
+      if (location) this.navigateToElement(location);
+      return;
+    }
     const scroller = this.scrollElement ?? this.getScroller();
-    const top = getStopScrollTop(this.trackTop(scroller), this.getTravel(), 0, id);
+    const top = getStopScrollTop(this.trackTop(scroller), travel, 0, id);
     this.animateTo(scroller, top, id);
   }
 

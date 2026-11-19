@@ -58,3 +58,7 @@ Chromium also checks the React renderer at widths 320, 375, 430, 768, 1280 and 1
 ## Intermediate visual checkpoints
 
 In addition to the four summit captures, CI saves five transition frames for each of UA/EN × 390/1440; the 11-point trajectory gate asserts active stop, progress fill, traveler coordinate monotonicity and exact re-entry into previously sampled positions during reverse scroll. These are behavioral/geometry safeguards. Pixel reports for intentionally redesigned artwork are diagnostic only and must not be interpreted as a pass/fail equivalence to the older v22 rendering.
+
+## Browser scroll ownership stress
+
+The regression suite covers manual scrollbar movement during wheel easing, form-field wheel ownership and resize during programmatic navigation. Its trace must record external interruption, and the page may not spring back. Manual reverse-gesture acceptance remains a release requirement.

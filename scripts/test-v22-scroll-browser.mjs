@@ -1083,6 +1083,61 @@ const checkReactIntermediateJourney = async () => {
   }
 };
 
+
+// Stress: browser-owned scroll operations must override wheel easing.
+const checkReactScrollOwnershipStress = async () => {
+  await command('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+  await command('Emulation.setTouchEmulationEnabled',{enabled:false});
+  await command('Page.navigate',{url:'http://127.0.0.1:'+port+'/uk?preview=react&trace=1'});
+  for(let i=0;i<80;i++){
+    if(await evaluate("!!document.querySelector('[data-react-journey] .track[data-journey-ready]') && typeof window.__journeyTrace === 'function'")) break;
+    if(i===79) throw new Error('stress controller not ready');
+    await delay(100);
+  }
+  const geometry=await evaluate("(() => { const t=document.querySelector('[data-react-journey] .track'); const s=t.querySelector('.stage'); return {top:t.getBoundingClientRect().top+scrollY,travel:t.offsetHeight-s.offsetHeight}; })()");
+  assert.ok(geometry.travel>500,'stress geometry invalid');
+
+  // Scrollbar-style direct scroll while a wheel request still has momentum.
+  await evaluate("window.scrollTo({top:"+ (geometry.top+geometry.travel*.72) +",behavior:'instant'})");
+  await delay(180);
+  await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:610,y:430,deltaY:170,deltaX:0});
+  await delay(45);
+  const manual=geometry.top+geometry.travel*.32;
+  await evaluate("window.scrollTo({top:"+manual+",behavior:'instant'})");
+  await delay(360);
+  const dragY=await evaluate('scrollY');
+  await delay(450);
+  const settled=await evaluate('scrollY');
+  assert.ok(Math.abs(settled-manual)<90 && Math.abs(settled-dragY)<5,
+    'Wheel animation overrode browser scrollbar: '+JSON.stringify({manual,dragY,settled}));
+  const trace=await evaluate('window.__journeyTrace()');
+  assert.ok(trace.length<=400 && trace.some(e=>e.event==='external-scroll'),
+    'External override was not recorded: '+JSON.stringify(trace.slice(-8)));
+
+  // Wheel over a booking field must remain native and not schedule page easing.
+  const center=await evaluate("(() => { const el=document.querySelector('[data-react-journey] #f-msg'); el.scrollIntoView({block:'center',behavior:'instant'}); const r=el.getBoundingClientRect(); return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)}; })()");
+  assert.ok(center.x>0 && center.y>0 && center.y<900,'Textarea not visible');
+  const targetsBefore=await evaluate("window.__journeyTrace().filter(e=>e.event==='wheel-target').length");
+  await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:center.x,y:center.y,deltaY:120,deltaX:0});
+  await delay(200);
+  const targetsAfter=await evaluate("window.__journeyTrace().filter(e=>e.event==='wheel-target').length");
+  assert.equal(targetsAfter,targetsBefore,'Wheel on textarea intercepted by page controller');
+
+  // Mid-navigation viewport resize and opposite wheel gesture.
+  await evaluate("document.querySelector('[data-react-journey] a.mouse').click()");
+  await delay(150);
+  await command('Emulation.setDeviceMetricsOverride',{width:1280,height:760,deviceScaleFactor:1,mobile:false});
+  await delay(400);
+  const resized=await evaluate("(() => { const t=document.querySelector('[data-react-journey] .track');return {width:innerWidth,y:scrollY,ready:t.hasAttribute('data-journey-ready'),overflow:document.documentElement.scrollWidth-innerWidth}; })()");
+  assert.ok(resized.width===1280 && resized.ready && resized.overflow<5,
+    'Resize disrupted journey: '+JSON.stringify(resized));
+  await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:500,y:390,deltaY:-120,deltaX:0});
+  await delay(600);
+  const after=await evaluate('scrollY');
+  assert.ok(after<resized.y+80,'Reverse wheel did not interrupt resized navigation: '+JSON.stringify({resized,after}));
+  console.log('SCROLL OWNERSHIP STRESS '+JSON.stringify({manual,dragY,settled,resized,after}));
+};
+
 // Independent React-only responsive and reduced-motion quality gate.
 // Runs after the expensive original/native parity captures, so it does not
 // repeat their geometry/screenshot work for each additional breakpoint.
@@ -1222,6 +1277,7 @@ try {
   await command('Runtime.enable');
   for (const locale of ['uk', 'en']) for (const width of [1440, 390]) await check(locale, width);
   await checkReactIntermediateJourney();
+  await checkReactScrollOwnershipStress();
   await checkReactResponsiveAndMotion();
   writeFileSync(join(screenshots, 'geometry.json'), JSON.stringify({samples: geometrySamples}, null, 2));
   console.log('Saved geometry measurements:', geometrySamples.length);

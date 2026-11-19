@@ -96,15 +96,22 @@ export class JourneyController {
     const scroller = this.scrollElement;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced || event.ctrlKey || event.metaKey || event.defaultPrevented || event.deltaY === 0) {
+      this.cancelWheel();
       this.schedule();
       return;
     }
     if (event.target instanceof Element) {
-      if (event.target.closest('[data-v22-source-drawer], input, textarea, select, [contenteditable="true"]')) return;
+      if (event.target.closest('[data-v22-source-drawer], input, textarea, select, [contenteditable="true"]')) {
+        this.cancelWheel();
+        return;
+      }
       let ancestor = event.target.parentElement;
       while (ancestor && ancestor !== document.body && ancestor !== document.documentElement) {
         if (ancestor !== this.track && /(auto|scroll)/.test(getComputedStyle(ancestor).overflowY) &&
-            ancestor.scrollHeight > ancestor.clientHeight + 2) return;
+            ancestor.scrollHeight > ancestor.clientHeight + 2) {
+          this.cancelWheel();
+          return;
+        }
         ancestor = ancestor.parentElement;
       }
     }

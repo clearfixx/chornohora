@@ -936,6 +936,102 @@ const check = async (locale, width) => {
   console.log(`Captured React JSX parity checkpoints: ${locale}/${width}`);
 };
 
+// Eleven normalized journey checkpoints cover *transitions*, not only the
+// four summit screenshots. The user-approved redesigned mountains intentionally
+// differ from the immutable v22 reference, so compare unchanged UI geometry
+// and monotonic traveler/route state separately from raw pixel diagnostics.
+const checkReactIntermediateJourney = async () => {
+  const checkpoints = [0, .105, .21, .315, .42, .525, .63, .73, .83, .915, 1];
+  for (const locale of ['uk', 'en']) {
+    for (const width of [390, 1440]) {
+      await command('Emulation.setDeviceMetricsOverride', {width, height:900, deviceScaleFactor:1, mobile:width < 700});
+      await command('Emulation.setTouchEmulationEnabled', {enabled:width < 700, maxTouchPoints:1});
+      await command('Page.navigate', {url:`http://127.0.0.1:${port}/${locale}?preview=react`});
+      for (let attempt = 0; attempt < 80; attempt++) {
+        if (await evaluate("!!document.querySelector('[data-react-journey] .track[data-journey-ready]')")) break;
+        if (attempt === 79) throw new Error(`Intermediate scene not mounted: ${locale}/${width}`);
+        await delay(100);
+      }
+      const geom = await evaluate(`(() => {
+        const track=document.querySelector('[data-react-journey] .track');
+        const stage=track.querySelector('.stage');
+        return {top:track.getBoundingClientRect().top + scrollY,
+          travel:track.offsetHeight-stage.offsetHeight};
+      })()`);
+      assert.ok(geom.travel > 200, `No scroll travel for intermediate checkpoints: ${locale}/${width}`);
+      const samples = [];
+      for (let i = 0; i < checkpoints.length; i++) {
+        const p = checkpoints[i];
+        const state = await evaluate(`(async () => {
+          window.scrollTo({top:${geom.top}+${geom.travel}*${p},behavior:'instant'});
+          await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+          const root=document.querySelector('[data-react-journey]');
+          const hiker=root.querySelector('.hiker');
+          const panel=root.querySelector('.route-ui-v6');
+          const fill=panel.querySelector('.fill');
+          const scene=root.querySelector('.stage');
+          const stageRect=scene.getBoundingClientRect();
+          const active=[...panel.querySelectorAll('.stop.is-active')].map(el=>Number(el.dataset.peak));
+          const routeValue=/scaleX\\(([^)]+)\\)/.exec(fill.style.transform);
+          return {
+            y:scrollY,
+            x:Number.parseFloat(hiker.style.getPropertyValue('--hiker-x')),
+            fill:routeValue?Number(routeValue[1]):NaN,
+            active,
+            started:document.body.classList.contains('route-started'),
+            routeVisible:getComputedStyle(panel).visibility,
+            hikerVisible:getComputedStyle(hiker).visibility,
+            stage: {left:stageRect.left,right:stageRect.right,width:stageRect.width},
+            documentWidth:document.documentElement.scrollWidth,
+          };
+        })()`);
+        const expectedIndex = [.21,.42,.63,.83].reduce((n,anchor,index) => p>=anchor ? index : n,-1);
+        const expected = expectedIndex < 0 ? [] : [expectedIndex+1];
+        assert.deepEqual(state.active, expected,
+          `Active scene drift at ${locale}/${width}/${p}: ${JSON.stringify(state)}`);
+        assert.equal(state.started, p >= .21,
+          `Route visibility state drift at ${locale}/${width}/${p}`);
+        assert.ok(Number.isFinite(state.x) && Number.isFinite(state.fill) &&
+          state.fill >= -.001 && state.fill <= 1.001,
+          `Traveler/route geometry invalid: ${JSON.stringify(state)}`);
+        assert.ok(state.documentWidth <= width+4 && state.stage.width > width*.9,
+          `Intermediate layout overflow at ${locale}/${width}/${p}: ${JSON.stringify(state)}`);
+        const previous = samples.at(-1);
+        if (previous) {
+          assert.ok(state.x >= previous.x-.2 && state.fill >= previous.fill-.01,
+            `Traveler or progress moved backwards during forward scroll: ${JSON.stringify({previous,state})}`);
+          assert.ok(state.y >= previous.y-.5, 'Document scroll moved backward during forward checkpoints');
+        }
+        samples.push({p,...state});
+        if ([1,3,5,7,9].includes(i)) {
+          await capture(locale,width,'react',`transition-${i}`);
+        }
+      }
+      assert.ok(samples.at(-1).x > samples[0].x+25,
+        `Traveler did not cross entire route at ${locale}/${width}`);
+      assert.ok(samples.at(-1).fill > .99, `Route did not reach 100% at ${locale}/${width}`);
+      for (let i = samples.length-2; i>=0; i--) {
+        const p=checkpoints[i];
+        const state = await evaluate(`(async () => {
+          window.scrollTo({top:${geom.top}+${geom.travel}*${p},behavior:'instant'});
+          await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+          const root=document.querySelector('[data-react-journey]');
+          return {
+            x:Number.parseFloat(root.querySelector('.hiker').style.getPropertyValue('--hiker-x')),
+            active:[...root.querySelectorAll('.route-ui-v6 .stop.is-active')].map(el=>Number(el.dataset.peak)),
+          };
+        })()`);
+        const expected=samples[i];
+        assert.deepEqual(state.active,expected.active,
+          `Reverse scroll active stop differs: ${locale}/${width}/${p}`);
+        assert.ok(Math.abs(state.x-expected.x)<.3,
+          `Traveler did not return to its forward checkpoint: ${JSON.stringify({p,state,expected})}`);
+      }
+      console.log(`INTERMEDIATE ${locale}/${width}: ${JSON.stringify(samples.map(({p,x,fill,active})=>({p,x,fill,active})))}`);
+    }
+  }
+};
+
 // Independent React-only responsive and reduced-motion quality gate.
 // Runs after the expensive original/native parity captures, so it does not
 // repeat their geometry/screenshot work for each additional breakpoint.
@@ -1074,6 +1170,7 @@ try {
   await command('Page.enable');
   await command('Runtime.enable');
   for (const locale of ['uk', 'en']) for (const width of [1440, 390]) await check(locale, width);
+  await checkReactIntermediateJourney();
   await checkReactResponsiveAndMotion();
   writeFileSync(join(screenshots, 'geometry.json'), JSON.stringify({samples: geometrySamples}, null, 2));
   console.log('Saved geometry measurements:', geometrySamples.length);

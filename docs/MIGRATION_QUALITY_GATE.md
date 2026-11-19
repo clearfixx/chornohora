@@ -54,3 +54,7 @@ For scroll diagnostics use `/uk?preview=react&trace=1` and copy `window.__journe
 ## Responsive and reduced-motion coverage (React preview)
 
 Chromium also checks the React renderer at widths 320, 375, 430, 768, 1280 and 1920 px, for both languages, including missing navigation/form controls, horizontal document overflow and touch-target geometry. An explicit emulated `prefers-reduced-motion: reduce` checks that button navigation is immediate and native wheel input still scrolls. This is an automated smoke gate, not a substitute for visual/manual acceptance.
+
+## Intermediate visual checkpoints
+
+In addition to the four summit captures, CI saves five transition frames for each of UA/EN × 390/1440; the 11-point trajectory gate asserts active stop, progress fill, traveler coordinate monotonicity and exact re-entry into previously sampled positions during reverse scroll. These are behavioral/geometry safeguards. Pixel reports for intentionally redesigned artwork are diagnostic only and must not be interpreted as a pass/fail equivalence to the older v22 rendering.

@@ -13,12 +13,28 @@ export class JourneyController {
   private wheelFrame = 0;
   private wheelTarget = 0;
   private wheelDirection = 0;
+  private wheelAppliedTop: number | null = null;
+  private traceEnabled = false;
+  private traceLog: Array<{t: number; event: string; y: number; target: number; dir: number; detail?: number}> = [];
   private scrollListenerTarget: Window | HTMLElement | null = null;
   private scrollElement: HTMLElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private mounted = false;
 
   constructor(private readonly track: HTMLElement, readonly store: JourneyStore) {}
+
+  /** Opt-in bounded diagnostic trace: append &trace=1 to the React preview URL. */
+  private trace(event: string, detail?: number): void {
+    if (!this.traceEnabled) return;
+    const y = this.scrollElement?.scrollTop ?? 0;
+    this.traceLog.push({
+      t: Math.round(performance.now()),
+      event, y: Math.round(y),
+      target: Math.round(this.wheelTarget), dir: this.wheelDirection,
+      ...(detail === undefined ? {} : {detail: Math.round(detail)}),
+    });
+    if (this.traceLog.length > 400) this.traceLog.shift();
+  }
 
   private getScroller(): HTMLElement {
     let ancestor = this.track.parentElement;
@@ -50,8 +66,16 @@ export class JourneyController {
   private sample = (): void => {
     this.sampleFrame = 0;
     if (!this.mounted || !this.scrollElement) return;
+    // Detect a scrollbar drag, browser focus restoration or an external
+    // scrollTo while wheel easing is pending. Never pull the user back.
+    if (this.wheelFrame && this.wheelAppliedTop !== null &&
+        Math.abs(this.scrollElement.scrollTop - this.wheelAppliedTop) > 80) {
+      this.trace('external-scroll', this.scrollElement.scrollTop - this.wheelAppliedTop);
+      this.cancelWheel();
+    }
     const travel = this.getTravel();
     const value = travel > 0 ? (this.scrollElement.scrollTop - this.trackTop(this.scrollElement)) / travel : 0;
+    this.trace('sample', value * 10000);
     this.store.setProgress(value);
   };
 
@@ -85,6 +109,7 @@ export class JourneyController {
     const now = scroller.scrollTop;
     const maximum = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
     const direction = Math.sign(event.deltaY);
+    this.trace('wheel', event.deltaY);
     // Use one continuous scrolling policy for the entire React page.
     // Switching from animated to native wheel after Petros caused speed jumps
     // and conflicting scroll momentum on the return trip.
@@ -107,6 +132,7 @@ export class JourneyController {
     event.preventDefault();
     this.wheelDirection = direction;
     this.wheelTarget = target;
+    this.trace('wheel-target');
     if (!this.wheelFrame) this.wheelFrame = requestAnimationFrame(this.tickWheel);
   };
 
@@ -116,7 +142,9 @@ export class JourneyController {
     const scroller = this.scrollElement;
     const remaining = this.wheelTarget - scroller.scrollTop;
     const next = Math.abs(remaining) < 0.8 ? this.wheelTarget : scroller.scrollTop + remaining * 0.18;
+    this.wheelAppliedTop = next;
     scroller.scrollTo({top: next, behavior: 'instant'});
+    this.trace('wheel-frame');
     this.schedule();
     if (Math.abs(this.wheelTarget - next) >= 0.8) this.wheelFrame = requestAnimationFrame(this.tickWheel);
   };
@@ -124,7 +152,9 @@ export class JourneyController {
   private cancelWheel = (): void => {
     if (this.wheelFrame) cancelAnimationFrame(this.wheelFrame);
     this.wheelFrame = 0;
+    this.trace('wheel-cancel');
     this.wheelDirection = 0;
+    this.wheelAppliedTop = null;
     this.wheelTarget = this.scrollElement?.scrollTop ?? 0;
   };
 
@@ -155,6 +185,12 @@ export class JourneyController {
     if (this.mounted) return () => this.unmount();
     this.mounted = true;
     this.scrollElement = this.getScroller();
+    this.traceEnabled = new URLSearchParams(window.location.search).get('trace') === '1';
+    if (this.traceEnabled) {
+      const host = window as Window & {__journeyTrace?: () => typeof this.traceLog};
+      host.__journeyTrace = () => this.traceLog.slice();
+    }
+    this.track.dataset.journeyReady = 'true';
     // Root scroll events are delivered on window/document, not reliably on
     // document.scrollingElement. This was the cause of the static hiker and route.
     this.scrollListenerTarget = this.isDocumentScroller(this.scrollElement) ? window : this.scrollElement;
@@ -242,6 +278,8 @@ export class JourneyController {
     this.sampleFrame = 0;
     this.cancelNavigation();
     this.cancelWheel();
+    delete this.track.dataset.journeyReady;
+    if (this.traceEnabled) delete (window as Window & {__journeyTrace?: () => typeof this.traceLog}).__journeyTrace;
     this.scrollElement = null;
   }
 }

@@ -497,7 +497,7 @@ const check = async (locale, width) => {
   await command('Page.navigate', {url: `http://127.0.0.1:${port}/${locale}?preview=react`});
   let reactReady = false;
   for (let attempt = 0; attempt < 100; attempt++) {
-    reactReady = await evaluate("!!document.querySelector('[data-v22-source-scene] .track .stage')");
+    reactReady = await evaluate("!!document.querySelector('[data-react-journey] .track[data-journey-ready] .stage')");
     if (reactReady) break;
     await delay(150);
   }
@@ -668,9 +668,25 @@ const check = async (locale, width) => {
   // The last peak is NOT the end of the page. Wheel must cross the journey
   // boundary and reveal content below it without using the scrollbar thumb.
   if (locale === 'uk' && width === 1440) {
-    await evaluate(`window.scrollTo({top: ${reactGeometry.top} + ${reactGeometry.travel} * .83, behavior: 'instant'})`);
-    await delay(350);
-    const start = await evaluate('window.scrollY');
+    // Ensure the peak checkpoint is truly reached BEFORE testing wheel input;
+    // previous failures started near Hero, making 'wheel stuck at Petros' a
+    // misleading diagnosis. Do not weaken the wheel exit assertion.
+    const expectedStart = reactGeometry.top + reactGeometry.travel * .83;
+    let start = 0;
+    const setupSamples = [];
+    for (let attempt = 0; attempt < 8; attempt++) {
+      start = await evaluate(`(async () => {
+        window.scrollTo({top: ${expectedStart}, behavior: 'instant'});
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        return window.scrollY;
+      })()`);
+      setupSamples.push(start);
+      if (Math.abs(start - expectedStart) < 12) break;
+      await delay(120);
+    }
+    assert.ok(Math.abs(start - expectedStart) < 12,
+      `Cannot establish Petros checkpoint; diagnose scroll restoration before testing wheel: ${JSON.stringify({expectedStart, setupSamples})}`);
+    await delay(150);
     const pageMax = await evaluate('document.scrollingElement.scrollHeight - document.scrollingElement.clientHeight');
     assert.ok(pageMax > reactGeometry.top + reactGeometry.travel + 100, 'no post-journey content to reach');
     for (let i = 0; i < 26; i++) {

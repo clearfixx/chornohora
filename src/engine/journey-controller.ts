@@ -1,5 +1,5 @@
 import {getStopScrollTop, type JourneyStopId} from '../lib/journey.ts';
-import {easeInOutCubic, journeyDuration} from './journey-easing';
+import {easeInOutCubic, journeyDuration, wheelScrollWasInterrupted} from './journey-easing';
 import {JourneyStore} from './journey-store.ts';
 
 type JourneyTraceEntry = {t: number; event: string; y: number; target: number; dir: number; detail?: number};
@@ -70,8 +70,7 @@ export class JourneyController {
     if (!this.mounted || !this.scrollElement) return;
     // Detect a scrollbar drag, browser focus restoration or an external
     // scrollTo while wheel easing is pending. Never pull the user back.
-    if (this.wheelFrame && this.wheelAppliedTop !== null &&
-        Math.abs(this.scrollElement.scrollTop - this.wheelAppliedTop) > 80) {
+    if (this.wheelFrame && wheelScrollWasInterrupted(this.scrollElement.scrollTop, this.wheelAppliedTop)) {
       this.trace('external-scroll', this.scrollElement.scrollTop - this.wheelAppliedTop);
       this.cancelWheel();
     }
@@ -149,6 +148,18 @@ export class JourneyController {
     this.wheelFrame = 0;
     if (!this.mounted || !this.scrollElement) return;
     const scroller = this.scrollElement;
+    // Check BEFORE writing this RAF frame: a scrollbar drag or another scroll
+    // between frames must win over the pending wheel momentum.
+    if (wheelScrollWasInterrupted(scroller.scrollTop, this.wheelAppliedTop)) {
+      this.trace('external-scroll', scroller.scrollTop - this.wheelAppliedTop!);
+      this.cancelWheel();
+      this.schedule();
+      return;
+    }
+    // Layout changes can shrink the valid range while easing is in flight.
+    // Never keep animating toward an unreachable stale destination.
+    const maximum = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    this.wheelTarget = Math.max(0, Math.min(maximum, this.wheelTarget));
     const remaining = this.wheelTarget - scroller.scrollTop;
     const next = Math.abs(remaining) < 0.8 ? this.wheelTarget : scroller.scrollTop + remaining * 0.18;
     this.wheelAppliedTop = next;

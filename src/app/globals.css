@@ -230,9 +230,8 @@ body:has([data-v22-source-scene]:not([data-react-journey])).route-menu-open .rou
 [data-react-journey] .final .final-heading,
 [data-react-journey] .final .lead { position: relative; }
 
-/* The supplied SVG facets previously used an UNDECLARED --lit variable,
-   which fell back to black. Their color-mix fills now follow the animated
-   mountain variables throughout dawn, day, evening and night. */
+/* The supplied reference defines a separate --lit facet palette; the
+   React-only keyframes below animate it alongside the three mountain planes. */
 
 /* Night-only lunar treatment. Retain sun rays in daytime and the original
    scroll-linked positioning/size of the orb in all four scenes. */
@@ -269,4 +268,25 @@ body:has([data-v22-source-scene]:not([data-react-journey])).route-menu-open .rou
 }
 @media (prefers-reduced-motion: reduce) {
   [data-react-journey] .moon-craters {transition: none}
+}
+
+
+/* Exact mountain and illuminated-facet colors from the approved HTML reference
+   "Чорногора1 — чотири неба.html". Preserve all existing sky/orb/cloud
+   values and scroll percentages from the current React renderer.
+   Scope to the React preview: the immutable v22 renderer stays unchanged. */
+@property --lit { syntax: '<color>'; inherits: true; initial-value: #FF8F2E; }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    [data-react-journey] .track .stage { animation-name: journey-reference-mountains; }
+  }
+}
+@keyframes journey-reference-mountains {
+
+0%{--s1:#140B4A;--s2:#4B2395;--s3:#FF6F61;--m1:#7C4DA8;--m2:#3A2C78;--m3:#2A1C5C;--m4:#20104F;--orb:#FFD166;--glow:#FF5A8A66;--cl:#FF9AB88C;--lit:#FF8F2E}
+16%,28%{--s1:#6B2FD6;--s2:#FF4F8B;--s3:#FFC247;--m1:#7C4DA8;--m2:#3A2C78;--m3:#2A1C5C;--m4:#2B1160;--orb:#FFF1A8;--glow:#FFE06699;--cl:#FFD6E4D9;--lit:#FF8F2E}
+36%,49%{--s1:#0B57F0;--s2:#1E90F5;--s3:#D4F77A;--m1:#5FD0C8;--m2:#1C9C8E;--m3:#0E6F68;--m4:#064A45;--orb:#FFFBD0;--glow:#FFFFC88C;--cl:#FFFFFFF2;--lit:#E8FFB0}
+57%,70%{--s1:#3A1590;--s2:#FF3E7F;--s3:#FF9A2E;--m1:#D45AA8;--m2:#7A2A8C;--m3:#5C1D80;--m4:#2E0F58;--orb:#FF5A2B;--glow:#FF5A2B8C;--cl:#FFAA82CC;--lit:#FFB070}
+78%,88%{--s1:#060833;--s2:#1B1A75;--s3:#12A3A0;--m1:#3446B0;--m2:#222C88;--m3:#161C62;--m4:#0A0E38;--orb:#F2F0FF;--glow:#B4BEFF73;--cl:#5A64BE59;--lit:#6F86FF}
+98%,100%{--s1:#6B2FD6;--s2:#FF4F8B;--s3:#FFC247;--m1:#7C4DA8;--m2:#3A2C78;--m3:#2A1C5C;--m4:#2B1160;--orb:#FFF1A8;--glow:#FFE06699;--cl:#FFD6E4D9;--lit:#FF8F2E}
 }

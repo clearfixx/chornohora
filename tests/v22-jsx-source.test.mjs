@@ -107,10 +107,21 @@ test('closing heading is not subject to peak-name exit animation', () => {
   assert.ok(final.includes('Ранок знову'));
   assert.doesNotMatch(final,/className="nmi"/);
 });
-test('mountain facets use active palette variables and not undefined --lit', () => {
+test('mountain facets and all four scenes use the exact reference palette', () => {
   const mountains=readFileSync('src/features/journey/components/scenes/MountainAndCloudLayers.tsx','utf8');
-  assert.doesNotMatch(mountains,/var\(--lit\)/);
-  assert.equal((mountains.match(/color-mix\(in srgb, var\(--m[23]\)/g) || []).length,2);
+  const css=readFileSync('src/app/globals.css','utf8');
+  assert.equal((mountains.match(/fill:"var\(--lit\)"/g) || []).length,2);
+  assert.match(css, /@property --lit/);
+  assert.match(css, /animation-name: journey-reference-mountains/);
+  for(const [m1,m2,m3,lit] of [
+    ['#7C4DA8','#3A2C78','#2A1C5C','#FF8F2E'],
+    ['#5FD0C8','#1C9C8E','#0E6F68','#E8FFB0'],
+    ['#D45AA8','#7A2A8C','#5C1D80','#FFB070'],
+    ['#3446B0','#222C88','#161C62','#6F86FF'],
+  ]) {
+    assert.ok(css.includes(`--m1:${m1};--m2:${m2};--m3:${m3}`));
+    assert.ok(css.includes(`--lit:${lit}`));
+  }
 });
 test('lunar craters are present, and sunlight rays are retained for daytime', () => {
   const sky=readFileSync('src/features/journey/components/scenes/SkyAtmosphere.tsx','utf8');

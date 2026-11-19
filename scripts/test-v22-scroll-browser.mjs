@@ -515,6 +515,31 @@ const check = async (locale, width) => {
     })()`);
     await delay(650);
     await capture(locale, width, 'react', name);
+    if (name === 'brebeneskul' || name === 'petros') {
+      const sceneMotion = await evaluate(`(() => {
+        const route = document.querySelector('[data-react-journey] .route-ui-v6');
+        const hiker = document.querySelector('[data-react-journey] .stage .hiker');
+        const fill = route?.querySelector('.fill');
+        return {
+          routeVisible: !!route && getComputedStyle(route).visibility === 'visible',
+          hikerVisible: !!hiker && getComputedStyle(hiker).visibility === 'visible',
+          hikerOffset: hiker ? getComputedStyle(hiker).translate : null,
+          fillTransform: fill ? getComputedStyle(fill).transform : null,
+          active: route?.querySelector('.stop.is-active')?.getAttribute('data-peak'),
+          current: route?.querySelector('[aria-current="step"]')?.getAttribute('data-peak'),
+        };
+      })()`);
+      const expectedPeak = name === 'brebeneskul' ? '2' : '4';
+      assert.equal(sceneMotion.active, expectedPeak, `active peak mismatch: ${JSON.stringify(sceneMotion)}`);
+      assert.equal(sceneMotion.current, expectedPeak, 'route aria-current must follow progress');
+      assert.ok(sceneMotion.routeVisible && sceneMotion.hikerVisible,
+        `React route/traveler missing at ${name}: ${JSON.stringify(sceneMotion)}`);
+      assert.ok(sceneMotion.hikerOffset && sceneMotion.hikerOffset !== 'none',
+        `React traveler did not move: ${JSON.stringify(sceneMotion)}`);
+      assert.ok(sceneMotion.fillTransform && sceneMotion.fillTransform !== 'none',
+        `React route progress did not advance: ${JSON.stringify(sceneMotion)}`);
+    }
+
   }
   // A click must animate through intermediate positions, not jump instantly.
   // The following checks run in real Chromium with browser input/event handling.

@@ -99,3 +99,24 @@ test('four reference SVG previews, three-icon facts and night-only meteor compon
     assert.ok(metrics.includes(text));
   assert.match(meteors,/progress >= .76 && progress < .94/);
 });
+
+test('closing heading is not subject to peak-name exit animation', () => {
+  const content=readFileSync('src/features/journey/components/JourneyLocationContent.tsx','utf8');
+  const final=content.slice(content.indexOf('className="final fn"'));
+  assert.ok(final.includes('className="name final-heading"'));
+  assert.ok(final.includes('Ранок знову'));
+  assert.doesNotMatch(final,/className="nmi"/);
+});
+test('mountain facets use active palette variables and not undefined --lit', () => {
+  const mountains=readFileSync('src/features/journey/components/scenes/MountainAndCloudLayers.tsx','utf8');
+  assert.doesNotMatch(mountains,/var\(--lit\)/);
+  assert.equal((mountains.match(/color-mix\(in srgb, var\(--m[23]\)/g) || []).length,2);
+});
+test('lunar craters are present, and sunlight rays are retained for daytime', () => {
+  const sky=readFileSync('src/features/journey/components/scenes/SkyAtmosphere.tsx','utf8');
+  const css=readFileSync('src/app/globals.css','utf8');
+  assert.equal((sky.match(/className="moon-crater moon-crater-/g)||[]).length,4);
+  assert.ok(sky.includes('className="rays"'));
+  assert.match(css,/:has\(\.shooting-stars\.is-active\) \.orb \.rays/);
+  assert.match(css,/:has\(\.shooting-stars\.is-active\) \.orb \.moon-craters/);
+});

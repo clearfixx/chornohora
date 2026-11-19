@@ -48,7 +48,7 @@ export function JourneyLocationContent() {
 <li><b>Ніч</b><span>Холодно навіть улітку, тож спальник має бути теплим.</span></li>
 </ul></aside>
 <section className="final fn" style={{"left":"6vw","top":"112px","width":"min(920px,88vw)","zIndex":"12"} as React.CSSProperties}>
-<h2 className="name" style={{"marginTop":"0"} as React.CSSProperties}><span className="nmi">Ранок знову</span></h2>
+<h2 className="name final-heading" style={{"marginTop":"0"} as React.CSSProperties}>Ранок знову</h2>
 <p className="lead">Вирушайте разом із сонцем. Група невелика, місць мало.</p>
 <div style={{"marginTop":"28px"} as React.CSSProperties}><a className="cta" href="#book" style={{"background":"#FFE14D"} as React.CSSProperties} data-journey-action="goBook">Забронювати</a></div>
 </section>

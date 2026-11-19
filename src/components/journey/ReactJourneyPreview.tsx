@@ -37,26 +37,45 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
     const drawer = document.getElementById('route-drawer');
     const prior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const frame = requestAnimationFrame(() => drawer?.querySelector<HTMLElement>('.route-drawer-close')?.focus({preventScroll: true}));
+    const getFocusable = () => drawer
+      ? [...drawer.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+        .filter(el => !el.hasAttribute('inert') && getComputedStyle(el).visibility !== 'hidden')
+      : [];
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
         setMenuOpen(false);
       } else if (event.key === 'Tab' && drawer) {
-        const items = [...drawer.querySelectorAll<HTMLElement>('a[href],button:not([disabled])')];
-        if (!items.length) return;
-        if (event.shiftKey && document.activeElement === items[0]) {
-          event.preventDefault(); items.at(-1)?.focus();
-        } else if (!event.shiftKey && document.activeElement === items.at(-1)) {
-          event.preventDefault(); items[0].focus();
+        const items = getFocusable();
+        if (!items.length) {
+          event.preventDefault();
+          drawer.focus({preventScroll: true});
+          return;
+        }
+        const first = items[0];
+        const last = items.at(-1)!;
+        const active = document.activeElement;
+        if (event.shiftKey && (active === first || !drawer.contains(active))) {
+          event.preventDefault(); last.focus({preventScroll: true});
+        } else if (!event.shiftKey && (active === last || !drawer.contains(active))) {
+          event.preventDefault(); first.focus({preventScroll: true});
         }
       }
     };
+    const onFocusIn = (event: FocusEvent) => {
+      if (drawer && event.target instanceof Node && !drawer.contains(event.target)) {
+        const first = getFocusable()[0];
+        (first ?? drawer).focus({preventScroll: true});
+      }
+    };
     window.addEventListener('keydown', onKey);
+    document.addEventListener('focusin', onFocusIn);
     return () => {
       document.body.classList.remove('route-menu-open');
       window.removeEventListener('keydown', onKey);
+      document.removeEventListener('focusin', onFocusIn);
       cancelAnimationFrame(frame);
-      prior?.focus({preventScroll: true});
+      if (prior?.isConnected) prior.focus({preventScroll: true});
     };
   }, [menuOpen]);
 

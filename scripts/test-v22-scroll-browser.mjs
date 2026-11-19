@@ -794,6 +794,53 @@ const check = async (locale, width) => {
     const back = await evaluate('window.scrollY');
     assert.ok(back < after - 80, 'reverse wheel did not return toward journey');
   }
+  // React drawer is a true focus-trapped dialog, not merely an animated sidebar.
+  if (locale === 'uk' && width === 1440) {
+    await evaluate('window.scrollTo({top: 0, behavior: "instant"})');
+    await delay(180);
+    const opened = await evaluate(`(() => {
+      const toggle = document.querySelector('[data-react-journey] [data-route-menu-toggle]');
+      toggle?.focus({preventScroll: true});
+      toggle?.click();
+      return !!toggle;
+    })()`);
+    assert.ok(opened, 'React menu toggle not found');
+    await delay(300);
+    const dialogOpen = await evaluate(`(() => {
+      const el = document.querySelector('#route-drawer');
+      return {role:el?.getAttribute('role'), modal:el?.getAttribute('aria-modal'),
+        hidden:el?.getAttribute('aria-hidden'), inert:el?.inert,
+        focus:el?.contains(document.activeElement)};
+    })()`);
+    assert.deepEqual(dialogOpen, {role:'dialog', modal:'true', hidden:'false', inert:false, focus:true},
+      `React menu is not a keyboard-accessible dialog: ${JSON.stringify(dialogOpen)}`);
+    const trapped = await evaluate(`(() => {
+      const dialog = document.querySelector('#route-drawer');
+      const button = dialog.querySelector('[data-route-menu-close]');
+      const last = [...dialog.querySelectorAll('a[href],button:not([disabled])')].at(-1);
+      last.focus({preventScroll:true});
+      window.dispatchEvent(new KeyboardEvent('keydown', {key:'Tab', bubbles:true, cancelable:true}));
+      const forward = document.activeElement === button;
+      button.focus({preventScroll:true});
+      window.dispatchEvent(new KeyboardEvent('keydown', {key:'Tab', shiftKey:true, bubbles:true, cancelable:true}));
+      const backward = document.activeElement === last;
+      document.querySelector('[data-react-journey] .nav-book-cta').focus({preventScroll:true});
+      const bounced = dialog.contains(document.activeElement);
+      return {forward,backward,bounced};
+    })()`);
+    assert.ok(trapped.forward && trapped.backward && trapped.bounced,
+      `React menu focus escaped dialog: ${JSON.stringify(trapped)}`);
+    await evaluate("window.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', bubbles:true, cancelable:true}))");
+    await delay(180);
+    const closed = await evaluate(`(() => {
+      const drawer = document.querySelector('#route-drawer');
+      return {hidden:drawer.getAttribute('aria-hidden'),inert:drawer.inert,
+        modal:drawer.getAttribute('aria-modal'),
+        focus:document.activeElement === document.querySelector('[data-react-journey] [data-route-menu-toggle]')};
+    })()`);
+    assert.deepEqual(closed,{hidden:'true',inert:true,modal:null,focus:true},
+      `React menu did not restore keyboard focus: ${JSON.stringify(closed)}`);
+  }
   // A click must animate through intermediate positions, not jump instantly.
   // The following checks run in real Chromium with browser input/event handling.
   if (locale === 'uk' && width === 1440) {

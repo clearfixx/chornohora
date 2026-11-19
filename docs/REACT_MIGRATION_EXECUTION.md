@@ -109,3 +109,7 @@ Approved source: the user's bundled `Чорногора1 — чотири неб
 ## Next integration — 2026-11-19
 
 The React preview now uses next-intl for the visible navbar, Hero, four location descriptions, route drawer, footer, route buttons and floating tooltip details in UA/EN. Both language links explicitly retain `?preview=react`, rather than silently returning to the old iframe route. Locale-specific metadata is generated server-side. The booking form has a React-owned validated **draft preview and copy** workflow; real transmission remains unimplemented and MUST NOT be claimed to users. Server submission needs a configured organizer recipient, validation, abuse protection and consent retention before enabling. Legacy canonical routes remain unchanged. Scroll/visual acceptance and client interactions are release blockers.
+
+## Accessibility checkpoint — 2026-11-19
+
+The React route drawer is labelled as a modal dialog only while open; its focus loop handles Tab and Shift+Tab, attempted focus escape, Escape dismissal and focus restoration. A Chromium regression checks this behavior without changing the approved visual design. The page retains native keyboard and touch scrolling; reduced-motion and responsive acceptance remain required before switching the canonical route.

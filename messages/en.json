@@ -129,6 +129,14 @@
     "tooltipShortDesc4": "One of Chornohora's highest summits, ending the day beneath the stars.",
     "tooltipElevation": "Elevation",
     "tooltipCoords": "Coordinates",
-    "bookingDatePast": "Choose today's date or a future departure date."
+    "bookingDatePast": "Choose today's date or a future departure date.",
+    "footerGalleryAlt1": "Carpathian illustration: sunrise over the mountains",
+    "footerGalleryAlt2": "Carpathian illustration: Lake Brebeneskul",
+    "footerGalleryAlt3": "Carpathian illustration: mountain forest",
+    "footerGalleryAlt4": "Carpathian illustration: Nesamovyte at sunset",
+    "footerGalleryAlt5": "Carpathian illustration: trail to Petros",
+    "footerGalleryAlt6": "Carpathian illustration: starry night sky",
+    "footerDemoProfile": "{network} — demo profile",
+    "footerDemoSocialTitle": "{network} · demo"
   }
 }

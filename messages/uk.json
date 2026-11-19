@@ -129,6 +129,14 @@
     "tooltipShortDesc4": "Одна з найвищих вершин Чорногори. Завершення мандрівки під зоряним небом.",
     "tooltipElevation": "Висота",
     "tooltipCoords": "Координати",
-    "bookingDatePast": "Оберіть сьогоднішню або майбутню дату виходу."
+    "bookingDatePast": "Оберіть сьогоднішню або майбутню дату виходу.",
+    "footerGalleryAlt1": "Ілюстрація Карпат: Світанок над горами",
+    "footerGalleryAlt2": "Ілюстрація Карпат: Озеро Бребенескул",
+    "footerGalleryAlt3": "Ілюстрація Карпат: Гірський ліс",
+    "footerGalleryAlt4": "Ілюстрація Карпат: Несамовите на заході",
+    "footerGalleryAlt5": "Ілюстрація Карпат: Стежка до Петроса",
+    "footerGalleryAlt6": "Ілюстрація Карпат: Нічне небо",
+    "footerDemoProfile": "{network} — демонстраційний профіль",
+    "footerDemoSocialTitle": "{network} · демонстрація"
   }
 }

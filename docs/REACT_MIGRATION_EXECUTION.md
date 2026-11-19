@@ -121,3 +121,7 @@ The browser suite adds a lightweight React-only viewport matrix (320/375/430/768
 ## Eleven-point trajectory acceptance
 
 The Chromium suite now samples the React implementation at normalized progress 0, .105, .21, .315, .42, .525, .63, .73, .83, .915 and 1 in both languages and at mobile/desktop widths. It checks traveler geometry, route fill, current summit, document overflow and forward/reverse state equality; five in-between frames per combination are saved as screenshot artifacts. Deliberate reference-driven mountain and tooltip redesigns mean raw differences from original v22 cannot be treated as automatic visual regressions. These checks target preserved journey mechanics; human review of the changed artwork remains mandatory.
+
+## Footer UA/EN accessibility audit
+
+The React footer gallery now has six properly localized descriptive image alternatives. Five social-demo link accessible names and titles use `next-intl` placeholders; the back-to-top title also follows the current locale. Chromium checks these attributes in both languages. The demo-only social links and approved visual presentation remain unchanged.

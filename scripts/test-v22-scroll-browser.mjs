@@ -1189,6 +1189,23 @@ const checkReactResponsiveAndMotion = async () => {
       assert.ok(measures.menu.right <= width - 2 && measures.menu.left >= 2 &&
         measures.language.right <= width - 2 && measures.language.left >= 2,
         `React header controls overflow viewport at ${locale}/${width}: ${JSON.stringify(measures)}`);
+      if (width === 1280) {
+        const gallery = await evaluate(`(() => ({
+          alts:[...document.querySelectorAll('[data-react-journey] .instagram-grid img')].map(img=>img.alt),
+          social:[...document.querySelectorAll('[data-react-journey] .social-links .social-icon')].map(a=>a.getAttribute('aria-label')),
+          titles:[...document.querySelectorAll('[data-react-journey] .social-links .social-icon')].map(a=>a.title),
+        }))()`);
+        assert.equal(gallery.alts.length,6,'Six descriptive gallery illustrations expected');
+        assert.ok(gallery.alts.every(alt=>alt.length>15),
+          `Missing gallery alternative text: ${JSON.stringify(gallery)}`);
+        assert.equal(gallery.social.length,5,'Five demo social links expected');
+        assert.ok(gallery.social.every(label=>label && label.includes(locale==='en'?'demo profile':'демонстраційний профіль')),
+          `Social accessibility labels not localized: ${JSON.stringify(gallery)}`);
+        assert.ok(gallery.titles.every(title=>title.includes(locale==='en'?'demo':'демонстрація')),
+          'Social demo titles were not localized');
+        if(locale==='en') assert.ok(gallery.alts.every(alt=>alt.startsWith('Carpathian illustration:')),
+          'Gallery image descriptions remain untranslated');
+      }
       console.log(`RESPONSIVE ${locale}/${width}: ${JSON.stringify(measures)}`);
     }
   }

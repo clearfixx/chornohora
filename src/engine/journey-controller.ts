@@ -2,6 +2,8 @@ import {getStopScrollTop, type JourneyStopId} from '../lib/journey.ts';
 import {easeInOutCubic, journeyDuration} from './journey-easing';
 import {JourneyStore} from './journey-store.ts';
 
+type JourneyTraceEntry = {t: number; event: string; y: number; target: number; dir: number; detail?: number};
+
 /**
  * Browser scrolling remains native for wheel, touch and keyboard.
  * Only explicit navigation animates at a controlled speed.
@@ -15,7 +17,7 @@ export class JourneyController {
   private wheelDirection = 0;
   private wheelAppliedTop: number | null = null;
   private traceEnabled = false;
-  private traceLog: Array<{t: number; event: string; y: number; target: number; dir: number; detail?: number}> = [];
+  private traceLog: JourneyTraceEntry[] = [];
   private scrollListenerTarget: Window | HTMLElement | null = null;
   private scrollElement: HTMLElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
@@ -187,7 +189,7 @@ export class JourneyController {
     this.scrollElement = this.getScroller();
     this.traceEnabled = new URLSearchParams(window.location.search).get('trace') === '1';
     if (this.traceEnabled) {
-      const host = window as Window & {__journeyTrace?: () => typeof this.traceLog};
+      const host = window as Window & {__journeyTrace?: () => JourneyTraceEntry[]};
       host.__journeyTrace = () => this.traceLog.slice();
     }
     this.track.dataset.journeyReady = 'true';
@@ -279,7 +281,7 @@ export class JourneyController {
     this.cancelNavigation();
     this.cancelWheel();
     delete this.track.dataset.journeyReady;
-    if (this.traceEnabled) delete (window as Window & {__journeyTrace?: () => typeof this.traceLog}).__journeyTrace;
+    if (this.traceEnabled) delete (window as Window & {__journeyTrace?: () => JourneyTraceEntry[]}).__journeyTrace;
     this.scrollElement = null;
   }
 }

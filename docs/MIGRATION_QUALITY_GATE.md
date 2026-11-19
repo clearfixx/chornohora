@@ -62,3 +62,7 @@ In addition to the four summit captures, CI saves five transition frames for eac
 ## Browser scroll ownership stress
 
 The regression suite covers manual scrollbar movement during wheel easing, form-field wheel ownership and resize during programmatic navigation. Its trace must record external interruption, and the page may not spring back. Manual reverse-gesture acceptance remains a release requirement.
+
+## React CSS isolation
+
+The React preview references `/react-journey.css` instead of separately loading original legacy CSS at runtime. Its committed content must equal the normalized `public/legacy/styles.css` followed by `public/v22-react-scene.css` exactly; this preserves CSS cascade order while decoupling the rendered React route from the legacy stylesheet URL. Source and Chromium smoke gates enforce the contract. Frozen reference and native compatibility modes are still present and not replaced.

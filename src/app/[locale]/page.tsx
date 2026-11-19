@@ -16,7 +16,7 @@ export default async function HomePage({searchParams}: {searchParams: Promise<{p
     // explicit comparison mode until visual and interaction parity is proven.
     const {preview} = await searchParams;
     if (preview === 'react') {
-      return <><link rel="stylesheet" href="/legacy/styles.css" /><link rel="stylesheet" href="/v22-react-scene.css" /><ReactJourneyPreview locale={locale === 'en' ? 'en' : 'uk'} /></>;
+      return <><link rel="stylesheet" href="/react-journey.css" /><ReactJourneyPreview locale={locale === 'en' ? 'en' : 'uk'} /></>;
     }
     if (preview === 'native') {
       const {html, drawerHtml, inlineCss} = getV22SourceScene();

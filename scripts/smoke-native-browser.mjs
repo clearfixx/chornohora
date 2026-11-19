@@ -57,7 +57,9 @@ try {
     const react = await dump(`/${locale}?preview=react`);
     assert.ok(react.includes('class="track"') && react.includes('class="stage"'), 'React JSX stage missing');
     assert.ok(!react.includes('legacy-journey__frame'), 'React preview must not use iframe');
-    assert.ok(react.includes('/v22-react-scene.css'), 'React stylesheet must be linked externally');
+    assert.ok(react.includes('/react-journey.css'), 'React standalone stylesheet must be linked externally');
+    assert.ok(!react.includes('href="/legacy/styles.css"') && !react.includes('href="/v22-react-scene.css"'),
+      'React must not load frozen legacy CSS as a separate runtime dependency');
     assert.ok(!react.includes('<style>/* cyrillic-ext */'), 'React preview must not embed legacy CSS as inline style');
     assert.ok((react.match(/preview=react/g) || []).length >= 2,
       'language switch must retain the experimental React preview');

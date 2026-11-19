@@ -977,6 +977,9 @@ const checkReactResponsiveAndMotion = async () => {
         `React controls missing at ${locale}/${width}: ${JSON.stringify(measures)}`);
       assert.ok(measures.menu.width >= 32 && measures.menu.height >= 32,
         `menu touch target too small at ${locale}/${width}: ${JSON.stringify(measures)}`);
+      assert.ok(measures.menu.right <= width - 2 && measures.menu.left >= 2 &&
+        measures.language.right <= width - 2 && measures.language.left >= 2,
+        `React header controls overflow viewport at ${locale}/${width}: ${JSON.stringify(measures)}`);
       console.log(`RESPONSIVE ${locale}/${width}: ${JSON.stringify(measures)}`);
     }
   }
@@ -1003,7 +1006,9 @@ const checkReactResponsiveAndMotion = async () => {
         travel:track.offsetHeight - stage.offsetHeight,
         reduced:matchMedia('(prefers-reduced-motion: reduce)').matches};
     })()`);
-    assert.ok(geometry.reduced && geometry.travel > 200);
+    console.log('REDUCED-MOTION-GEOMETRY', JSON.stringify(geometry));
+    assert.ok(geometry.reduced, `Chromium did not emulate reduced motion: ${JSON.stringify(geometry)}`);
+    assert.ok(geometry.travel > 200, `Reduced-motion stage has no travel: ${JSON.stringify(geometry)}`);
     await evaluate("document.querySelector('[data-react-journey] a.mouse')?.click()");
     await delay(150);
     const position = await evaluate("window.scrollY");

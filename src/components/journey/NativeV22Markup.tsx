@@ -2,7 +2,7 @@
  * This is a checked-in React JSX stage, NOT an HTML injection.
  * Interaction wiring and visual/browser acceptance are separate migration gates.
  */
-import type * as React from &apos;react&apos;;
+import type * as React from 'react';
 
 export function NativeV22StageMarkup() {
   return (

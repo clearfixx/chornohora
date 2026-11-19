@@ -805,7 +805,15 @@ const check = async (locale, width) => {
       return !!toggle;
     })()`);
     assert.ok(opened, 'React menu toggle not found');
-    await delay(300);
+    // Await actual focus transfer rather than assuming animation completion
+    // after a hardcoded sleep (the drawer has a 580 ms transform transition).
+    let focused = false;
+    for (let attempt = 0; attempt < 25; attempt++) {
+      focused = await evaluate("(() => { const el = document.querySelector('#route-drawer'); return !!el && el.contains(document.activeElement); })()");
+      if (focused) break;
+      await delay(60);
+    }
+    assert.ok(focused, 'React drawer did not acquire focus after opening');
     const dialogOpen = await evaluate(`(() => {
       const el = document.querySelector('#route-drawer');
       return {role:el?.getAttribute('role'), modal:el?.getAttribute('aria-modal'),

@@ -1,6 +1,6 @@
 'use client';
 
-import {memo, useCallback, useEffect, useRef, useState} from 'react';
+import {memo, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useJourneyProgress} from '@/hooks/useJourneyProgress';
 import {JourneyStore} from '@/engine/journey-store';
 import {JourneyStage} from '@/features/journey/components/JourneyStage';
@@ -31,12 +31,21 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
   }, [progress]);
   useEffect(() => () => document.body.classList.remove('route-started'), []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.body.classList.toggle('route-menu-open', menuOpen);
     if (!menuOpen) return () => document.body.classList.remove('route-menu-open');
     const drawer = document.getElementById('route-drawer');
     const prior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const frame = requestAnimationFrame(() => drawer?.querySelector<HTMLElement>('.route-drawer-close')?.focus({preventScroll: true}));
+    const focusInitial = () => {
+      const first = drawer?.querySelector<HTMLElement>('.route-drawer-close');
+      if (first && document.activeElement !== first) first.focus({preventScroll: true});
+      else if (!first) drawer?.focus({preventScroll: true});
+    };
+    // Visibility and transform transitions can defer focusability until the
+    // drawer is painted. Try immediately and after paint, then at transition end.
+    focusInitial();
+    const frame = requestAnimationFrame(focusInitial);
+    drawer?.addEventListener('transitionend', focusInitial, {once: true});
     const getFocusable = () => drawer
       ? [...drawer.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])')]
         .filter(el => !el.hasAttribute('inert') && getComputedStyle(el).visibility !== 'hidden')
@@ -75,6 +84,7 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
       window.removeEventListener('keydown', onKey);
       document.removeEventListener('focusin', onFocusIn);
       cancelAnimationFrame(frame);
+      drawer?.removeEventListener('transitionend', focusInitial);
       if (prior?.isConnected) prior.focus({preventScroll: true});
     };
   }, [menuOpen]);

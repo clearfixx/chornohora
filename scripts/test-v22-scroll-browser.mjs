@@ -965,7 +965,7 @@ const check = async (locale, width) => {
       };
     })()`);
     assert.equal(prepared.heading, 'Заявка підготовлена');
-    assert.equal(await evaluate("document.activeElement?.classList.contains('journey-booking-preview') ?? document.activeElement?.tagName === 'H3'"), true,
+    assert.equal(await evaluate("document.activeElement === document.querySelector('.journey-booking-preview h3')"), true,
       'Booking preview heading should receive keyboard focus');
     assert.ok(prepared.text?.includes('+380000000000') && prepared.text.includes('3') &&
       prepared.notice?.includes('не надіслані') && !prepared.stillForm,

@@ -1,11 +1,14 @@
 'use client';
 
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {memo, useCallback, useEffect, useRef, useState} from 'react';
 import {useJourneyProgress} from '@/hooks/useJourneyProgress';
 import {NativeV22StageMarkup, NativeV22DrawerMarkup} from './NativeV22Markup';
 import type {JourneyStopId} from '@/lib/journey';
 
 type Locale = 'uk' | 'en';
+// The 45kB SVG/JSX scene must NOT reconcile at every scroll progress tick.
+const MemoStage = memo(NativeV22StageMarkup);
+const MemoDrawer = memo(NativeV22DrawerMarkup);
 const actionToStop: Record<string, JourneyStopId> = {
   goGovla: 'govla', goBreb: 'brebeneskul',
   goNes: 'nesamovyte', goPetros: 'petros',
@@ -18,12 +21,12 @@ const drawerToStop: Record<string, JourneyStopId> = {
 export function ReactJourneyPreview({locale}: {locale: Locale}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const {progress, navigateToStop} = useJourneyProgress(trackRef);
+  const {progress, navigateToStop, navigateToTop, navigateToElement} = useJourneyProgress(trackRef);
 
   useEffect(() => {
     document.body.classList.toggle('route-started', progress >= 0.2095);
-    return () => document.body.classList.remove('route-started');
   }, [progress]);
+  useEffect(() => () => document.body.classList.remove('route-started'), []);
 
   useEffect(() => {
     document.body.classList.toggle('route-menu-open', menuOpen);
@@ -57,14 +60,15 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
   const navigate = useCallback((action: string) => {
     setMenuOpen(false);
     if (action === 'goStart') {
-      window.scrollTo({top: 0, behavior: 'smooth'});
+      navigateToTop();
     } else if (action === 'goBook') {
-      document.getElementById('book')?.scrollIntoView({behavior: 'smooth'});
+      const section = document.getElementById('book');
+      if (section) navigateToElement(section);
     } else {
       const stop = actionToStop[action];
       if (stop) navigateToStop(stop);
     }
-  }, [navigateToStop]);
+  }, [navigateToStop, navigateToTop, navigateToElement]);
 
   const navigateFromDrawer = useCallback((target: string) => {
     if (target === 'book') navigate('goBook');
@@ -75,15 +79,18 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
     }
   }, [navigate, navigateToStop]);
 
+  const toggleMenu = useCallback(() => setMenuOpen(value => !value), []);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+
   return <>
-    <div data-v22-source-scene="">
-      <NativeV22StageMarkup
+    <div data-v22-source-scene="" data-react-journey="">
+      <MemoStage
         trackRef={trackRef} locale={locale} menuOpen={menuOpen}
-        onAction={navigate} onToggleMenu={() => setMenuOpen(value => !value)}
+        onAction={navigate} onToggleMenu={toggleMenu}
       />
     </div>
     <div data-v22-source-drawer="">
-      <NativeV22DrawerMarkup open={menuOpen} onDismiss={() => setMenuOpen(false)} onNavigate={navigateFromDrawer}/>
+      <MemoDrawer open={menuOpen} onDismiss={closeMenu} onNavigate={navigateFromDrawer}/>
     </div>
   </>;
 }

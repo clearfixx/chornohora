@@ -28,5 +28,7 @@ export function useJourneyProgress(trackRef: RefObject<HTMLElement | null>) {
   }, [trackRef, store]);
 
   const navigateToStop = useCallback((id: JourneyStopId) => controller?.navigate(id), [controller]);
-  return {...snapshot, navigateToStop};
+  const navigateToTop = useCallback(() => controller?.navigateToTop(), [controller]);
+  const navigateToElement = useCallback((element: HTMLElement) => controller?.navigateToElement(element), [controller]);
+  return {...snapshot, navigateToStop, navigateToTop, navigateToElement};
 }

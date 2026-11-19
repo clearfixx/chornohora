@@ -1,16 +1,17 @@
 import {getStopScrollTop, type JourneyStopId} from '../lib/journey.ts';
+import {easeInOutCubic, journeyDuration} from './journey-easing';
 import {JourneyStore} from './journey-store.ts';
 
 /**
- * Browser adapter for a React-owned journey scene.
- * Native wheel/touch/keyboard scrolling remains browser-owned: no global
- * preventDefault wheel handler, and no competing animation loops.
+ * Browser scrolling remains native for wheel, touch and keyboard.
+ * Only explicit navigation animates at a controlled speed.
+ * All measurements are read-only; React owns the rendered scene.
  */
 export class JourneyController {
-  private frame = 0;
+  private sampleFrame = 0;
+  private navigationFrame = 0;
   private scrollElement: HTMLElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
-  private stopTimer = 0;
   private mounted = false;
 
   constructor(private readonly track: HTMLElement, readonly store: JourneyStore) {}
@@ -28,7 +29,8 @@ export class JourneyController {
   }
 
   private isDocumentScroller(scroller: HTMLElement): boolean {
-    return scroller === document.scrollingElement || scroller === document.documentElement || scroller === document.body;
+    return scroller === document.scrollingElement ||
+      scroller === document.documentElement || scroller === document.body;
   }
 
   private trackTop(scroller: HTMLElement): number {
@@ -42,31 +44,28 @@ export class JourneyController {
   }
 
   private sample = (): void => {
-    this.frame = 0;
+    this.sampleFrame = 0;
     if (!this.mounted || !this.scrollElement) return;
     const travel = this.getTravel();
     const value = travel > 0 ? (this.scrollElement.scrollTop - this.trackTop(this.scrollElement)) / travel : 0;
     this.store.setProgress(value);
-    const navigation = this.store.getSnapshot();
-    if (navigation.isNavigating && navigation.targetStop) {
-      const target = getStopScrollTop(this.trackTop(this.scrollElement), travel, 0, navigation.targetStop);
-      if (Math.abs(target - this.scrollElement.scrollTop) < 2) this.endNavigation();
-    }
   };
 
   private schedule = (): void => {
-    if (!this.frame) this.frame = requestAnimationFrame(this.sample);
+    if (!this.sampleFrame) this.sampleFrame = requestAnimationFrame(this.sample);
   };
 
-  private interrupted = (): void => {
-    if (this.store.getSnapshot().isNavigating) this.endNavigation();
-  };
-
-  private endNavigation(): void {
-    if (this.stopTimer) window.clearTimeout(this.stopTimer);
-    this.stopTimer = 0;
+  private cancelNavigation = (): void => {
+    if (this.navigationFrame) cancelAnimationFrame(this.navigationFrame);
+    this.navigationFrame = 0;
     this.store.setNavigation(null);
-  }
+  };
+
+  private onKeyDown = (event: KeyboardEvent): void => {
+    if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) {
+      this.cancelNavigation();
+    }
+  };
 
   mount(): () => void {
     if (this.mounted) return () => this.unmount();
@@ -74,9 +73,9 @@ export class JourneyController {
     this.scrollElement = this.getScroller();
     this.scrollElement.addEventListener('scroll', this.schedule, {passive: true});
     window.addEventListener('resize', this.schedule, {passive: true});
-    // Only explicit user input interrupts a programmatic scroll.
-    window.addEventListener('wheel', this.interrupted, {passive: true});
-    window.addEventListener('touchstart', this.interrupted, {passive: true});
+    window.addEventListener('wheel', this.cancelNavigation, {passive: true});
+    window.addEventListener('touchstart', this.cancelNavigation, {passive: true});
+    window.addEventListener('pointerdown', this.cancelNavigation, {passive: true});
     window.addEventListener('keydown', this.onKeyDown);
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(this.schedule);
@@ -88,23 +87,55 @@ export class JourneyController {
     return () => this.unmount();
   }
 
-  private onKeyDown = (event: KeyboardEvent): void => {
-    if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) {
-      this.interrupted();
-    }
-  };
-
+  /** Animate only intentional, click-initiated navigation. */
   navigate(id: JourneyStopId): void {
     if (!this.mounted) return;
     const scroller = this.scrollElement ?? this.getScroller();
     const top = getStopScrollTop(this.trackTop(scroller), this.getTravel(), 0, id);
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    this.store.setNavigation(reduced ? null : id);
-    if (this.stopTimer) window.clearTimeout(this.stopTimer);
-    scroller.scrollTo({top, behavior: reduced ? 'instant' : 'smooth'});
-    // Safety net: browser smooth scroll may terminate without a final event.
-    if (!reduced) this.stopTimer = window.setTimeout(() => this.endNavigation(), 3000);
-    this.schedule();
+    this.animateTo(scroller, top, id);
+  }
+
+  navigateToElement(element: HTMLElement): void {
+    if (!this.mounted) return;
+    const scroller = this.scrollElement ?? this.getScroller();
+    const offset = element.getBoundingClientRect().top -
+      (this.isDocumentScroller(scroller) ? 0 : scroller.getBoundingClientRect().top);
+    this.animateTo(scroller, scroller.scrollTop + offset, null);
+  }
+
+  navigateToTop(): void {
+    if (!this.mounted) return;
+    const scroller = this.scrollElement ?? this.getScroller();
+    this.animateTo(scroller, 0, null);
+  }
+
+  private animateTo(scroller: HTMLElement, requestedTop: number, stop: JourneyStopId | null): void {
+    this.cancelNavigation();
+    const start = scroller.scrollTop;
+    const end = Math.max(0, Math.min(requestedTop, scroller.scrollHeight - scroller.clientHeight));
+    const distance = end - start;
+    if (Math.abs(distance) < 1) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      scroller.scrollTo({top: end, behavior: 'instant'});
+      this.schedule();
+      return;
+    }
+    const duration = journeyDuration(distance, scroller.clientHeight);
+    let began: number | null = null;
+    this.store.setNavigation(stop);
+    const tick = (timestamp: number): void => {
+      if (!this.mounted) return;
+      if (began === null) began = timestamp;
+      const t = Math.min(1, (timestamp - began) / duration);
+      scroller.scrollTo({top: start + distance * easeInOutCubic(t), behavior: 'instant'});
+      this.schedule();
+      if (t < 1) this.navigationFrame = requestAnimationFrame(tick);
+      else {
+        this.navigationFrame = 0;
+        this.store.setNavigation(null);
+      }
+    };
+    this.navigationFrame = requestAnimationFrame(tick);
   }
 
   unmount(): void {
@@ -112,14 +143,15 @@ export class JourneyController {
     this.mounted = false;
     this.scrollElement?.removeEventListener('scroll', this.schedule);
     window.removeEventListener('resize', this.schedule);
-    window.removeEventListener('wheel', this.interrupted);
-    window.removeEventListener('touchstart', this.interrupted);
+    window.removeEventListener('wheel', this.cancelNavigation);
+    window.removeEventListener('touchstart', this.cancelNavigation);
+    window.removeEventListener('pointerdown', this.cancelNavigation);
     window.removeEventListener('keydown', this.onKeyDown);
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
-    if (this.frame) cancelAnimationFrame(this.frame);
-    this.frame = 0;
-    this.endNavigation();
+    if (this.sampleFrame) cancelAnimationFrame(this.sampleFrame);
+    this.sampleFrame = 0;
+    this.cancelNavigation();
     this.scrollElement = null;
   }
 }

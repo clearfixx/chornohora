@@ -6,6 +6,7 @@ export function JourneyLocationContent() {
 <section className="place show r1" style={{"left":"6vw","top":"112px","width":"min(920px,88vw)","zIndex":"12"} as React.CSSProperties}>
 <div style={{"display":"flex","flexWrap":"wrap","gap":"10px"} as React.CSSProperties}><span className="pill" style={{"background":"#fff","color":"#1B0B5A"} as React.CSSProperties}>Світанок</span><span className="pill alt a1 r1" style={{"background":"rgba(10,5,60,.4)","color":"#fff"} as React.CSSProperties}></span></div>
 <h2 className="name"><span className="nmi n1">Говерла</span></h2>
+<p className="location-subtitle">Сонце зустрічає вас першим</p>
 <p className="lead">Найвища точка України. Виходимо затемна, щоб зустріти сонце на вершині.</p>
 </section>
 <aside className="card show k1"><ul>
@@ -16,6 +17,7 @@ export function JourneyLocationContent() {
 <section className="place show r2" style={{"left":"6vw","top":"112px","width":"min(920px,88vw)","zIndex":"12"} as React.CSSProperties}>
 <div style={{"display":"flex","flexWrap":"wrap","gap":"10px"} as React.CSSProperties}><span className="pill" style={{"background":"#fff","color":"#0A2C7A"} as React.CSSProperties}>День</span><span className="pill alt a2 r2" style={{"background":"rgba(5,20,90,.45)","color":"#fff"} as React.CSSProperties}></span></div>
 <h2 className="name"><span className="nmi n2">Бребенескул</span></h2>
+<p className="location-subtitle">Озеро, що тримає небо</p>
 <p className="lead">Найвисокогірніше озеро країни. Холодна вода, тиша й обід на камінні.</p>
 </section>
 <aside className="card show k2"><ul>
@@ -26,6 +28,7 @@ export function JourneyLocationContent() {
 <section className="place show r3" style={{"left":"6vw","top":"112px","width":"min(920px,88vw)","zIndex":"12"} as React.CSSProperties}>
 <div style={{"display":"flex","flexWrap":"wrap","gap":"10px"} as React.CSSProperties}><span className="pill" style={{"background":"#fff","color":"#4A0F5A"} as React.CSSProperties}>Вечір</span><span className="pill alt a3 r3" style={{"background":"rgba(30,5,70,.45)","color":"#fff"} as React.CSSProperties}></span></div>
 <h2 className="name"><span className="nmi n3">Несамовите</span></h2>
+<p className="location-subtitle">Вечір, який горить на воді</p>
 <p className="lead">Льодовикове озеро в чаші гір. Небо горить, а вода повторює його вдвічі.</p>
 </section>
 <aside className="card show k3"><ul>
@@ -36,6 +39,7 @@ export function JourneyLocationContent() {
 <section className="place show r4" style={{"left":"6vw","top":"112px","width":"min(920px,88vw)","zIndex":"12"} as React.CSSProperties}>
 <div style={{"display":"flex","flexWrap":"wrap","gap":"10px"} as React.CSSProperties}><span className="pill" style={{"background":"#fff","color":"#0A0E50"} as React.CSSProperties}>Ніч</span><span className="pill alt a4 r4" style={{"background":"rgba(0,0,40,.5)","color":"#fff"} as React.CSSProperties}></span></div>
 <h2 className="name"><span className="nmi n4">Петрос</span></h2>
+<p className="location-subtitle">Ніч, повна зірок</p>
 <p className="lead">Намет на полонині й жодного міського світла. Лише зорі над головою.</p>
 </section>
 <aside className="card show k4"><ul>

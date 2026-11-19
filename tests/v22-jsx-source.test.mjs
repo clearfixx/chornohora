@@ -35,8 +35,13 @@ test('all approved path geometry and circle coordinates are preserved verbatim',
   assert.ok(paths.length > 15);
   assert.ok(circles.length > 50);
   // The decorative language chevron is intentionally replaced with real UA/EN links.
-  // All landscape and other SVG paths must remain unchanged.
-  for (const path of paths.filter(path => path !== 'm6 9 6 6 6-6')) {
+  // Landscape geometry is deliberately replaced by the new uploaded reference.
+  // The rest of the approved SVG icons and details must remain unchanged.
+  const replacedMountainPaths = new Set(["M0,520 L0,116 L201,211 L439,115 L561,209 L762,120 L944,220 L1117,108 L1329,196 L1466,130 L1635,203 L1833,138 L2032,210 L2205,99 L2436,217 L2594,111 L2741,192 L2962,91 L3117,195 L3338,126 L3532,210 L3768,137 L4006,219 L4173,144 L4200,190 L4200,520 Z",
+"M0,520 L0,225 L117,287 L251,190 L394,302 L574,236 L676,284 L788,211 L897,298 L1014,208 L1198,302 L1381,232 L1550,294 L1641,235 L1806,295 L1917,223 L2105,284 L2230,235 L2355,290 L2461,220 L2596,284 L2686,215 L2783,306 L2947,235 L3051,298 L3173,194 L3287,294 L3457,213 L3655,294 L3768,223 L3909,304 L4062,206 L4200,280 L4200,520 Z",
+"M0,520 L0,291 L132,360 L247,288 L343,377 L492,282 L595,383 L687,288 L843,378 L970,318 L1048,368 L1202,314 L1345,376 L1470,297 L1624,379 L1736,294 L1893,380 L1999,285 L2154,375 L2281,318 L2392,367 L2514,287 L2599,386 L2758,284 L2889,385 L2997,311 L3076,370 L3153,296 L3273,368 L3385,289 L3530,384 L3675,290 L3828,388 L3904,299 L4047,388 L4200,360 L4200,520 Z",
+"M0,520 L0,413 L57,462 L158,402 L250,453 L348,393 L420,445 L548,390 L665,445 L748,397 L839,456 L929,407 L1054,447 L1132,385 L1215,466 L1300,398 L1371,449 L1456,407 L1535,445 L1651,405 L1747,453 L1800,398 L1873,460 L1994,387 L2083,455 L2193,403 L2302,450 L2405,392 L2482,446 L2600,411 L2667,449 L2785,407 L2837,450 L2965,386 L3031,462 L3131,410 L3231,460 L3352,413 L3472,458 L3562,413 L3625,460 L3719,416 L3785,464 L3850,409 L3953,463 L4065,411 L4178,452 L4200,445 L4200,520 Z"]); 
+  for (const path of paths.filter(path => path !== 'm6 9 6 6 6-6' && !replacedMountainPaths.has(path))) {
     assert.ok(allJsx.includes('d="' + path + '"'), 'path geometry missing');
   }
   for (const [cx,cy,r] of [...geometry.matchAll(/<circle\s+cx="([^"]+)" cy="([^"]+)" r="([^"]+)"/g)].map(m=>m.slice(1))) {
@@ -72,4 +77,12 @@ test('the imported JSX monolith is split into cohesive scene and page components
   for (const path of structureFiles) assert.ok(readFileSync(path, 'utf8').includes('export function'), path);
   assert.ok(readFileSync(structureFiles[0], 'utf8').length < 6000,
     'stage should coordinate components, not embed the entire legacy scene');
+});
+test('replacement mountain geometry and location headings are present', () => {
+  const mountain=readFileSync('src/features/journey/components/scenes/MountainAndCloudLayers.tsx','utf8');
+  for (const signature of ['M0,560 L0,178 L189,260','M0,800 L0,160 L153,615','M0,440 L0,207 L161,313']) assert.ok(mountain.includes(signature));
+  assert.doesNotMatch(mountain,/className="ly l4"/);
+  const content=readFileSync('src/features/journey/components/JourneyLocationContent.tsx','utf8');
+  for (const subtitle of ["Сонце зустрічає вас першим","Озеро, що тримає небо","Вечір, який горить на воді","Ніч, повна зірок"]) assert.ok(content.includes(subtitle));
+  assert.ok(content.includes('Ранок знову'));
 });

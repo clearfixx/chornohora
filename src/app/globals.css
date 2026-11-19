@@ -169,3 +169,27 @@ body:has([data-v22-source-scene]:not([data-react-journey])).route-menu-open .rou
     filter: none !important;
   }
 }
+
+/* New mountain SVG geometry comes from the supplied design reference.
+   The original approved parallax transform classes stay in place. */
+[data-react-journey] .reference-mountain svg {display:block;max-width:none}
+[data-react-journey] .location-subtitle {
+  margin: 8px 0 14px;
+  color: #ffdab6;
+  font: 700 clamp(17px,2.1vw,27px)/1.25 Onest,system-ui,sans-serif;
+  letter-spacing: .01em;
+}
+[data-react-journey] .shooting-stars {position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;opacity:0;visibility:hidden}
+/* Meteor visibility is tied to the fourth route scene, independent of the
+   scroll controller. The stars are purely decorative and never intercept input. */
+[data-react-journey] .meteor {position:absolute;width:95px;height:2px;border-radius:3px;background:linear-gradient(90deg,transparent,#ffe4b2);transform:rotate(-24deg);opacity:0}
+[data-react-journey] .meteor-one {left:20%;top:27%;animation:petros-shoot 7s linear 1s infinite}
+[data-react-journey] .meteor-two {left:79%;top:16%;animation:petros-shoot 9s linear 4s infinite}
+@keyframes petros-shoot {
+  0%,78% {opacity:0;translate:0 0}
+  80% {opacity:1}
+  100% {opacity:0;translate:-170px 76px}
+}
+@media (prefers-reduced-motion:reduce) {
+  [data-react-journey] .meteor {animation:none!important;opacity:0!important}
+}

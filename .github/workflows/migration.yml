@@ -45,6 +45,10 @@ jobs:
       - run: pnpm test:browser
       - run: pnpm test:browser-scroll
       - run: pnpm test:geometry
+      - name: Compare v22 and native screenshots pixel by pixel
+        run: |
+          python3 -m pip install --user Pillow==11.3.0
+          python3 scripts/compare-v22-pixels.py
       - name: Upload v22 original/native comparison screenshots
         if: always()
         uses: actions/upload-artifact@v4

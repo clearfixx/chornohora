@@ -903,6 +903,36 @@ const check = async (locale, width) => {
     assert.ok(Math.abs(afterInterruption - interrupted) < 80,
       `React journey continued after wheel interrupt: ${JSON.stringify({interrupted, afterInterruption})}`);
   }
+  // The demo booking form must not let a past departure reach preview.
+  // Chromium's native date validity and our local-calendar validation agree.
+  if (locale === 'uk' && width === 1440) {
+    const past = await evaluate(`(() => {
+      const form = document.querySelector('[data-react-journey] .book form');
+      if (!form) return null;
+      const input = form.querySelector('[name="date"]');
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      input.value = [yesterday.getFullYear(), String(yesterday.getMonth()+1).padStart(2,'0'), String(yesterday.getDate()).padStart(2,'0')].join('-');
+      return {valid:input.checkValidity(), min:input.min, value:input.value};
+    })()`);
+    assert.ok(past && !past.valid && past.min, `booking accepted past date: ${JSON.stringify(past)}`);
+  }
+  // The English locale must expose its translated demo-only draft semantics.
+  if (locale === 'en' && width === 1440) {
+    const english = await evaluate(`(() => {
+      const form = document.querySelector('[data-react-journey] .book form');
+      return {
+        button:form?.querySelector('button[type="submit"]')?.textContent?.trim(),
+        phoneLabel:form?.querySelector('label[for="f-tel"]')?.textContent?.trim(),
+        dateMin:form?.querySelector('input[type="date"]')?.min,
+        warning:[...form.querySelectorAll('p')].map(p=>p.textContent).join(' | '),
+      };
+    })()`);
+    assert.equal(english.button, 'Prepare request');
+    assert.equal(english.phoneLabel, 'Phone');
+    assert.ok(english.dateMin && english.warning.includes('demonstration'),
+      `English booking notice missing: ${JSON.stringify(english)}`);
+  }
   // Booking is now a real React-controlled *draft* workflow, not a fake
   // success message. No backend request may occur or be implied.
   if (locale === 'uk' && width === 1440) {
@@ -935,6 +965,8 @@ const check = async (locale, width) => {
       };
     })()`);
     assert.equal(prepared.heading, 'Заявка підготовлена');
+    assert.equal(await evaluate("document.activeElement?.classList.contains('journey-booking-preview') ?? document.activeElement?.tagName === 'H3'"), true,
+      'Booking preview heading should receive keyboard focus');
     assert.ok(prepared.text?.includes('+380000000000') && prepared.text.includes('3') &&
       prepared.notice?.includes('не надіслані') && !prepared.stillForm,
       `Booking should prepare a draft, never claim sent: ${JSON.stringify(prepared)}`);

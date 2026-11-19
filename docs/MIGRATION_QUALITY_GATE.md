@@ -44,3 +44,9 @@ GitHub Actions runs the full sequence and saves visual comparison artifacts. Ins
 9. Full CI green and a final review; only then merge and switch the canonical route.
 
 The old snapshot-based migration documents are superseded by this status and `docs/REACT_MIGRATION_EXECUTION.md`.
+
+## Progress on package 3 (2026-11-19)
+
+The main 41 KB `NativeV22Markup.tsx` is deleted in the React branch and replaced by components under `src/features/journey/components/`, including `scenes/` layers. Nine React-owned image tags use `next/image`. The approved `public/legacy` reference remains untouched. This satisfies the decomposition and image-conversion implementation milestone, but **not** the release gate: old production iframe and compatibility adapters remain; visual and interaction checks, including intermittent Petros ↔ footer scroll, are unresolved.
+
+For scroll diagnostics use `/uk?preview=react&trace=1` and copy `window.__journeyTrace?.()` from DevTools after a reproduction. The trace is bounded and opt-in.

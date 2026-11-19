@@ -2,7 +2,7 @@
 
 import {useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
-import type {CSSProperties} from 'react';
+import type {CSSProperties, FocusEvent, PointerEvent} from 'react';
 import {ROUTE_STOPS, clampProgress} from '@/lib/journey';
 import type {JourneyStore} from '@/engine/journey-store';
 
@@ -59,18 +59,18 @@ export function ReactRouteIndicator({store}: {store: JourneyStore}) {
     setActiveTooltip(index);
   }, []);
 
-  const onPointerOver = (event: React.PointerEvent<HTMLDivElement>) => {
+  const onPointerOver = (event: PointerEvent<HTMLDivElement>) => {
     const stop = event.target instanceof Element ? event.target.closest<HTMLElement>('.stop[data-peak]') : null;
     if (!stop || (event.relatedTarget instanceof Node && stop.contains(event.relatedTarget))) return;
     activateFrom(stop);
   };
-  const onPointerOut = (event: React.PointerEvent<HTMLDivElement>) => {
+  const onPointerOut = (event: PointerEvent<HTMLDivElement>) => {
     const stop = event.target instanceof Element ? event.target.closest<HTMLElement>('.stop[data-peak]') : null;
     if (stop && stop === activeSource.current &&
         !(event.relatedTarget instanceof Node && stop.contains(event.relatedTarget))) closeTooltip();
   };
-  const onFocus = (event: React.FocusEvent<HTMLDivElement>) => activateFrom(event.target);
-  const onBlur = (event: React.FocusEvent<HTMLDivElement>) => {
+  const onFocus = (event: FocusEvent<HTMLDivElement>) => activateFrom(event.target);
+  const onBlur = (event: FocusEvent<HTMLDivElement>) => {
     const stop = event.target instanceof Element ? event.target.closest<HTMLElement>('.stop[data-peak]') : null;
     if (stop && stop === activeSource.current &&
         !(event.relatedTarget instanceof Node && stop.contains(event.relatedTarget))) closeTooltip();
@@ -136,6 +136,7 @@ export function ReactRouteIndicator({store}: {store: JourneyStore}) {
   const lineStyle: CSSProperties = span ? {left: first, right: 'auto', width: span} : {};
   const fillStyle: CSSProperties = {...lineStyle, transform: 'scaleX(' + getRouteFill(progress, centers) + ')'};
   return (
+<>
 <div ref={barRef} onPointerOver={onPointerOver} onPointerOut={onPointerOut} onFocusCapture={onFocus} onBlurCapture={onBlur} className="band route-ui-v6" style={{"position":"absolute","left":"0","right":"0","bottom":"0","height":"92px","background":"var(--m4)","zIndex":"10"} as React.CSSProperties}>
 <div style={{"position":"absolute","left":"6vw","right":"6vw","top":"28px","height":"3px","background":"rgba(255,255,255,.28)",...lineStyle} as React.CSSProperties}></div>
 <div className="fill" style={{"position":"absolute","left":"6vw","right":"6vw","top":"28px","height":"3px","background":"#ffae64","transformOrigin":"left center",...fillStyle} as React.CSSProperties}></div>
@@ -165,7 +166,7 @@ export function ReactRouteIndicator({store}: {store: JourneyStore}) {
   </div>,
   document.body,
 )}
-
+</>
   );
 }
 

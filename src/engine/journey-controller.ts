@@ -12,6 +12,7 @@ export class JourneyController {
   private navigationFrame = 0;
   private wheelFrame = 0;
   private wheelTarget = 0;
+  private wheelDirection = 0;
   private scrollListenerTarget: Window | HTMLElement | null = null;
   private scrollElement: HTMLElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
@@ -58,10 +59,10 @@ export class JourneyController {
     if (!this.sampleFrame) this.sampleFrame = requestAnimationFrame(this.sample);
   };
 
-  /** A wheel sequence uses one bounded target and decelerates over subsequent frames.
-   * Unlike programmatic peak navigation, this never snaps to a section.
-   * Wheel input outside the journey, nested scroll controls and reduced-motion
-   * preferences remain fully browser-owned.
+  /** A wheel sequence uses one target and decelerates over subsequent frames.
+   * The same motion policy spans the mountain journey AND the lower page,
+   * so there is no fast/slow boundary when entering booking or returning.
+   * Nested scroll controls and reduced-motion preferences remain browser-owned.
    */
   private wheel = (event: WheelEvent): void => {
     if (!this.mounted || !this.scrollElement) return;
@@ -81,31 +82,30 @@ export class JourneyController {
         ancestor = ancestor.parentElement;
       }
     }
-    const top = this.trackTop(scroller);
-    const end = top + this.getTravel();
     const now = scroller.scrollTop;
-    // Let wheel input leave the animated route in BOTH directions. Clamping
-    // the destination to its end caused a wheel trap on the last night scene.
-    if ((now <= top && event.deltaY < 0) || (now >= end && event.deltaY > 0) ||
-        now < top - 1 || now > end + 1) {
+    const maximum = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    const direction = Math.sign(event.deltaY);
+    // Use one continuous scrolling policy for the entire React page.
+    // Switching from animated to native wheel after Petros caused speed jumps
+    // and conflicting scroll momentum on the return trip.
+    if ((now <= 0 && direction < 0) || (now >= maximum && direction > 0)) {
       this.cancelWheel();
       return;
     }
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? scroller.clientHeight : 1;
-    const lastPeak = top + this.getTravel() * 0.83;
-    // The final scene remains visible while the last portion of the journey
-    // can be traversed without dozens of tiny wheel turns.
-    const leavingNight = event.deltaY > 0 && now >= lastPeak;
-    const delta = leavingNight
-      ? Math.max(-320, Math.min(320, event.deltaY * unit * 1.8))
-      : Math.max(-140, Math.min(140, event.deltaY * unit * 0.72));
+    const delta = Math.max(-160, Math.min(160, event.deltaY * unit * 0.85));
     if (!delta) return;
-    const maxScroll = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
-    const target = Math.min(maxScroll, Math.max(0, (this.wheelFrame ? this.wheelTarget : now) + delta));
-    // A target past the travel boundary is intentional: the scroll must reach
-    // the booking/footer after the last scene, instead of sticking at 100%.
-    if (Math.abs(target - now) < 0.1) return;
+    // Reversing wheel direction must discard pending momentum from the old
+    // direction; otherwise two successive inputs can visibly fight each other.
+    if (this.wheelDirection && direction !== this.wheelDirection) this.cancelWheel();
+    const base = this.wheelFrame ? this.wheelTarget : now;
+    const target = Math.min(maximum, Math.max(0, base + delta));
+    if (Math.abs(target - now) < 0.1) {
+      this.cancelWheel();
+      return;
+    }
     event.preventDefault();
+    this.wheelDirection = direction;
     this.wheelTarget = target;
     if (!this.wheelFrame) this.wheelFrame = requestAnimationFrame(this.tickWheel);
   };
@@ -124,6 +124,8 @@ export class JourneyController {
   private cancelWheel = (): void => {
     if (this.wheelFrame) cancelAnimationFrame(this.wheelFrame);
     this.wheelFrame = 0;
+    this.wheelDirection = 0;
+    this.wheelTarget = this.scrollElement?.scrollTop ?? 0;
   };
 
   private cancelNavigation = (): void => {

@@ -5,7 +5,7 @@ The target route data lives in `src/lib/journey.ts` and retains v22's four exact
 ## React controller
 
 - `src/engine/journey-store.ts`: stable immutable snapshot with progress, active stop and programmatic navigation state. One subscription API for all scene consumers.
-- `src/engine/journey-controller.ts`: one browser adapter for scroller measurements, scroll sampling on window for document scrolling (element listeners for nested scrolling), bounded eased wheel input within the journey, native touch/keyboard scrolling. Cancels navigation state on user interaction and handles cleanup.
+- `src/engine/journey-controller.ts`: one browser adapter for scroller measurements, scroll sampling on window for document scrolling (element listeners for nested scrolling), continuous eased wheel input across the React preview page, with momentum cancellation on reverse direction, native touch/keyboard scrolling. Cancels navigation state on user interaction and handles cleanup.
 - `src/hooks/useJourneyProgress.ts`: uses `useSyncExternalStore`, mounting one controller for the JSX track.
 - `src/components/journey/ReactJourneyPreview.tsx`: isolated mount under `?preview=react`.
 

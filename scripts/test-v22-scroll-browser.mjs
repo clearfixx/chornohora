@@ -596,6 +596,37 @@ const check = async (locale, width) => {
     const after = await evaluate('window.scrollY');
     assert.ok(after > reactGeometry.top + reactGeometry.travel + 60,
       `wheel stuck in Petros scene: ${JSON.stringify({start, after, boundary: reactGeometry.top + reactGeometry.travel, pageMax})}`);
+    // At the seam, a single wheel impulse must not suddenly accelerate:
+    // measure equal input from either side without changing scroll policy.
+    await evaluate(`window.scrollTo({top: ${reactGeometry.top + reactGeometry.travel - 260}, behavior: 'instant'})`);
+    await delay(150);
+    const beforeSeam = await evaluate('window.scrollY');
+    await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x: 600, y: 420, deltaY: 120, deltaX: 0});
+    await delay(550);
+    const onSeam = await evaluate('window.scrollY');
+    const firstStep = onSeam - beforeSeam;
+    await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x: 600, y: 420, deltaY: 120, deltaX: 0});
+    await delay(550);
+    const afterSeam = await evaluate('window.scrollY');
+    const secondStep = afterSeam - onSeam;
+    assert.ok(firstStep > 50 && secondStep > 50, 'wheel stalled at transition to booking');
+    assert.ok(Math.abs(firstStep - secondStep) < 35,
+      `wheel speed changed at journey boundary: ${JSON.stringify({firstStep, secondStep})}`);
+    // Reverse immediately while a forward ease is still active: movement
+    // should go upward consistently, without ping-ponging for seconds.
+    await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x: 600, y: 420, deltaY: 120, deltaX: 0});
+    await delay(35);
+    await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x: 600, y: 420, deltaY: -120, deltaX: 0});
+    const reverseSamples = [];
+    for (let i = 0; i < 9; i++) {
+      await delay(90);
+      reverseSamples.push(await evaluate('window.scrollY'));
+    }
+    assert.ok(reverseSamples.at(-1) < reverseSamples[0], `wheel did not reverse: ${reverseSamples}`);
+    for (let i = 1; i < reverseSamples.length; i++) {
+      assert.ok(reverseSamples[i] <= reverseSamples[i - 1] + 2,
+        `wheel direction oscillated: ${reverseSamples}`);
+    }
     // Re-enter the scene by rolling backward from below it.
     for (let i = 0; i < 12; i++) {
       await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x: 600, y: 420, deltaY: -120, deltaX: 0});

@@ -66,3 +66,7 @@ The regression suite covers manual scrollbar movement during wheel easing, form-
 ## React CSS isolation
 
 The React preview references `/react-journey.css` instead of separately loading original legacy CSS at runtime. Its committed content must equal the normalized `public/legacy/styles.css` followed by `public/v22-react-scene.css` exactly; this preserves CSS cascade order while decoupling the rendered React route from the legacy stylesheet URL. Source and Chromium smoke gates enforce the contract. Frozen reference and native compatibility modes are still present and not replaced.
+
+## React import ownership boundary
+
+`pnpm check:react-ownership` traverses actual local static/dynamic import edges beginning at the ReactJourneyPreview entry, rather than flagging intentionally retained legacy comparison code elsewhere in the repository. It fails if the reachable graph imports old HTML/scroller adapters or uses an iframe, `innerHTML` assignment or `dangerouslySetInnerHTML`. The check separately verifies the server page's `preview=react` branch does not mount legacy HTML/CSS. `pnpm test:react-ownership` covers scanner behavior and guards source-level isolation. Neither gate implies manual visual/scroll acceptance is complete.

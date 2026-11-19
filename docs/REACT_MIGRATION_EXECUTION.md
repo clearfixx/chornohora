@@ -133,3 +133,7 @@ The preview now loads only `/react-journey.css` for its historical scene rules (
 ### Reproducible React stylesheet build
 
 Run `pnpm sync:react-css` if the approved stylesheet reference changes in an explicitly authorized future migration step. The command normalizes line endings and writes the existing stylesheet order to `public/react-journey.css` without mutating the frozen inputs. `pnpm check:react-css` performs a read-only comparison and is enforced by GitHub Actions, preventing silent CSS drift. Neither operation modifies the user-approved animation timeline unless the source styles themselves are intentionally changed and reviewed.
+
+## React runtime ownership dependency gate
+
+The React import graph now has a mandatory automated boundary check. Old controllers, iframe and source extractors are intentionally kept for the canonical reference and native comparison path, but are forbidden from the transitive import graph rooted at ReactJourneyPreview. HTML injection/imperative source ownership is likewise forbidden. The server route's React branch must not use the legacy source loader, original CSS link or iframe. These checks are source-level, while the Chromium suite remains responsible for runtime behavior. Commands: `pnpm check:react-ownership`, `pnpm test:react-ownership`.

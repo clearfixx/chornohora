@@ -23,6 +23,8 @@ jobs:
       - run: pnpm test:journey
       - run: pnpm test:source
       - run: pnpm check:react-css
+      - run: pnpm check:react-ownership
+      - run: pnpm test:react-ownership
       - run: pnpm test:jsx-source
       - run: pnpm test:v22-scroll
       - run: pnpm test:v22-drawer

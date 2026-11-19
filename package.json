@@ -29,7 +29,9 @@
     "test:v22-ghost": "node --test tests/v22-ghost-titles.test.mjs",
     "test:jsx-source": "node --test tests/v22-jsx-source.test.mjs",
     "sync:react-css": "node scripts/sync-react-css.mjs",
-    "check:react-css": "node scripts/sync-react-css.mjs --check"
+    "check:react-css": "node scripts/sync-react-css.mjs --check",
+    "check:react-ownership": "node scripts/check-react-ownership.mjs",
+    "test:react-ownership": "node --test tests/react-ownership.test.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",

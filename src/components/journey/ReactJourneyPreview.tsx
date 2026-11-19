@@ -3,13 +3,14 @@
 import {memo, useCallback, useEffect, useRef, useState} from 'react';
 import {useJourneyProgress} from '@/hooks/useJourneyProgress';
 import {JourneyStore} from '@/engine/journey-store';
-import {NativeV22StageMarkup, NativeV22DrawerMarkup} from './NativeV22Markup';
+import {JourneyStage} from '@/features/journey/components/JourneyStage';
+import {JourneyDrawer} from '@/features/journey/components/JourneyDrawer';
 import type {JourneyStopId} from '@/lib/journey';
 
 type Locale = 'uk' | 'en';
 // The 45kB SVG/JSX scene must NOT reconcile at every scroll progress tick.
-const MemoStage = memo(NativeV22StageMarkup);
-const MemoDrawer = memo(NativeV22DrawerMarkup);
+const MemoStage = memo(JourneyStage);
+const MemoDrawer = memo(JourneyDrawer);
 const actionToStop: Record<string, JourneyStopId> = {
   goGovla: 'govla', goBreb: 'brebeneskul',
   goNes: 'nesamovyte', goPetros: 'petros',

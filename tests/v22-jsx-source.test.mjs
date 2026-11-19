@@ -3,7 +3,17 @@ import {readFileSync} from 'node:fs';
 import test from 'node:test';
 
 const source = readFileSync('public/legacy/index.html', 'utf8');
-const jsx = readFileSync('src/components/journey/NativeV22Markup.tsx', 'utf8');
+const structureFiles = [
+  'src/features/journey/components/JourneyStage.tsx',
+  'src/features/journey/components/JourneyNavbar.tsx',
+  'src/features/journey/components/JourneyScenery.tsx',
+  'src/features/journey/components/JourneyHero.tsx',
+  'src/features/journey/components/JourneyLocationContent.tsx',
+  'src/features/journey/components/BookingSection.tsx',
+  'src/features/journey/components/JourneyFooter.tsx',
+  'src/features/journey/components/JourneyDrawer.tsx',
+];
+const jsx = structureFiles.map(path => readFileSync(path, 'utf8')).join('\n');
 const motion = readFileSync('src/components/journey/ReactJourneyMotion.tsx', 'utf8');
 const allJsx = jsx + '\n' + motion;
 const marker = '<sc-if data-dc-static="" value="{{ false }}">';
@@ -11,8 +21,8 @@ const fallback = source.slice(source.indexOf(marker), source.indexOf('</sc-if></
 const geometry = fallback.slice(fallback.indexOf('<div data-canvas-height="8000"'));
 
 test('native stage exists as JSX without injected HTML or legacy runtime', () => {
-  assert.match(jsx, /function NativeV22StageMarkup/);
-  assert.match(jsx, /function NativeV22DrawerMarkup/);
+  assert.match(jsx, /function JourneyStage/);
+  assert.match(jsx, /function JourneyDrawer/);
   assert.doesNotMatch(jsx, /dangerouslySetInnerHTML|\.innerHTML|<iframe|<x-dc/);
 });
 
@@ -44,4 +54,19 @@ test('React traveler and four-stop progress panel subscribe independently to the
   assert.match(motion, /getRouteFill\(progress, centers\)/);
   assert.match(motion, /className=\{stopClass\(progress, activeIndex/);
   assert.match(motion, /--hiker-x/);
+});
+
+
+test('React components use Next Image with fixed dimensions and no plain images', () => {
+  assert.doesNotMatch(jsx, /<img\b/);
+  assert.equal([...jsx.matchAll(/<Image\b/g)].length, 9);
+  for (const name of ['JourneyNavbar', 'JourneyFooter', 'JourneyDrawer']) {
+    assert.match(readFileSync('src/features/journey/components/' + name + '.tsx','utf8'), /from 'next\/image'/);
+  }
+});
+
+test('the imported JSX monolith is split into cohesive scene and page components', () => {
+  for (const path of structureFiles) assert.ok(readFileSync(path, 'utf8').includes('export function'), path);
+  assert.ok(readFileSync(structureFiles[0], 'utf8').length < 6000,
+    'stage should coordinate components, not embed the entire legacy scene');
 });

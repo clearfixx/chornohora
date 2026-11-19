@@ -156,5 +156,5 @@ body:has([data-v22-source-scene]).route-menu-open .route-menu-scrim {
    per original scene. The approved original iframe and ?preview=native are unchanged.
    Avoid wheel interception, scroll-snapping and forced smooth scrolling. */
 [data-react-journey] .track {
-  --S: 9400px;
+  --S: 12800px;
 }

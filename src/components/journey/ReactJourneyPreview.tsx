@@ -2,6 +2,7 @@
 
 import {memo, useCallback, useEffect, useRef, useState} from 'react';
 import {useJourneyProgress} from '@/hooks/useJourneyProgress';
+import {JourneyStore} from '@/engine/journey-store';
 import {NativeV22StageMarkup, NativeV22DrawerMarkup} from './NativeV22Markup';
 import type {JourneyStopId} from '@/lib/journey';
 
@@ -20,8 +21,9 @@ const drawerToStop: Record<string, JourneyStopId> = {
 /** Isolated experimental React preview; the approved canonical v22 is unchanged. */
 export function ReactJourneyPreview({locale}: {locale: Locale}) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const [store] = useState(() => new JourneyStore());
   const [menuOpen, setMenuOpen] = useState(false);
-  const {progress, navigateToStop, navigateToTop, navigateToElement} = useJourneyProgress(trackRef);
+  const {progress, navigateToStop, navigateToTop, navigateToElement} = useJourneyProgress(trackRef, store);
 
   useEffect(() => {
     document.body.classList.toggle('route-started', progress >= 0.2095);
@@ -85,7 +87,7 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
   return <>
     <div data-v22-source-scene="" data-react-journey="">
       <MemoStage
-        trackRef={trackRef} locale={locale} menuOpen={menuOpen}
+        trackRef={trackRef} store={store} locale={locale} menuOpen={menuOpen}
         onAction={navigate} onToggleMenu={toggleMenu}
       />
     </div>

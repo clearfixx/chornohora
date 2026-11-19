@@ -526,7 +526,7 @@ const check = async (locale, width) => {
     assert.ok(clicked, 'React scene scroll cue missing');
     await delay(300);
     const halfway = await evaluate("window.scrollY");
-    await delay(2550);
+    await delay(4800);
     const finish = await evaluate("window.scrollY");
     const destination = reactGeometry.top + reactGeometry.travel * .21;
     assert.ok(halfway > before + 1 && halfway < destination * .65,
@@ -541,7 +541,7 @@ const check = async (locale, width) => {
     await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x: 600, y: 460, deltaY: -240, deltaX: 0});
     await delay(350);
     const interrupted = await evaluate("window.scrollY");
-    await delay(850);
+    await delay(1100);
     const afterInterruption = await evaluate("window.scrollY");
     assert.ok(Math.abs(afterInterruption - interrupted) < 80,
       `React journey continued after wheel interrupt: ${JSON.stringify({interrupted, afterInterruption})}`);

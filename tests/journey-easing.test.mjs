@@ -16,7 +16,7 @@ test('navigation easing is smooth, monotonic and endpoint-exact', () => {
 
 test('large jumps are slower but bounded; small jumps still animated', () => {
   assert.ok(journeyDuration(2000, 900) > journeyDuration(200, 900));
-  assert.ok(journeyDuration(200, 900) >= 1100);
-  assert.ok(journeyDuration(20000, 900) <= 2400);
-  assert.equal(journeyDuration(Infinity, 900), 1500);
+  assert.ok(journeyDuration(200, 900) >= 2300);
+  assert.ok(journeyDuration(20000, 900) <= 4600);
+  assert.equal(journeyDuration(Infinity, 900), 2800);
 });

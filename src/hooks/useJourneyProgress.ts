@@ -1,6 +1,6 @@
 'use client';
 
-import {useCallback, useEffect, useState, useSyncExternalStore, type RefObject} from 'react';
+import {useCallback, useEffect, useSyncExternalStore, type RefObject} from 'react';
 import {JourneyController} from '@/engine/journey-controller';
 import {JourneyStore} from '@/engine/journey-store';
 import type {JourneyStopId} from '@/lib/journey';
@@ -10,8 +10,8 @@ import type {JourneyStopId} from '@/lib/journey';
  * components read the same immutable snapshot through useSyncExternalStore.
  * The old iframe and static compatibility adapters never mount this hook.
  */
-export function useJourneyProgress(trackRef: RefObject<HTMLElement | null>) {
-  const [store] = useState(() => new JourneyStore());
+export function useJourneyProgress(trackRef: RefObject<HTMLElement | null>, store: JourneyStore) {
+
   const [controller, setController] = useState<JourneyController | null>(null);
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
 

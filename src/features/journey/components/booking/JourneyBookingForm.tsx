@@ -1,6 +1,7 @@
 'use client';
 
-import {useRef, useState, type FormEvent} from 'react';
+import {useEffect, useRef, useState, type FormEvent} from 'react';
+import {isValidFutureOrTodayDate, localISODate} from '@/features/journey/booking/validation';
 import {useTranslations} from 'next-intl';
 
 type RequestDraft = {
@@ -15,9 +16,13 @@ type RequestDraft = {
 export function JourneyBookingForm() {
   const t = useTranslations('Journey');
   const formRef = useRef<HTMLFormElement>(null);
+  const previewTitleRef = useRef<HTMLHeadingElement>(null);
+  const [minimumDate, setMinimumDate] = useState<string>();
   const [draft, setDraft] = useState<RequestDraft | null>(null);
   const [savedDraft, setSavedDraft] = useState<RequestDraft | null>(null);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  useEffect(() => { setMinimumDate(localISODate()); }, []);
+  useEffect(() => { if (draft) previewTitleRef.current?.focus({preventScroll: true}); }, [draft]);
 
   const onPrepare = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -29,6 +34,12 @@ export function JourneyBookingForm() {
       name: get('name'), phone: get('tel'), email: get('email'),
       date: get('date'), people: get('people'), message: get('message'),
     };
+    if (!isValidFutureOrTodayDate(nextDraft.date)) {
+      const dateInput = form.elements.namedItem('date') as HTMLInputElement | null;
+      dateInput?.setCustomValidity(t('bookingDatePast'));
+      dateInput?.reportValidity();
+      return;
+    }
     setSavedDraft(nextDraft);
     setDraft(nextDraft);
     setCopyState('idle');
@@ -55,7 +66,7 @@ export function JourneyBookingForm() {
 
   if (draft) return (
     <div className="journey-booking-preview" aria-live="polite">
-      <h3>{t('bookingPreviewTitle')}</h3>
+      <h3 tabIndex={-1} ref={previewTitleRef}>{t('bookingPreviewTitle')}</h3>
       <p>{t('bookingPreviewNotice')}</p>
       <label className="journey-booking-summary-label" htmlFor="journey-booking-summary">{t('bookingSummary')}</label>
       <textarea id="journey-booking-summary" readOnly value={summary} rows={7}/>
@@ -79,7 +90,7 @@ export function JourneyBookingForm() {
       <div className="fld"><label htmlFor="f-mail">{t('bookingEmail')}</label><input autoComplete="email" id="f-mail" name="email" defaultValue={savedDraft?.email} placeholder="name@mail.com" type="email" maxLength={254}/></div>
     </div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(200px,100%),1fr))',gap:'18px'}}>
-      <div className="fld"><label htmlFor="f-date">{t('bookingDate')}</label><input id="f-date" name="date" defaultValue={savedDraft?.date} required type="date"/></div>
+      <div className="fld"><label htmlFor="f-date">{t('bookingDate')}</label><input id="f-date" name="date" defaultValue={savedDraft?.date} min={minimumDate} onChange={event => event.currentTarget.setCustomValidity("")} required type="date"/></div>
       <div className="fld"><label htmlFor="f-n">{t('bookingPeople')}</label><input id="f-n" max="12" min="1" name="people" required type="number" defaultValue={savedDraft?.people ?? "2"}/></div>
     </div>
     <div className="fld"><label htmlFor="f-msg">{t('bookingMessage')}</label><textarea id="f-msg" name="message" defaultValue={savedDraft?.message} maxLength={2000} placeholder={t('bookingMessagePlaceholder')}/></div>

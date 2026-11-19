@@ -128,6 +128,7 @@
     "tooltipShortDesc3": "A glacial lake in the high Carpathians, bathed in evening color.",
     "tooltipShortDesc4": "One of Chornohora's highest summits, ending the day beneath the stars.",
     "tooltipElevation": "Elevation",
-    "tooltipCoords": "Coordinates"
+    "tooltipCoords": "Coordinates",
+    "bookingDatePast": "Choose today's date or a future departure date."
   }
 }

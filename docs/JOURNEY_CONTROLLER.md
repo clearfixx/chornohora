@@ -5,7 +5,7 @@ The target route data lives in `src/lib/journey.ts` and retains v22's four exact
 ## React controller
 
 - `src/engine/journey-store.ts`: stable immutable snapshot with progress, active stop and programmatic navigation state. One subscription API for all scene consumers.
-- `src/engine/journey-controller.ts`: one browser adapter for scroller measurements, passive scroll sampling and native wheel/touch/keyboard behavior. Cancels navigation state on user interaction and handles cleanup.
+- `src/engine/journey-controller.ts`: one browser adapter for scroller measurements, scroll sampling on window for document scrolling (element listeners for nested scrolling), bounded eased wheel input within the journey, native touch/keyboard scrolling. Cancels navigation state on user interaction and handles cleanup.
 - `src/hooks/useJourneyProgress.ts`: uses `useSyncExternalStore`, mounting one controller for the JSX track.
 - `src/components/journey/ReactJourneyPreview.tsx`: isolated mount under `?preview=react`.
 
@@ -13,7 +13,7 @@ The old v22 controller remains active **only in the canonical source/compatibili
 
 ## Remaining work
 
-Move the interactive route progress, hiker and visual transitions to React-owned components receiving this store; remove their old DOM class togglers. Thoroughly validate touch gestures, reverse scrolling, external scrollers and reduced motion before production use.
+Traveler and progress indicator now subscribe to the shared React store. Still validate exact visual parity, touch gestures, external scrollers and final full-browser acceptance before production use. Thoroughly validate touch gestures, reverse scrolling, external scrollers and reduced motion before production use.
 
 ## Checks
 

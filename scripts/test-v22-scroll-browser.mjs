@@ -541,6 +541,45 @@ const check = async (locale, width) => {
     }
 
   }
+  // Real wheel input must update the shared store, traveler and active
+  // route without requiring any click or programmatic navigation.
+  if (locale === 'uk' && width === 1440) {
+    await evaluate("window.scrollTo({top: 0, behavior: 'instant'})");
+    await delay(250);
+    for (let i = 0; i < 36; i++) {
+      await command('Input.dispatchMouseEvent', {
+        type: 'mouseWheel', x: 600, y: 420, deltaY: 120, deltaX: 0,
+      });
+      await delay(28);
+    }
+    await delay(700);
+    const forward = await evaluate(`(() => ({
+      scroll: scrollY,
+      progress: [...document.querySelectorAll('[data-react-journey] .stop.is-active')].map(el => el.dataset.peak),
+      offset: getComputedStyle(document.querySelector('[data-react-journey] .hiker')).translate,
+      route: getComputedStyle(document.querySelector('[data-react-journey] .route-ui-v6')).visibility,
+      started: document.body.classList.contains('route-started'),
+    }))()`);
+    assert.ok(forward.scroll > 0, 'wheel did not scroll');
+    assert.ok(forward.started && forward.route === 'visible', `wheel failed to reveal route: ${JSON.stringify(forward)}`);
+    assert.deepEqual(forward.progress, ['1'], `wheel not synchronized with progress: ${JSON.stringify(forward)}`);
+    for (let i = 0; i < 38; i++) {
+      await command('Input.dispatchMouseEvent', {
+        type: 'mouseWheel', x: 600, y: 420, deltaY: -120, deltaX: 0,
+      });
+      await delay(28);
+    }
+    await delay(900);
+    const reverse = await evaluate(`(() => ({
+      scroll: scrollY,
+      started: document.body.classList.contains('route-started'),
+      route: getComputedStyle(document.querySelector('[data-react-journey] .route-ui-v6')).visibility,
+      hiker: getComputedStyle(document.querySelector('[data-react-journey] .hiker')).visibility,
+    }))()`);
+    assert.ok(reverse.scroll < 80, `wheel reverse did not return to Hero: ${JSON.stringify(reverse)}`);
+    assert.ok(!reverse.started && reverse.route === 'hidden' && reverse.hiker === 'hidden',
+      `Hero failed to hide route and hiker: ${JSON.stringify(reverse)}`);
+  }
   // A click must animate through intermediate positions, not jump instantly.
   // The following checks run in real Chromium with browser input/event handling.
   if (locale === 'uk' && width === 1440) {

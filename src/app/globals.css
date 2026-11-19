@@ -154,7 +154,7 @@ body:has([data-v22-source-scene]).route-menu-open .route-menu-scrim {
 
 /* React-preview journey pacing: longer scroll travel means more wheel turns
    per original scene. The approved original iframe and ?preview=native are unchanged.
-   Avoid wheel interception, scroll-snapping and forced smooth scrolling. */
+   Wheel smoothing is scoped to the React journey; preserve native touch, keyboard and reduced-motion scrolling. */
 [data-react-journey] .track {
   --S: 12800px;
 }

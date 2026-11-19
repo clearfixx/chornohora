@@ -10,6 +10,9 @@ import {JourneyStore} from './journey-store.ts';
 export class JourneyController {
   private sampleFrame = 0;
   private navigationFrame = 0;
+  private wheelFrame = 0;
+  private wheelTarget = 0;
+  private scrollListenerTarget: Window | HTMLElement | null = null;
   private scrollElement: HTMLElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private mounted = false;
@@ -55,15 +58,81 @@ export class JourneyController {
     if (!this.sampleFrame) this.sampleFrame = requestAnimationFrame(this.sample);
   };
 
+  /** A wheel sequence uses one bounded target and decelerates over subsequent frames.
+   * Unlike programmatic peak navigation, this never snaps to a section.
+   * Wheel input outside the journey, nested scroll controls and reduced-motion
+   * preferences remain fully browser-owned.
+   */
+  private wheel = (event: WheelEvent): void => {
+    if (!this.mounted || !this.scrollElement) return;
+    this.cancelNavigation();
+    const scroller = this.scrollElement;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || event.ctrlKey || event.metaKey || event.defaultPrevented || event.deltaY === 0) {
+      this.schedule();
+      return;
+    }
+    if (event.target instanceof Element) {
+      if (event.target.closest('[data-v22-source-drawer], input, textarea, select, [contenteditable="true"]')) return;
+      let ancestor = event.target.parentElement;
+      while (ancestor && ancestor !== document.body && ancestor !== document.documentElement) {
+        if (ancestor !== this.track && /(auto|scroll)/.test(getComputedStyle(ancestor).overflowY) &&
+            ancestor.scrollHeight > ancestor.clientHeight + 2) return;
+        ancestor = ancestor.parentElement;
+      }
+    }
+    const top = this.trackTop(scroller);
+    const end = top + this.getTravel();
+    const now = scroller.scrollTop;
+    // Allow the normal page to continue before and after the visual journey.
+    if ((now <= top && event.deltaY < 0) || (now >= end && event.deltaY > 0) ||
+        now < top - 1 || now > end + 1) return;
+    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? scroller.clientHeight : 1;
+    const delta = Math.max(-140, Math.min(140, event.deltaY * unit * 0.72));
+    if (!delta) return;
+    const target = Math.min(end, Math.max(top, (this.wheelFrame ? this.wheelTarget : now) + delta));
+    if (Math.abs(target - now) < 0.1) return;
+    event.preventDefault();
+    this.wheelTarget = target;
+    if (!this.wheelFrame) this.wheelFrame = requestAnimationFrame(this.tickWheel);
+  };
+
+  private tickWheel = (): void => {
+    this.wheelFrame = 0;
+    if (!this.mounted || !this.scrollElement) return;
+    const scroller = this.scrollElement;
+    const remaining = this.wheelTarget - scroller.scrollTop;
+    const next = Math.abs(remaining) < 0.8 ? this.wheelTarget : scroller.scrollTop + remaining * 0.18;
+    scroller.scrollTo({top: next, behavior: 'instant'});
+    this.schedule();
+    if (Math.abs(this.wheelTarget - next) >= 0.8) this.wheelFrame = requestAnimationFrame(this.tickWheel);
+  };
+
+  private cancelWheel = (): void => {
+    if (this.wheelFrame) cancelAnimationFrame(this.wheelFrame);
+    this.wheelFrame = 0;
+  };
+
   private cancelNavigation = (): void => {
     if (this.navigationFrame) cancelAnimationFrame(this.navigationFrame);
     this.navigationFrame = 0;
     this.store.setNavigation(null);
   };
 
+  private onTouchStart = (): void => {
+    this.cancelNavigation();
+    this.cancelWheel();
+  };
+
+  private onPointerDown = (): void => {
+    this.cancelNavigation();
+    this.cancelWheel();
+  };
+
   private onKeyDown = (event: KeyboardEvent): void => {
     if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) {
       this.cancelNavigation();
+      this.cancelWheel();
     }
   };
 
@@ -71,11 +140,14 @@ export class JourneyController {
     if (this.mounted) return () => this.unmount();
     this.mounted = true;
     this.scrollElement = this.getScroller();
-    this.scrollElement.addEventListener('scroll', this.schedule, {passive: true});
+    // Root scroll events are delivered on window/document, not reliably on
+    // document.scrollingElement. This was the cause of the static hiker and route.
+    this.scrollListenerTarget = this.isDocumentScroller(this.scrollElement) ? window : this.scrollElement;
+    this.scrollListenerTarget.addEventListener('scroll', this.schedule, {passive: true});
     window.addEventListener('resize', this.schedule, {passive: true});
-    window.addEventListener('wheel', this.cancelNavigation, {passive: true});
-    window.addEventListener('touchstart', this.cancelNavigation, {passive: true});
-    window.addEventListener('pointerdown', this.cancelNavigation, {passive: true});
+    window.addEventListener('wheel', this.wheel, {passive: false});
+    window.addEventListener('touchstart', this.onTouchStart, {passive: true});
+    window.addEventListener('pointerdown', this.onPointerDown, {passive: true});
     window.addEventListener('keydown', this.onKeyDown);
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(this.schedule);
@@ -111,6 +183,7 @@ export class JourneyController {
 
   private animateTo(scroller: HTMLElement, requestedTop: number, stop: JourneyStopId | null): void {
     this.cancelNavigation();
+    this.cancelWheel();
     const start = scroller.scrollTop;
     const end = Math.max(0, Math.min(requestedTop, scroller.scrollHeight - scroller.clientHeight));
     const distance = end - start;
@@ -141,17 +214,19 @@ export class JourneyController {
   unmount(): void {
     if (!this.mounted) return;
     this.mounted = false;
-    this.scrollElement?.removeEventListener('scroll', this.schedule);
+    this.scrollListenerTarget?.removeEventListener('scroll', this.schedule);
+    this.scrollListenerTarget = null;
     window.removeEventListener('resize', this.schedule);
-    window.removeEventListener('wheel', this.cancelNavigation);
-    window.removeEventListener('touchstart', this.cancelNavigation);
-    window.removeEventListener('pointerdown', this.cancelNavigation);
+    window.removeEventListener('wheel', this.wheel);
+    window.removeEventListener('touchstart', this.onTouchStart);
+    window.removeEventListener('pointerdown', this.onPointerDown);
     window.removeEventListener('keydown', this.onKeyDown);
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
     if (this.sampleFrame) cancelAnimationFrame(this.sampleFrame);
     this.sampleFrame = 0;
     this.cancelNavigation();
+    this.cancelWheel();
     this.scrollElement = null;
   }
 }

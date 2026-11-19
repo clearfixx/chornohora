@@ -37,9 +37,11 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
     const drawer = document.getElementById('route-drawer');
     const prior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focusInitial = () => {
+      // Do not steal focus back from a menu link if the user already tabbed.
+      if (drawer?.contains(document.activeElement)) return;
       const first = drawer?.querySelector<HTMLElement>('.route-drawer-close');
-      if (first && document.activeElement !== first) first.focus({preventScroll: true});
-      else if (!first) drawer?.focus({preventScroll: true});
+      if (first) first.focus({preventScroll: true});
+      else drawer?.focus({preventScroll: true});
     };
     // Visibility and transform transitions can defer focusability until the
     // drawer is painted. Try immediately and after paint, then at transition end.

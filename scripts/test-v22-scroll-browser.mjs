@@ -598,10 +598,39 @@ const check = async (locale, width) => {
     await delay(240);
     const atNight = await evaluate("document.querySelector('[data-petros-meteors]')?.classList.contains('is-active')");
     assert.equal(atNight, true, 'meteors should appear at Petros');
+    const moon = await evaluate(`(() => ({
+      rays: getComputedStyle(document.querySelector('[data-react-journey] .orb .rays')).opacity,
+      craters: getComputedStyle(document.querySelector('[data-react-journey] .orb .moon-craters')).opacity,
+      count: document.querySelectorAll('[data-react-journey] .moon-crater').length,
+    }))()`);
+    assert.equal(moon.rays, '0', `moon still has rays at Petros: ${JSON.stringify(moon)}`);
+    assert.equal(moon.count, 4, 'four lunar surface craters expected');
+    const nightFacet = await evaluate("getComputedStyle(document.querySelector('[data-react-journey] .reference-mountain.l2 svg path:nth-child(2)')).fill");
+    assert.notEqual(nightFacet, 'rgb(0, 0, 0)', 'night mountain facet reverted to black');
+
     await evaluate("window.scrollTo({top: 0, behavior: 'instant'})");
     await delay(240);
     const afterNight = await evaluate("document.querySelector('[data-petros-meteors]')?.classList.contains('is-active')");
     assert.equal(afterNight, false, 'meteors must disappear on returning to Hero');
+    await evaluate(`window.scrollTo({top: ${reactGeometry.top} + ${reactGeometry.travel} * .98, behavior: 'instant'})`);
+    await delay(450);
+    const finale = await evaluate(`(() => {
+      const section = document.querySelector('[data-react-journey] .final.fn');
+      const heading = section?.querySelector('.final-heading');
+      return {
+        text: heading?.textContent,
+        present: !!heading,
+        opacity: section ? getComputedStyle(section).opacity : null,
+        visibility: section ? getComputedStyle(section).visibility : null,
+        headingHeight: heading?.getBoundingClientRect().height,
+        headingTranslate: heading ? getComputedStyle(heading).translate : null,
+      };
+    })()`);
+    assert.ok(finale.present && finale.text === 'Ранок знову' &&
+      finale.visibility === 'visible' && finale.headingHeight > 24 &&
+      Number(finale.opacity) > 0.1,
+      `Final heading is missing or hidden at end of journey: ${JSON.stringify(finale)}`);
+
   }
 
   // React tooltips are rendered into a body portal, outside the animated

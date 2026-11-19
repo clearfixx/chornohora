@@ -824,6 +824,50 @@ const check = async (locale, width) => {
     assert.ok(Math.abs(afterInterruption - interrupted) < 80,
       `React journey continued after wheel interrupt: ${JSON.stringify({interrupted, afterInterruption})}`);
   }
+  // Booking is now a real React-controlled *draft* workflow, not a fake
+  // success message. No backend request may occur or be implied.
+  if (locale === 'uk' && width === 1440) {
+    const entered = await evaluate(`(() => {
+      const form = document.querySelector('[data-react-journey] .book form');
+      if (!form) return false;
+      form.querySelector('[name="name"]').value = 'Тестова мандрівниця';
+      form.querySelector('[name="tel"]').value = '+380000000000';
+      form.querySelector('[name="email"]').value = 'example@test.invalid';
+      form.querySelector('[name="date"]').value = '2026-12-10';
+      form.querySelector('[name="people"]').value = '3';
+      form.querySelector('[name="message"]').value = 'Перевірка чернетки';
+      form.querySelector('[name="consent"]').checked = true;
+      form.requestSubmit();
+      return true;
+    })()`);
+    assert.ok(entered, 'React booking form missing');
+    await delay(200);
+    const prepared = await evaluate(`(() => {
+      const preview = document.querySelector('[data-react-journey] .journey-booking-preview');
+      return {
+        heading: preview?.querySelector('h3')?.textContent,
+        text: preview?.querySelector('textarea')?.value,
+        notice: preview?.querySelector('p')?.textContent,
+        stillForm: !!document.querySelector('[data-react-journey] .book form'),
+      };
+    })()`);
+    assert.equal(prepared.heading, 'Заявка підготовлена');
+    assert.ok(prepared.text?.includes('+380000000000') && prepared.text.includes('3') &&
+      prepared.notice?.includes('не надіслані') && !prepared.stillForm,
+      `Booking should prepare a draft, never claim sent: ${JSON.stringify(prepared)}`);
+    await evaluate("document.querySelector('[data-react-journey] .journey-booking-secondary').click()");
+    await delay(130);
+    const restored = await evaluate(`(() => {
+      const form = document.querySelector('[data-react-journey] .book form');
+      return {name: form?.querySelector('[name="name"]')?.value,
+        phone: form?.querySelector('[name="tel"]')?.value,
+        date: form?.querySelector('[name="date"]')?.value,
+        consent: form?.querySelector('[name="consent"]')?.checked};
+    })()`);
+    assert.deepEqual(restored, {
+      name:'Тестова мандрівниця',phone:'+380000000000',date:'2026-12-10',consent:true,
+    }, `Booking edit lost drafted values: ${JSON.stringify(restored)}`);
+  }
   console.log(`Captured React JSX parity checkpoints: ${locale}/${width}`);
 };
 try {

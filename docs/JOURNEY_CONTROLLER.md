@@ -39,3 +39,7 @@ The legacy CSS deliberately switches to a stacked, non-sticky layout under `pref
 ### Scroll ownership stress gate
 
 Chromium tests direct scrollbar-style jumps while wheel RAF is active, wheel events over form text areas, and resizing during animated navigation followed by a reverse wheel input. The opt-in bounded `?trace=1` diagnostics must record `external-scroll` without pulling the page back. Wheel events on nested/editable content now cancel pending page easing and remain browser-owned. Approved scene timing is unchanged.
+
+### External-scroll RAF guard — 2026-11-19
+
+The React wheel controller now checks the last applied scroll position **at the beginning of each wheel animation frame**, before writing another scroll position. Previously, only the scroll-sampling callback detected external movement; frame ordering could overwrite a user scrollbar drag, browser focus restoration or other scroll first. An observed displacement greater than 80 CSS pixels cancels the pending wheel target and leaves the externally chosen position intact. A viewport/layout change also clamps the target against the current scroll range each frame. Unit checks cover detection boundaries and cancellation policy. This is a targeted mitigation, **not** evidence of complete resolution of the intermittent Petros-to-booking/footer bug. Repeat manual browser acceptance and Chromium stress scenarios before lifting the release blocker. The approved 12% navigation speed adjustment and v22 reference remain unchanged.

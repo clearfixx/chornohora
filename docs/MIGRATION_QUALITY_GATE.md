@@ -50,3 +50,7 @@ The old snapshot-based migration documents are superseded by this status and `do
 The main 41 KB `NativeV22Markup.tsx` is deleted in the React branch and replaced by components under `src/features/journey/components/`, including `scenes/` layers. Nine React-owned image tags use `next/image`. The approved `public/legacy` reference remains untouched. This satisfies the decomposition and image-conversion implementation milestone, but **not** the release gate: old production iframe and compatibility adapters remain; visual and interaction checks, including intermittent Petros ↔ footer scroll, are unresolved.
 
 For scroll diagnostics use `/uk?preview=react&trace=1` and copy `window.__journeyTrace?.()` from DevTools after a reproduction. The trace is bounded and opt-in.
+
+## Responsive and reduced-motion coverage (React preview)
+
+Chromium also checks the React renderer at widths 320, 375, 430, 768, 1280 and 1920 px, for both languages, including missing navigation/form controls, horizontal document overflow and touch-target geometry. An explicit emulated `prefers-reduced-motion: reduce` checks that button navigation is immediate and native wheel input still scrolls. This is an automated smoke gate, not a substitute for visual/manual acceptance.

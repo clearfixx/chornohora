@@ -928,6 +928,101 @@ const check = async (locale, width) => {
   }
   console.log(`Captured React JSX parity checkpoints: ${locale}/${width}`);
 };
+
+// Independent React-only responsive and reduced-motion quality gate.
+// Runs after the expensive original/native parity captures, so it does not
+// repeat their geometry/screenshot work for each additional breakpoint.
+const checkReactResponsiveAndMotion = async () => {
+  for (const locale of ['uk', 'en']) {
+    for (const width of [320, 375, 430, 768, 1280, 1920]) {
+      await command('Emulation.setDeviceMetricsOverride', {
+        width, height: 900, deviceScaleFactor: 1, mobile: width < 700,
+      });
+      await command('Emulation.setTouchEmulationEnabled', {enabled: width < 700, maxTouchPoints: 1});
+      await command('Page.navigate', {url: `http://127.0.0.1:${port}/${locale}?preview=react`});
+      let ready = false;
+      for (let attempt = 0; attempt < 80; attempt++) {
+        ready = await evaluate("!!document.querySelector('[data-react-journey] .track[data-journey-ready]')");
+        if (ready) break;
+        await delay(100);
+      }
+      assert.ok(ready, `React journey did not mount at ${locale}/${width}`);
+      const measures = await evaluate(`(() => {
+        const root = document.documentElement;
+        const book = document.querySelector('[data-react-journey] .book form');
+        const header = document.querySelector('[data-react-journey] header.nav');
+        const menu = header?.querySelector('[data-route-menu-toggle]');
+        const lang = header?.querySelector('.nav-language');
+        const cta = document.querySelector('[data-react-journey] .hero-primary');
+        const scroller = document.scrollingElement;
+        const rect = el => {
+          if (!el) return null;
+          const r = el.getBoundingClientRect();
+          return {width:r.width,left:r.left,right:r.right,height:r.height};
+        };
+        return {
+          width:innerWidth,
+          documentWidth:root.scrollWidth,
+          maxScroll:scroller.scrollHeight-scroller.clientHeight,
+          header:rect(header), menu:rect(menu), language:rect(lang),
+          cta:rect(cta), form:rect(book),
+          required:book ? [...book.querySelectorAll('input[required]')].length : 0,
+          preview:!!document.querySelector('[data-react-journey] .route-ui-v6'),
+        };
+      })()`);
+      assert.ok(measures.documentWidth <= width + 4,
+        `React horizontal overflow at ${locale}/${width}: ${JSON.stringify(measures)}`);
+      assert.ok(measures.header && measures.menu && measures.language && measures.cta &&
+        measures.form && measures.maxScroll > 500 && measures.preview && measures.required >= 3,
+        `React controls missing at ${locale}/${width}: ${JSON.stringify(measures)}`);
+      assert.ok(measures.menu.width >= 32 && measures.menu.height >= 32,
+        `menu touch target too small at ${locale}/${width}: ${JSON.stringify(measures)}`);
+      console.log(`RESPONSIVE ${locale}/${width}: ${JSON.stringify(measures)}`);
+    }
+  }
+  // An explicit reduced-motion preference must disable JS easing for both
+  // click-based navigation and wheel input. Restore default emulation after.
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1440, height: 900, deviceScaleFactor: 1, mobile: false,
+  });
+  await command('Emulation.setTouchEmulationEnabled', {enabled: false});
+  await command('Emulation.setEmulatedMedia', {
+    features: [{name: 'prefers-reduced-motion', value: 'reduce'}],
+  });
+  try {
+    await command('Page.navigate', {url: `http://127.0.0.1:${port}/uk?preview=react`});
+    for (let attempt = 0; attempt < 80; attempt++) {
+      if (await evaluate("!!document.querySelector('[data-react-journey] .track[data-journey-ready]')")) break;
+      await delay(100);
+      if (attempt === 79) throw new Error('Reduced-motion React controller not ready');
+    }
+    const geometry = await evaluate(`(() => {
+      const track=document.querySelector('[data-react-journey] .track');
+      const stage=track.querySelector('.stage');
+      return {top:track.getBoundingClientRect().top + scrollY,
+        travel:track.offsetHeight - stage.offsetHeight,
+        reduced:matchMedia('(prefers-reduced-motion: reduce)').matches};
+    })()`);
+    assert.ok(geometry.reduced && geometry.travel > 200);
+    await evaluate("document.querySelector('[data-react-journey] a.mouse')?.click()");
+    await delay(150);
+    const position = await evaluate("window.scrollY");
+    const expected = geometry.top + geometry.travel * .21;
+    assert.ok(Math.abs(position - expected) < 60,
+      `reduced-motion peak navigation should be immediate: ${JSON.stringify({position,expected})}`);
+    const before = await evaluate('window.scrollY');
+    await command('Input.dispatchMouseEvent', {
+      type:'mouseWheel', x:600, y:420, deltaY:-160, deltaX:0,
+    });
+    await delay(300);
+    const after = await evaluate('window.scrollY');
+    assert.ok(after < before - 10, `native wheel should work with reduced motion: ${JSON.stringify({before,after})}`);
+    console.log(`REDUCED-MOTION ${JSON.stringify({position,expected,before,after})}`);
+  } finally {
+    await command('Emulation.setEmulatedMedia', {features: []});
+  }
+};
+
 try {
   for (let i = 0; i < 80; i++) {
     try { if ((await fetch(`http://127.0.0.1:${port}/uk`)).ok) break; } catch {}
@@ -954,6 +1049,7 @@ try {
   await command('Page.enable');
   await command('Runtime.enable');
   for (const locale of ['uk', 'en']) for (const width of [1440, 390]) await check(locale, width);
+  await checkReactResponsiveAndMotion();
   writeFileSync(join(screenshots, 'geometry.json'), JSON.stringify({samples: geometrySamples}, null, 2));
   console.log('Saved geometry measurements:', geometrySamples.length);
 } finally {

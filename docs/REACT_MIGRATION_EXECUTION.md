@@ -113,3 +113,7 @@ The React preview now uses next-intl for the visible navbar, Hero, four location
 ## Accessibility checkpoint — 2026-11-19
 
 The React route drawer is labelled as a modal dialog only while open; its focus loop handles Tab and Shift+Tab, attempted focus escape, Escape dismissal and focus restoration. A Chromium regression checks this behavior without changing the approved visual design. The page retains native keyboard and touch scrolling; reduced-motion and responsive acceptance remain required before switching the canonical route.
+
+## Responsive and motion regression coverage
+
+The browser suite adds a lightweight React-only viewport matrix (320/375/430/768/1280/1920 × UA/EN) alongside existing detailed 390/1440 captures. It validates scroll bounds and essential controls. Reduced-motion navigation and native wheel are exercised using Chromium media emulation. No changes are made to immutable `public/legacy`.

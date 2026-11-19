@@ -358,6 +358,43 @@ const check = async (locale, width) => {
   })()`);
   assert.equal(reverse.started, false, `route panel failed to hide on reverse scroll: ${locale}/${width}`);
   assert.deepEqual(reverse.active, [], `active summit not cleared on reverse scroll: ${locale}/${width}`);
+  // Regression for user-reported broken mouse cue and drawer navigation:
+  // assert destination is reached, not merely that the click handler fired.
+  const navigation = await evaluate(`(async () => {
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const mouse = document.querySelector('.track a.mouse[href="#govla"]');
+    const track = document.querySelector('.track');
+    const stage = track?.querySelector('.stage');
+    if (!mouse || !stage) return {error: 'mouse cue missing'};
+    const destination = track.getBoundingClientRect().top + scrollY
+      + (track.offsetHeight - stage.offsetHeight) * .21;
+    mouse.click();
+    await sleep(2100);
+    const mouseY = scrollY;
+    const toggle = document.querySelector('[data-route-menu-toggle]');
+    toggle?.click();
+    await sleep(720);
+    document.querySelector('#route-drawer [data-route-target="2"]')?.click();
+    await sleep(2100);
+    const drawerY = scrollY;
+    const thirdDestination = track.getBoundingClientRect().top + scrollY
+      + (track.offsetHeight - stage.offsetHeight) * .63;
+    return {mouseY, drawerY, destination, thirdDestination,
+      closed: !document.body.classList.contains('route-menu-open'),
+      languageLinks: [...document.querySelectorAll('.nav-language a')].map(a => a.getAttribute('href')),
+      floatingLocale: !!document.querySelector('.legacy-journey__locale')};
+  })()`);
+  assert.ok(!navigation.error, `native navigation controls missing: ${JSON.stringify(navigation)}`);
+  assert.ok(Math.abs(navigation.mouseY - navigation.destination) < 45,
+    `mouse cue did not reach first summit ${locale}/${width}: ${JSON.stringify(navigation)}`);
+  assert.ok(Math.abs(navigation.drawerY - navigation.thirdDestination) < 45 && navigation.closed,
+    `drawer did not reach third summit ${locale}/${width}: ${JSON.stringify(navigation)}`);
+  assert.ok(navigation.languageLinks.includes('/uk?preview=native') &&
+    navigation.languageLinks.includes('/en?preview=native') && !navigation.floatingLocale,
+    `navbar locale links missing or duplicated ${locale}/${width}: ${JSON.stringify(navigation)}`);
+  console.log(`NAVIGATION ${locale}/${width}: ${JSON.stringify(navigation)}`);
+  await evaluate("window.scrollTo({top: 0, behavior: 'instant'})");
+  await delay(2200);
   // Exercise real DOM event handlers in the native implementation, not only
   // static markup and scroll positions. All form values are synthetic.
   const interactions = await evaluate(`(async () => {

@@ -588,6 +588,22 @@ const check = async (locale, width) => {
       `closing drawer changed scroll: ${JSON.stringify({beforeMenu, closed})}`);
   }
 
+  // Meteors belong only to the Petros portion of the same React scroll state.
+  if (locale === 'uk' && width === 1440) {
+    await evaluate(`window.scrollTo({top: ${reactGeometry.top} + ${reactGeometry.travel} * .63, behavior: 'instant'})`);
+    await delay(240);
+    const beforeNight = await evaluate("document.querySelector('[data-petros-meteors]')?.classList.contains('is-active')");
+    assert.equal(beforeNight, false, 'meteors should not run in the evening');
+    await evaluate(`window.scrollTo({top: ${reactGeometry.top} + ${reactGeometry.travel} * .83, behavior: 'instant'})`);
+    await delay(240);
+    const atNight = await evaluate("document.querySelector('[data-petros-meteors]')?.classList.contains('is-active')");
+    assert.equal(atNight, true, 'meteors should appear at Petros');
+    await evaluate("window.scrollTo({top: 0, behavior: 'instant'})");
+    await delay(240);
+    const afterNight = await evaluate("document.querySelector('[data-petros-meteors]')?.classList.contains('is-active')");
+    assert.equal(afterNight, false, 'meteors must disappear on returning to Hero');
+  }
+
   // React tooltips are rendered into a body portal, outside the animated
   // scene stacking context that hides the original v22 .stop-card elements.
   if (locale === 'uk' && width === 1440) {
@@ -607,6 +623,18 @@ const check = async (locale, width) => {
     assert.ok(hover.present && hover.visible && hover.text.includes('Бребенескул') &&
       hover.text.includes('1 801 м') && hover.role === 'tooltip',
       `React hover tooltip missing: ${JSON.stringify(hover)}`);
+    const previewFacts = await evaluate(`(() => {
+      const tip = document.querySelector('[data-react-route-tooltip="2"]');
+      return {
+        previewPathCount: tip?.querySelectorAll('.reference-tooltip-preview svg path').length ?? 0,
+        previewWidth: tip?.querySelector('.reference-tooltip-preview')?.getBoundingClientRect().width ?? 0,
+        factCount: tip?.querySelectorAll('.reference-tooltip-facts li').length ?? 0,
+        thirdFact: tip?.querySelector('.reference-tooltip-facts li:last-child')?.textContent ?? '',
+      };
+    })()`);
+    assert.ok(previewFacts.previewPathCount >= 3 && previewFacts.previewWidth > 70 &&
+      previewFacts.factCount === 3 && previewFacts.thirdFact.includes('найвисокогірніше озеро'),
+      `Reference preview or icon facts missing: ${JSON.stringify(previewFacts)}`);
     await command('Input.dispatchMouseEvent', {type: 'mouseMoved', x: 10, y: 400});
     await delay(150);
     assert.equal(await evaluate("!!document.querySelector('[data-react-route-tooltip]')"), false,

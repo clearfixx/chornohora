@@ -86,3 +86,16 @@ test('replacement mountain geometry and location headings are present', () => {
   for (const subtitle of ["Сонце зустрічає вас першим","Озеро, що тримає небо","Вечір, який горить на воді","Ніч, повна зірок"]) assert.ok(content.includes(subtitle));
   assert.ok(content.includes('Ранок знову'));
 });
+
+test('four reference SVG previews, three-icon facts and night-only meteor component are present', () => {
+  const preview=readFileSync('src/features/journey/components/LocationPreview.tsx','utf8');
+  const metrics=readFileSync('src/features/journey/data/locations.ts','utf8');
+  const meteors=readFileSync('src/features/journey/components/scenes/PetrosMeteors.tsx','utf8');
+  for(const path of ['M0 130V98Q30 70 70 88T143 80V130Z',
+    'M0 84 L40 38 L70 68 L100 30 L143 80 V130 H0 Z',
+    'M0 88 L30 64 L60 84 L95 58 L143 88 V130 H0 Z',
+    'M0 130 V102 L46 58 L62 78 L82 50 L143 106 V130 Z']) assert.ok(preview.includes(path));
+  for(const text of ['≈ 25 млн років','найвисокогірніше озеро','льодовикове озеро','ніч під зорями'])
+    assert.ok(metrics.includes(text));
+  assert.match(meteors,/progress >= .76 && progress < .94/);
+});

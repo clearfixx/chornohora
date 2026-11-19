@@ -96,3 +96,12 @@ Apply module boundaries by feature, keep React visual components declarative, an
 ## Status
 
 The React store and controller are now mounted in the isolated `?preview=react` route. The original static scene and drawer have been converted to checked-in JSX, and React controls route navigation and menu state. Chromium compares original/native/React frames at fixed checkpoints. The canonical iframe and older `?preview=native` DOM adapter remain only as reference/compatibility modes. Traveler, route progress, location tooltips and drawer behavior are React-owned, but the booking behavior and full UA/EN translation remain unfinished; the imported JSX monolith and plain React `<img>` tags have been removed, but component naming, booking functionality, locale content and full browser parity still need work. The intermittent scroll issue and the CI scroll test are still open, so no architectural or visual completion is claimed.
+
+## User-requested visual upgrade (separate from frozen v22 parity)
+
+Approved source: the user's bundled `Чорногора1 — чотири неба.html` reference. This visual upgrade is **intentional**, so original-v22 pixel metrics for the newly replaced mountain silhouettes and tooltip designs are no longer valid as strict equality targets. Preserve baseline comparisons for the unchanged scene geometry, timing and UI.
+- Replace **all** original React mountains (old `l1/l2/l3/l4`) with the reference's **three** complete `l1/l2/l3` SVG ranges (4200×560 / 4200×800 / 4200×440), including the lit facets of the latter two; retain existing parallax ordering and traveler/forest layers.
+- Add the four exact supplied subtitles under the location titles. The existing “Ранок знову” heading is already in the closing scene, so avoid duplicating it.
+- Render the four reference thumbnail SVGs (not stock images) and the reference's three icon facts in React tooltips with location-specific values.
+- Petros meteors are decorative and only active during the Petros journey interval; reduced motion disables animation.
+- Test click, wheel, reverse scrolling, mobile layering and tooltip keyboard interaction. Legacy source in `public/legacy` remains unchanged.

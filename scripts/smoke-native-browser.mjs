@@ -59,6 +59,14 @@ try {
     assert.ok(!react.includes('legacy-journey__frame'), 'React preview must not use iframe');
     assert.ok(react.includes('/v22-react-scene.css'), 'React stylesheet must be linked externally');
     assert.ok(!react.includes('<style>/* cyrillic-ext */'), 'React preview must not embed legacy CSS as inline style');
+    if(locale === 'en') {
+      for(const value of ['A day on the ridge','The sun greets you first','Morning again','Reserve your place on the ridge']){
+        assert.ok(react.includes(value), 'English React text missing: '+value);
+      }
+      assert.ok(!react.includes('Найвища точка України.'),'English preview still renders Ukrainian scene copy');
+    } else {
+      assert.ok(react.includes('Сонце зустрічає вас першим'), 'Ukrainian scene copy missing');
+    }
     console.log(`Browser smoke OK: /${locale} and /${locale}?preview=native`);
   }
 } finally {

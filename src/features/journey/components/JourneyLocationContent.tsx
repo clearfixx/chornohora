@@ -47,7 +47,7 @@ export function JourneyLocationContent() {
 <aside className="card show k4"><ul>
 <li><b>{t("card41")}</b><span>{t("card41Text")}</span></li>
 <li><b>{t("card42")}</b><span>{t("card42Text")}</span></li>
-<li><b>{t("phase4")}</b><span>{t("card43Text")}</span></li>
+<li><b>{t("card43")}</b><span>{t("card43Text")}</span></li>
 </ul></aside>
 <section className="final fn" style={{"left":"6vw","top":"112px","width":"min(920px,88vw)","zIndex":"12"} as React.CSSProperties}>
 <h2 className="name final-heading" style={{"marginTop":"0"} as React.CSSProperties}>{t("finalTitle")}</h2>

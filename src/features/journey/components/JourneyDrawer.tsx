@@ -33,7 +33,7 @@ export function JourneyDrawer({open, onDismiss, onNavigate}: DrawerProps) {
     <a href="#brebeneskul" data-route-target="1"><small>02 / {t("phase2").toUpperCase()}</small><span>{t("peak2")}</span><b aria-hidden="true">↗</b></a>
     <a href="#nesamovyte" data-route-target="2"><small>03 / {t("phase3").toUpperCase()}</small><span>{t("peak3")}</span><b aria-hidden="true">↗</b></a>
     <a href="#petros" data-route-target="3" data-journey-action="goPetros"><small>04 / {t("phase4").toUpperCase()}</small><span>{t("peak4")}</span><b aria-hidden="true">↗</b></a>
-  </nav><a className="route-drawer-book" href="#book" data-route-target="book" data-journey-action="goBook">Забронювати місце <span aria-hidden="true">↗</span></a></div>
+  </nav><a className="route-drawer-book" href="#book" data-route-target="book" data-journey-action="goBook">{t("book")} <span aria-hidden="true">↗</span></a></div>
   <div className="route-drawer-foot"><span>{t("drawerFoot")}</span><span>48°09′ N · 24°30′ E</span></div>
 </aside>
     </>

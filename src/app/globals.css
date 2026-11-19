@@ -290,3 +290,13 @@ body:has([data-v22-source-scene]:not([data-react-journey])).route-menu-open .rou
 78%,88%{--s1:#060833;--s2:#1B1A75;--s3:#12A3A0;--m1:#3446B0;--m2:#222C88;--m3:#161C62;--m4:#0A0E38;--orb:#F2F0FF;--glow:#B4BEFF73;--cl:#5A64BE59;--lit:#6F86FF}
 98%,100%{--s1:#6B2FD6;--s2:#FF4F8B;--s3:#FFC247;--m1:#7C4DA8;--m2:#3A2C78;--m3:#2A1C5C;--m4:#2B1160;--orb:#FFF1A8;--glow:#FFE06699;--cl:#FFD6E4D9;--lit:#FF8F2E}
 }
+
+/* React-owned booking draft: no counterfeit "sent" state without a backend. */
+.journey-booking-preview {display:flex;flex-direction:column;gap:16px;color:#1B0B5A}
+.journey-booking-preview h3 {font:800 clamp(24px,3vw,36px)/1.15 Unbounded,Onest,sans-serif;margin:0}
+.journey-booking-preview p {font:400 15px/1.5 Onest,sans-serif;margin:0}
+.journey-booking-summary-label {font:700 15px/1.3 Onest,sans-serif}
+.journey-booking-preview textarea {width:100%;min-height:160px;box-sizing:border-box;border:1px solid #cbc2ec;border-radius:12px;padding:14px;background:#f9f7ff;color:#1B0B5A;font:400 15px/1.5 Onest,sans-serif;resize:vertical}
+.journey-booking-actions {display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.journey-booking-actions .cta {border:0;cursor:pointer;background:#ffe14d}
+.journey-booking-secondary {padding:12px 18px;background:#efebfc;color:#1B0B5A;border:1px solid #dcd6f2;border-radius:16px;cursor:pointer;font:700 15px/1.4 Onest,sans-serif}

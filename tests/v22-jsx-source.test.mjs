@@ -84,8 +84,12 @@ test('replacement mountain geometry and location headings are present', () => {
   for (const signature of ['M0,560 L0,178 L189,260','M0,800 L0,160 L153,615','M0,440 L0,207 L161,313']) assert.ok(mountain.includes(signature));
   assert.doesNotMatch(mountain,/className="ly l4"/);
   const content=readFileSync('src/features/journey/components/JourneyLocationContent.tsx','utf8');
-  for (const subtitle of ["Сонце зустрічає вас першим","Озеро, що тримає небо","Вечір, який горить на воді","Ніч, повна зірок"]) assert.ok(content.includes(subtitle));
-  assert.ok(content.includes('Ранок знову'));
+  const ua=JSON.parse(readFileSync('messages/uk.json','utf8')).Journey;
+  const en=JSON.parse(readFileSync('messages/en.json','utf8')).Journey;
+  for(const key of ['subtitle1','subtitle2','subtitle3','subtitle4','finalTitle']){
+    assert.ok(content.includes('t("'+key+'")'),key);
+    assert.ok(ua[key] && en[key],key);
+  }
 });
 
 test('four reference SVG previews, three-icon facts and night-only meteor component are present', () => {
@@ -105,7 +109,8 @@ test('closing heading is not subject to peak-name exit animation', () => {
   const content=readFileSync('src/features/journey/components/JourneyLocationContent.tsx','utf8');
   const final=content.slice(content.indexOf('className="final fn"'));
   assert.ok(final.includes('className="name final-heading"'));
-  assert.ok(final.includes('Ранок знову'));
+  assert.ok(final.includes('t("finalTitle")'));
+  assert.equal(JSON.parse(readFileSync('messages/uk.json','utf8')).Journey.finalTitle,'Ранок знову');
   assert.doesNotMatch(final,/className="nmi"/);
 });
 test('mountain facets and all four scenes use the exact reference palette', () => {
@@ -144,4 +149,13 @@ test('React booking prepares a request without falsely reporting submission', ()
   const en=JSON.parse(readFileSync('messages/en.json','utf8'));
   for(const key of ['bookingPrepare','bookingPreviewNotice','bookingCopy','bookingNeedsBackend'])
     assert.ok(ua.Journey[key] && en.Journey[key],key);
+});
+
+test('UK and EN dictionaries contain equivalent Journey keys', () => {
+  const uk=JSON.parse(readFileSync('messages/uk.json','utf8')).Journey;
+  const en=JSON.parse(readFileSync('messages/en.json','utf8')).Journey;
+  assert.deepEqual(Object.keys(uk).sort(),Object.keys(en).sort());
+  assert.ok(Object.values(en).every(v=>typeof v === 'string' && v.trim().length));
+  assert.ok(en.heroHeading.includes('ridge'));
+  assert.ok(en.peak1==='Hoverla' && en.finalTitle==='Morning again');
 });

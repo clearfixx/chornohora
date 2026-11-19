@@ -105,3 +105,7 @@ Approved source: the user's bundled `Чорногора1 — чотири неб
 - Render the four reference thumbnail SVGs (not stock images) and the reference's three icon facts in React tooltips with location-specific values.
 - Petros meteors are decorative and only active during the Petros journey interval; reduced motion disables animation.
 - Test click, wheel, reverse scrolling, mobile layering and tooltip keyboard interaction. Legacy source in `public/legacy` remains unchanged.
+
+## Next integration — 2026-11-19
+
+The React preview now uses next-intl for the visible navbar, Hero, four location descriptions, route drawer, footer, route buttons and floating tooltip details in UA/EN. Both language links explicitly retain `?preview=react`, rather than silently returning to the old iframe route. Locale-specific metadata is generated server-side. The booking form has a React-owned validated **draft preview and copy** workflow; real transmission remains unimplemented and MUST NOT be claimed to users. Server submission needs a configured organizer recipient, validation, abuse protection and consent retention before enabling. Legacy canonical routes remain unchanged. Scroll/visual acceptance and client interactions are release blockers.

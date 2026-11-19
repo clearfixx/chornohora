@@ -59,6 +59,9 @@ try {
     assert.ok(!react.includes('legacy-journey__frame'), 'React preview must not use iframe');
     assert.ok(react.includes('/v22-react-scene.css'), 'React stylesheet must be linked externally');
     assert.ok(!react.includes('<style>/* cyrillic-ext */'), 'React preview must not embed legacy CSS as inline style');
+    assert.ok((react.match(/preview=react/g) || []).length >= 2,
+      'language switch must retain the experimental React preview');
+
     if(locale === 'en') {
       for(const value of ['A day on the ridge','The sun greets you first','Morning again','Reserve your place on the ridge']){
         assert.ok(react.includes(value), 'English React text missing: '+value);

@@ -14,9 +14,9 @@ export function JourneyNavbar({locale, menuOpen}: {locale: 'uk' | 'en'; menuOpen
 <nav aria-label={t("navQuick")} className="navlinks nav-actions"><a className="nav-phone" href="tel:+380440000000" aria-label={t("navPhone")}>+380 (44) 000-00-00</a><a className="nav-book-cta" href="#book" data-journey-action="goBook">{t("book")}</a></nav>
 
 <nav className="nav-language" aria-label={locale === 'uk' ? 'Мова' : 'Language'}>
-  <Link href="/" locale="uk" aria-current={locale === 'uk' ? 'page' : undefined}>UA</Link>
+  <Link href={{pathname: "/", query: {preview: "react"}}} locale="uk" aria-current={locale === 'uk' ? 'page' : undefined}>UA</Link>
   <span aria-hidden="true"> / </span>
-  <Link href="/" locale="en" aria-current={locale === 'en' ? 'page' : undefined}>EN</Link>
+  <Link href={{pathname: "/", query: {preview: "react"}}} locale="en" aria-current={locale === 'en' ? 'page' : undefined}>EN</Link>
 </nav><button type="button" aria-label={menuOpen ? t('navClose') : t('navOpen')} aria-expanded={menuOpen} aria-controls="route-drawer" className="nav-menu" data-route-menu-toggle=""><span></span><span></span><span></span></button></header>
   );
 }

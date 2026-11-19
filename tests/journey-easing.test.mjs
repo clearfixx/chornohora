@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {easeInOutCubic, journeyDuration} from '../src/engine/journey-easing.ts';
+import {easeInOutCubic, journeyDuration, wheelScrollWasInterrupted} from '../src/engine/journey-easing.ts';
 
 test('navigation easing is smooth, monotonic and endpoint-exact', () => {
   assert.equal(easeInOutCubic(0), 0);
@@ -27,4 +27,13 @@ test('navigation durations are about twelve percent faster than the previous pol
     const ratio = journeyDuration(distance, 900) / oldDuration(distance);
     assert.ok(ratio > 0.88 && ratio < 0.91, `duration ratio unexpected for ${distance}: ${ratio}`);
   }
+});
+
+test('wheel easing yields to external jumps but tolerates pixel rounding', () => {
+  assert.equal(wheelScrollWasInterrupted(900, null), false);
+  assert.equal(wheelScrollWasInterrupted(900, 900), false);
+  assert.equal(wheelScrollWasInterrupted(979, 900), false);
+  assert.equal(wheelScrollWasInterrupted(981, 900), true);
+  assert.equal(wheelScrollWasInterrupted(819, 900), true);
+  assert.equal(wheelScrollWasInterrupted(Number.NaN, 900), false);
 });

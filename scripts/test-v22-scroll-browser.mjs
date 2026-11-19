@@ -541,6 +541,53 @@ const check = async (locale, width) => {
     }
 
   }
+  // The React drawer must preserve the approved v19 perspective scene,
+  // rather than the flat native-compatibility mode. Scroller position must
+  // survive opening/closing, with the route track itself untransformed.
+  if (locale === 'uk' && width === 1440) {
+    await evaluate(`window.scrollTo({top: ${reactGeometry.top} + ${reactGeometry.travel} * .21, behavior: 'instant'})`);
+    await delay(350);
+    const beforeMenu = await evaluate('window.scrollY');
+    const menuButton = await evaluate(`(() => {
+      const el = document.querySelector('[data-react-journey] [data-route-menu-toggle]');
+      if (!el) return false;
+      el.click();
+      return true;
+    })()`);
+    assert.ok(menuButton, 'React route menu toggle missing');
+    await delay(720);
+    const opened = await evaluate(`(() => {
+      const stage = document.querySelector('[data-react-journey] .track .stage');
+      const track = document.querySelector('[data-react-journey] .track');
+      const drawer = document.querySelector('#route-drawer');
+      const style = getComputedStyle(stage);
+      return {
+        bodyOpen: document.body.classList.contains('route-menu-open'),
+        transform: style.transform,
+        origin: style.transformOrigin,
+        trackTransform: getComputedStyle(track).transform,
+        drawerVisible: getComputedStyle(drawer).visibility === 'visible',
+        scroll: scrollY,
+      };
+    })()`);
+    assert.ok(opened.bodyOpen && opened.drawerVisible &&
+      opened.transform.startsWith('matrix3d(') && opened.trackTransform === 'none',
+      `React perspective effect absent or track transformed: ${JSON.stringify(opened)}`);
+    assert.ok(Math.abs(opened.scroll - beforeMenu) < 3,
+      `opening drawer changed scroll position: ${JSON.stringify({beforeMenu, opened})}`);
+    await evaluate("document.querySelector('#route-drawer .route-drawer-close').click()");
+    await delay(720);
+    const closed = await evaluate(`(() => ({
+      opened: document.body.classList.contains('route-menu-open'),
+      transform: getComputedStyle(document.querySelector('[data-react-journey] .track .stage')).transform,
+      scroll: scrollY,
+    }))()`);
+    assert.equal(closed.opened, false, 'React drawer failed to close');
+    assert.equal(closed.transform, 'none', 'perspective effect not reset on close');
+    assert.ok(Math.abs(closed.scroll - beforeMenu) < 3,
+      `closing drawer changed scroll: ${JSON.stringify({beforeMenu, closed})}`);
+  }
+
   // React tooltips are rendered into a body portal, outside the animated
   // scene stacking context that hides the original v22 .stop-card elements.
   if (locale === 'uk' && width === 1440) {

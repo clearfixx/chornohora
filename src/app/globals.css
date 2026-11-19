@@ -55,7 +55,7 @@ a {color: inherit;}
   }
 }
 
-/* Native v22 acceptance fixes: no duplicated language switch or tilted scene. */
+/* Native compatibility-only fixes: do not suppress the approved perspective animation in React preview. */
 [data-v22-source-scene] .nav-language a {
   color: inherit;
   text-decoration: none;
@@ -69,16 +69,16 @@ a {color: inherit;}
   outline: 2px solid #ffe14d;
   outline-offset: 3px;
 }
-body:has([data-v22-source-scene]).route-menu-open .track .stage {
+body:has([data-v22-source-scene]:not([data-react-journey])).route-menu-open .track .stage {
   transform: none !important;
   filter: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
-body:has([data-v22-source-scene]).route-menu-open .track {
+body:has([data-v22-source-scene]:not([data-react-journey])).route-menu-open .track {
   pointer-events: auto;
 }
-body:has([data-v22-source-scene]).route-menu-open .route-menu-scrim {
+body:has([data-v22-source-scene]:not([data-react-journey])).route-menu-open .route-menu-scrim {
   background: rgba(5,3,20,.68);
 }
 @media (max-width: 700px) {
@@ -157,4 +157,15 @@ body:has([data-v22-source-scene]).route-menu-open .route-menu-scrim {
    Wheel smoothing is continuous across React preview, including booking/footer, to avoid boundary speed jumps. Preserve native touch, keyboard and reduced-motion scrolling. */
 [data-react-journey] .track {
   --S: 12800px;
+}
+
+/* React preview reuses the approved v19 perspective drawer animation from
+   public/legacy/styles.css. The native comparison intentionally stays flat.
+   Transform ONLY the viewport-sized .stage, never the tall .track: rotating
+   the track breaks scrolling and scroll-linked animation geometry. */
+@media (prefers-reduced-motion: reduce) {
+  body:has([data-react-journey]).route-menu-open .track .stage {
+    transform: none !important;
+    filter: none !important;
+  }
 }

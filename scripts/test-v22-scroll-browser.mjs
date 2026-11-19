@@ -87,6 +87,55 @@ const checkGhostTitle = async (locale, width, mode, name, expectedPeak) => {
   assert.ok(state.topFraction >= 0.2 && state.topFraction <= 0.5, `outline title outside sky composition: ${locale}/${width}/${mode}/${name}: ${JSON.stringify(state)}`);
   assert.ok(state.mountainZ > state.titleZ, `mountains must render above outline title: ${locale}/${mode}/${name}`);
 };
+// Check intermediate scroll frames, not only the four static summit screenshots.
+// Opacity should evolve continuously and the title must not jump sideways.
+const checkGhostContinuity = async (locale, width, mode) => {
+  const result = await evaluate(`(async () => {
+    const doc = ${mode === 'original' ? "document.querySelector('iframe[src=\"/legacy/index.html\"]').contentDocument" : 'document'};
+    const win = doc.defaultView;
+    const track = doc.querySelector('.track');
+    const stage = track.querySelector('.stage');
+    const top = track.getBoundingClientRect().top + win.scrollY;
+    const travel = track.offsetHeight - stage.offsetHeight;
+    const peaks = [0.21, 0.42, 0.63, 0.83];
+    const data = [];
+    for (let index = 0; index < peaks.length; index++) {
+      const samples = [];
+      for (const offset of [-0.035, -0.025, -0.015, -0.005, 0, 0.005, 0.015, 0.025, 0.035]) {
+        win.scrollTo({top: top + travel * (peaks[index] + offset), behavior: 'instant'});
+        await new Promise(resolve => win.requestAnimationFrame(() => win.requestAnimationFrame(resolve)));
+        const el = doc.querySelector('.track .ghost.g' + (index + 1));
+        const rect = el.getBoundingClientRect();
+        const stageRect = stage.getBoundingClientRect();
+        samples.push({
+          offset,
+          opacity: Number(win.getComputedStyle(el).opacity),
+          center: (rect.left + rect.right - stageRect.left - stageRect.right) / 2,
+          visible: rect.right > 0 && rect.left < doc.documentElement.clientWidth,
+        });
+      }
+      data.push(samples);
+    }
+    return data;
+  })()`);
+  for (let index = 0; index < result.length; index++) {
+    const samples = result[index];
+    for (const sample of samples) {
+      assert.ok(Number.isFinite(sample.opacity) && sample.opacity >= 0 && sample.opacity <= 1,
+        `invalid outline opacity at ${locale}/${width}/${mode}/peak${index + 1}: ${JSON.stringify(sample)}`);
+      assert.ok(Math.abs(sample.center) <= 1,
+        `outline jumped sideways at ${locale}/${width}/${mode}/peak${index + 1}: ${JSON.stringify(sample)}`);
+      assert.ok(sample.visible, `outline left viewport at ${locale}/${width}/${mode}/peak${index + 1}`);
+    }
+    for (let i = 1; i < samples.length; i++) {
+      assert.ok(Math.abs(samples[i].opacity - samples[i - 1].opacity) <= 0.55,
+        `abrupt outline fade at ${locale}/${width}/${mode}/peak${index + 1}: ${JSON.stringify(samples)}`);
+    }
+    assert.ok(samples[4].opacity > 0.5,
+      `outline not visible at summit center ${locale}/${width}/${mode}/peak${index + 1}`);
+    console.log(`GHOST CONTINUITY ${locale}/${width}/${mode}/peak${index + 1}: ${JSON.stringify(samples)}`);
+  }
+};
 const sampleGeometry = async (locale, width, mode, name) => {
   const data = await evaluate(`(() => {
     const doc = ${mode === 'original' ? "document.querySelector('iframe[src=\"/legacy/index.html\"]').contentDocument" : 'document'};
@@ -155,6 +204,7 @@ const check = async (locale, width) => {
     await capture(locale, width, 'native', name);
     console.log(`CDP ${locale}/${width} ${name}: ${JSON.stringify(state)}`);
   }
+  await checkGhostContinuity(locale, width, 'native');
   const reverse = await evaluate(`(async () => {
     window.scrollTo({top: 0, behavior: 'instant'});
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -255,6 +305,7 @@ const check = async (locale, width) => {
     await sampleGeometry(locale, width, 'original', name);
     await capture(locale, width, 'original', name);
   }
+  await checkGhostContinuity(locale, width, 'original');
 };
 try {
   for (let i = 0; i < 80; i++) {

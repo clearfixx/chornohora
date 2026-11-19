@@ -21,12 +21,13 @@ export function mountV22StaticNavigation(
 ): () => void {
   const onClick = (event: MouseEvent) => {
     if (!(event.target instanceof Element)) return;
-    const element = event.target.closest<HTMLElement>('[sc-camel-on-click]');
+    const element = event.target.closest<HTMLElement>('[sc-camel-on-click], a.mouse[href^="#"], a[href="#start"]');
     if (!element || !scene.contains(element)) return;
     const expression = element.getAttribute('sc-camel-on-click');
     const match = expression?.match(/^\{\{\s*(\w+)\s*\}\}$/);
-    if (!match) return;
-    const target = bindings[match[1]];
+    const hash = element.getAttribute('href')?.slice(1);
+    const anchors: Record<string, V22Target> = {start: 'start', govla: 'govla', brebeneskul: 'brebeneskul', nesamovyte: 'nesamovyte', petros: 'petros', book: 'book'};
+    const target = match ? bindings[match[1]] : hash ? anchors[hash] : undefined;
     if (target) controller.navigate(target, event);
   };
   scene.addEventListener('click', onClick);

@@ -1423,6 +1423,7 @@ const checkReactPetrosPaintCosts = async () => {
   // Reduced blur radii are measured as candidates, NOT approved style changes.
   const variants=[
     {name:'original-before',css:''},
+    {name:'cached-aurora-raster',css:'.stage .aur{filter:none!important;background:none!important;}'},
     {name:'aurora-composite-layer',css:'.stage .aur{will-change:opacity,transform;transform:translateZ(0)!important;}'},
     {name:'original-middle',css:''},
     {name:'aurora-blur-36px',css:'.stage .aur{filter:blur(36px)!important;}'},
@@ -1438,7 +1439,54 @@ const checkReactPetrosPaintCosts = async () => {
     const reply=await command('Performance.getMetrics');
     return Object.fromEntries(reply.result.metrics.map(metric=>[metric.name,metric.value]));
   };
+  // Experiment, not production: rasterize each gradient and blur once into
+  // PNG-backed images. The same parent animation, opacity and blend mode
+  // still run at scroll time. Canvas gradient/ellipse geometry is approximate;
+  // screenshots MUST be compared before considering production usage.
+  const setCachedAurora = async enabled => evaluate(`(() => {
+    const auroras=[...document.querySelectorAll('[data-react-journey] .stage .aur')];
+    for (const el of auroras) {
+      el.querySelector('[data-petros-raster]')?.remove();
+      if (!`+enabled+`) continue;
+      const second=auroras.indexOf(el)===1;
+      const w=Math.ceil(el.getBoundingClientRect().width);
+      const h=Math.ceil(el.getBoundingClientRect().height);
+      const blur=second?56:50;
+      const pad=Math.ceil(blur*3);
+      const gradientStops=second
+        ? [[0,'transparent'],[.08,'transparent'],[.38,'rgba(255,90,200,.6)'],[.7,'rgba(40,230,255,.65)'],[.95,'transparent'],[1,'transparent']]
+        : [[0,'transparent'],[.3,'rgba(25,245,180,.75)'],[.62,'rgba(123,92,255,.7)'],[.92,'transparent'],[1,'transparent']];
+      const angle=(second?80:100)*Math.PI/180;
+      const dx=Math.sin(angle),dy=-Math.cos(angle);
+      const length=Math.abs(w*dx)+Math.abs(h*dy);
+      const source=document.createElement('canvas');
+      source.width=w;source.height=h;
+      const s=source.getContext('2d');
+      const gradient=s.createLinearGradient(w/2-dx*length/2,h/2-dy*length/2,
+        w/2+dx*length/2,h/2+dy*length/2);
+      for(const [offset,color] of gradientStops) gradient.addColorStop(offset,color);
+      s.fillStyle=gradient;
+      s.beginPath();s.ellipse(w/2,h/2,w/2,h/2,0,0,2*Math.PI);s.fill();
+      const canvas=document.createElement('canvas');
+      canvas.width=w+pad*2;canvas.height=h+pad*2;
+      const context=canvas.getContext('2d');
+      context.filter='blur('+blur+'px)';
+      context.drawImage(source,pad,pad);
+      const img=document.createElement('img');
+      img.dataset.petrosRaster='';
+      img.alt='';
+      img.decoding='sync';
+      img.style.cssText='position:absolute;max-width:none;pointer-events:none;left:-'+pad+
+        'px;top:-'+pad+'px;width:'+canvas.width+'px;height:'+canvas.height+'px;';
+      img.src=canvas.toDataURL('image/png');
+      el.append(img);
+    }
+    return {layers:auroras.length,images:document.querySelectorAll('[data-petros-raster]').length};
+  })()`);
   for(const variant of variants) {
+    const raster=await setCachedAurora(variant.name==='cached-aurora-raster');
+    assert.equal(raster.images,variant.name==='cached-aurora-raster'?2:0,
+      'Test raster setup did not match selected variant');
     await evaluate(`(() => {
       document.getElementById('react-petros-perf-ablation')?.remove();
       const style=document.createElement('style');
@@ -1448,7 +1496,7 @@ const checkReactPetrosPaintCosts = async () => {
     })()`);
     // Review visual differences at the actual night-scene checkpoints before
     // considering a smaller blur radius in the shipped stylesheet.
-    if (['original-before','aurora-blur-24px','no-aurora-blur'].includes(variant.name)) {
+    if (['original-before','cached-aurora-raster','aurora-blur-24px','no-aurora-blur'].includes(variant.name)) {
       for(const progress of [.83,.88]) {
         const position=geometry.top+geometry.travel*progress;
         await evaluate("window.scrollTo({top:"+position+",behavior:'instant'})");
@@ -1505,6 +1553,7 @@ const checkReactPetrosPaintCosts = async () => {
     console.log('PETROS PAINT ABLATION '+JSON.stringify(record));
   }
   await evaluate("document.getElementById('react-petros-perf-ablation')?.remove()");
+  await setCachedAurora(false);
   // Repeated controls make the interpretation more grounded than a
   // single no-filter versus filter comparison on a noisy CI machine.
   const controls=comparisons.filter(row=>row.variant.startsWith('original-'));

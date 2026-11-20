@@ -1184,7 +1184,37 @@ const checkReactBookingFooterSeam = async () => {
     const reentered=await evaluate('scrollY');
     assert.ok(reentered<edges.end-100,
       'Wheel did not re-enter the mountain journey from booking: '+JSON.stringify({locale,edges,reentered}));
-    console.log('BOOKING FOOTER SEAM '+locale+' '+JSON.stringify({edges,established,down:beforeReverse,up:goingUp.at(-1),reentered}));
+
+    // Alternate directions repeatedly at the exact stage/booking boundary.
+    // A single successful reversal does not catch stale momentum leaking
+    // into the next gesture. Exercise short consecutive wheel bursts in both
+    // locales, and verify that each burst settles in its requested direction.
+    const seamStart=edges.end-30;
+    await evaluate("window.scrollTo({top:"+seamStart+",behavior:'instant'})");
+    await delay(250);
+    let prior=await evaluate('scrollY');
+    assert.ok(Math.abs(prior-seamStart)<20,
+      'Could not establish rapid-reversal seam checkpoint: '+JSON.stringify({locale,seamStart,prior}));
+    const reversals=[];
+    for(const direction of [1,-1,1,-1,1,-1]){
+      for(let i=0;i<3;i++){
+        await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:520,y:430,deltaY:direction*120,deltaX:0});
+        await delay(35);
+      }
+      await delay(500);
+      const moved=await evaluate('scrollY');
+      assert.ok((moved-prior)*direction>35,
+        'Rapid wheel reversal ignored or moved in old direction: '+
+          JSON.stringify({locale,direction,prior,moved,reversals}));
+      reversals.push({direction,start:prior,end:moved});
+      prior=moved;
+    }
+    await delay(220);
+    const resting=await evaluate('scrollY');
+    assert.ok(Math.abs(resting-prior)<5,
+      'Wheel momentum kept oscillating after reversal sequence: '+
+        JSON.stringify({locale,reversals,prior,resting}));
+    console.log('BOOKING FOOTER SEAM '+locale+' '+JSON.stringify({edges,established,down:beforeReverse,up:goingUp.at(-1),reentered,reversals}));
   }
 };
 

@@ -94,3 +94,7 @@ The 11-point React journey Chromium matrix (UA/EN × 390/1440) now checks that a
 ## Traveler and forest occlusion gate — 2026-11-20
 
 The eleven-checkpoint Chromium matrix now checks the forest composition in UA/EN at both 390px mobile and 1440px desktop. The back-forest SVG must remain behind the traveler and the foreground forest above it in computed stacking order; both forest layers must retain their existing 5000×220 viewBox and SVG geometry, and foreground pointer events must remain disabled. The assertions run at every forward checkpoint to detect incidental React/CSS regressions without altering approved artwork or motion. This structural layer check does **not** establish pixel-perfect occlusion at every intermediate traveler location; full visual review is still required prior to switching the canonical route.
+
+## Mobile route tooltip viewport gate — 2026-11-20
+
+The React route tooltip portal now clamps its measured position on **both** viewport axes, placing the popover below the focused route marker if the normal above-marker placement lacks room, then constraining the final position to a 12px safe edge. The Chromium responsive matrix focuses the Brebeneskul route marker by keyboard at 320/375/430px in UA and EN and asserts the rendered portal fits the viewport. This does not alter tooltip illustrations, copy, or the immutable v22 reference; real mobile-device review remains required.

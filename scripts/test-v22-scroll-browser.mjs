@@ -1415,11 +1415,16 @@ const checkReactPetrosPaintCosts = async () => {
       travel:track.offsetHeight-stage.offsetHeight};
   })()`);
   assert.ok(geometry.travel>500,'Petros ablation geometry missing');
+  // Interleave the reference to detect thermal / shared-runner drift.
+  // Reduced blur radii are measured as candidates, NOT approved style changes.
   const variants=[
-    {name:'original',css:''},
+    {name:'original-before',css:''},
+    {name:'aurora-composite-layer',css:'.stage .aur{will-change:opacity,transform;transform:translateZ(0)!important;}'},
+    {name:'original-middle',css:''},
+    {name:'aurora-blur-36px',css:'.stage .aur{filter:blur(36px)!important;}'},
+    {name:'aurora-blur-24px',css:'.stage .aur{filter:blur(24px)!important;}'},
+    {name:'original-after',css:''},
     {name:'no-aurora-blur',css:'.stage .aur{filter:none!important;}'},
-    {name:'no-orb-shadow',css:'.stage .orb{box-shadow:none!important;}'},
-    {name:'no-both',css:'.stage .aur{filter:none!important;}.stage .orb{box-shadow:none!important;}'},
   ];
   const comparisons=[];
   for(const variant of variants) {
@@ -1471,8 +1476,17 @@ const checkReactPetrosPaintCosts = async () => {
     console.log('PETROS PAINT ABLATION '+JSON.stringify(record));
   }
   await evaluate("document.getElementById('react-petros-perf-ablation')?.remove()");
+  // Repeated controls make the interpretation more grounded than a
+  // single no-filter versus filter comparison on a noisy CI machine.
+  const controls=comparisons.filter(row=>row.variant.startsWith('original-'));
+  const controlMedian=controls.map(row=>row.medianMs).sort((a,b)=>a-b)[1];
+  const normalized=comparisons.map(row=>({
+    ...row,
+    versusControl:Math.round(row.medianMs/controlMedian*100)/100,
+  }));
+  console.log('PETROS PAINT ABLATION SUMMARY '+JSON.stringify({controlMedian,normalized}));
   writeFileSync(join(screenshots,'petros-paint-ablation.json'),
-    JSON.stringify({locale:'uk',windowMs:1000,comparisons},null,2));
+    JSON.stringify({locale:'uk',windowMs:1000,controlMedian,comparisons:normalized},null,2));
 };
 
 // Independent React-only responsive and reduced-motion quality gate.

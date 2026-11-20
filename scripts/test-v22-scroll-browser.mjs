@@ -1320,6 +1320,32 @@ const checkReactResponsiveAndMotion = async () => {
       assert.ok(measures.menu.right <= width - 2 && measures.menu.left >= 2 &&
         measures.language.right <= width - 2 && measures.language.left >= 2,
         `React header controls overflow viewport at ${locale}/${width}: ${JSON.stringify(measures)}`);
+      // Keyboard-focus a route marker on narrow viewports. The tooltip is
+      // rendered in a fixed portal and must remain fully visible without
+      // relying on mouse hover or a desktop-height viewport.
+      if (width <= 430) {
+        await evaluate(`(async () => {
+          const track=document.querySelector('[data-react-journey] .track');
+          const stage=track.querySelector('.stage');
+          const top=track.getBoundingClientRect().top+scrollY;
+          const travel=track.offsetHeight-stage.offsetHeight;
+          window.scrollTo({top:top+travel*.42,behavior:'instant'});
+          await new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));
+          track.querySelector('.route-ui-v6 .stop[data-peak="2"]').focus({preventScroll:true});
+        })()`);
+        await delay(130);
+        const tip=await evaluate(`(() => {
+          const el=document.querySelector('[data-react-route-tooltip="2"]');
+          if (!el) return null;
+          const rect=el.getBoundingClientRect();
+          return {left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom,
+            viewportWidth:innerWidth,viewportHeight:innerHeight};
+        })()`);
+        assert.ok(tip && tip.left>=10 && tip.right<=width-10 &&
+          tip.top>=10 && tip.bottom<=tip.viewportHeight-10,
+          `Mobile route tooltip clipped at ${locale}/${width}: ${JSON.stringify(tip)}`);
+        await evaluate('document.activeElement?.blur()');
+      }
       if (width === 1280) {
         const gallery = await evaluate(`(() => ({
           alts:[...document.querySelectorAll('[data-react-journey] .instagram-grid img')].map(img=>img.alt),

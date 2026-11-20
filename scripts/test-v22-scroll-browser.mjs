@@ -1552,6 +1552,81 @@ const checkReactPetrosPaintCosts = async () => {
     comparisons.push(record);
     console.log('PETROS PAINT ABLATION '+JSON.stringify(record));
   }
+
+  // Check responsive raster geometry and capture original/cached pairs.
+  // This remains a browser-only experiment; never writes to product styles.
+  const responsiveAurora=[];
+  for(const locale of ['uk','en']) for(const width of [390,768]) {
+    await command('Emulation.setDeviceMetricsOverride',{
+      width,height:900,deviceScaleFactor:1,mobile:width<700,
+    });
+    await command('Emulation.setTouchEmulationEnabled',{
+      enabled:width<700,maxTouchPoints:width<700?1:0,
+    });
+    await command('Page.navigate',{url:'http://127.0.0.1:'+port+'/'+locale+'?preview=react'});
+    for(let attempt=0;attempt<80;attempt++) {
+      if(await evaluate("!!document.querySelector('[data-react-journey] .track[data-journey-ready]')")) break;
+      if(attempt===79) throw Error('Responsive aurora scene not ready: '+locale+'/'+width);
+      await delay(100);
+    }
+    const responsiveGeometry=await evaluate(`(() => {
+      const track=document.querySelector('[data-react-journey] .track');
+      const stage=track.querySelector('.stage');
+      return {top:track.getBoundingClientRect().top+scrollY,
+        travel:track.offsetHeight-stage.offsetHeight};
+    })()`);
+    assert.ok(responsiveGeometry.travel>500,
+      'Responsive aurora geometry missing: '+locale+'/'+width);
+    for(const variant of ['original','cached']) {
+      const cached=variant==='cached';
+      const raster=await setCachedAurora(cached);
+      assert.equal(raster.layers,2,'Expected two aurora layers at '+locale+'/'+width);
+      assert.equal(raster.images,cached?2:0,
+        'Unexpected aurora raster count: '+locale+'/'+width+'/'+variant);
+      await evaluate(`(() => {
+        document.getElementById('react-petros-perf-ablation')?.remove();
+        const style=document.createElement('style');
+        style.id='react-petros-perf-ablation';
+        style.textContent=`+(cached?JSON.stringify('.stage .aur{filter:none!important;background:none!important;}'):JSON.stringify(''))+`;
+        document.head.append(style);
+      })()`);
+      // Confirm image decoding and dimensions before recording any screenshot.
+      const layers=await evaluate(`(async () => {
+        const auroras=[...document.querySelectorAll('[data-react-journey] .stage .aur')];
+        const images=[...document.querySelectorAll('[data-petros-raster]')];
+        await Promise.all(images.map(img=>img.decode()));
+        return {count:images.length,geometry:auroras.map((el,index)=>{
+          const rect=el.getBoundingClientRect();
+          const img=images[index];
+          const pad=(index===0?150:168);
+          return {
+            width:Math.ceil(rect.width),height:Math.ceil(rect.height),
+            imageWidth:img?.naturalWidth??null,imageHeight:img?.naturalHeight??null,
+            expectedWidth:Math.ceil(rect.width)+pad*2,
+            expectedHeight:Math.ceil(rect.height)+pad*2,
+          };
+        })};
+      })()`);
+      if(cached) {
+        assert.equal(layers.count,2,'Cached aurora images missing');
+        for(const layer of layers.geometry) {
+          assert.ok(layer.width>100 && layer.height>50);
+          assert.equal(layer.imageWidth,layer.expectedWidth,'Raster width mismatches layer');
+          assert.equal(layer.imageHeight,layer.expectedHeight,'Raster height mismatches layer');
+        }
+      }
+      responsiveAurora.push({locale,width,variant,...layers});
+      for(const progress of [.83,.88]) {
+        const position=responsiveGeometry.top+responsiveGeometry.travel*progress;
+        await evaluate("window.scrollTo({top:"+position+",behavior:'instant'})");
+        await delay(200);
+        await capture(locale,width,'aurora-responsive-'+variant,
+          'progress-'+Math.round(progress*100));
+      }
+    }
+  }
+  writeFileSync(join(screenshots,'petros-aurora-responsive.json'),
+    JSON.stringify({samples:responsiveAurora},null,2));
   await evaluate("document.getElementById('react-petros-perf-ablation')?.remove()");
   await setCachedAurora(false);
   // Repeated controls make the interpretation more grounded than a

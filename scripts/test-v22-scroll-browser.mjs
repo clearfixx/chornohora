@@ -1218,6 +1218,12 @@ const checkReactScrollOwnershipStress = async () => {
   const resized=await evaluate("(() => { const t=document.querySelector('[data-react-journey] .track');return {width:innerWidth,y:scrollY,ready:t.hasAttribute('data-journey-ready'),overflow:document.documentElement.scrollWidth-innerWidth}; })()");
   assert.ok(resized.width===1280 && resized.ready && resized.overflow<5,
     'Resize disrupted journey: '+JSON.stringify(resized));
+  // A resize invalidates click-navigation coordinates measured before it.
+  // Verify no old RAF continues driving the page after the new viewport settles.
+  await delay(340);
+  const stableAfterResize=await evaluate('scrollY');
+  assert.ok(Math.abs(stableAfterResize-resized.y)<4,
+    'Stale navigation continued after resize: '+JSON.stringify({resized,stableAfterResize}));
   await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:500,y:390,deltaY:-120,deltaX:0});
   await delay(600);
   const after=await evaluate('scrollY');

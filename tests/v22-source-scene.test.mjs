@@ -62,8 +62,8 @@ test('React has independent checked-in CSS with exact immutable legacy rule orde
   const optimizedSelectors = standalone.match(/\.stage,\.stage :is\([^\n{}]+\),\.nav \.ul(?=\{animation-timeline:--cyc;)/g) ?? [];
   assert.equal(optimizedSelectors.length, 1, 'Expected exactly one React-only timeline selector');
   const originalTimeline = '.stage,.stage *,.nav .ul';
-  const originalOrb = scene.match(/@keyframes orb\\{[\\s\\S]*?\\n\\}/)?.[0];
-  const compositedOrb = standalone.match(/@keyframes orb\\{[\\s\\S]*?\\n\\}/)?.[0];
+  const originalOrb = scene.match(/@keyframes orb\{[\s\S]*?\n\}/)?.[0];
+  const compositedOrb = standalone.match(/@keyframes orb\{[\s\S]*?\n\}/)?.[0];
   assert.ok(originalOrb && compositedOrb, 'Both CSS variants must retain orb keyframes');
   assert.match(compositedOrb, /translate:-6vw -300px/);
   assert.doesNotMatch(compositedOrb, /left:|top:/,

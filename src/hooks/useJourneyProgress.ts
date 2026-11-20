@@ -1,6 +1,6 @@
 'use client';
 
-import {useCallback, useEffect, useState, useSyncExternalStore, type RefObject} from 'react';
+import {useCallback, useEffect, useState, type RefObject} from 'react';
 import {JourneyController} from '@/engine/journey-controller';
 import {JourneyStore} from '@/engine/journey-store';
 import type {JourneyStopId} from '@/lib/journey';
@@ -13,7 +13,6 @@ import type {JourneyStopId} from '@/lib/journey';
 export function useJourneyProgress(trackRef: RefObject<HTMLElement | null>, store: JourneyStore) {
 
   const [controller, setController] = useState<JourneyController | null>(null);
-  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
 
   useEffect(() => {
     const track = trackRef.current;
@@ -30,5 +29,5 @@ export function useJourneyProgress(trackRef: RefObject<HTMLElement | null>, stor
   const navigateToStop = useCallback((id: JourneyStopId) => controller?.navigate(id), [controller]);
   const navigateToTop = useCallback(() => controller?.navigateToTop(), [controller]);
   const navigateToElement = useCallback((element: HTMLElement) => controller?.navigateToElement(element), [controller]);
-  return {...snapshot, navigateToStop, navigateToTop, navigateToElement};
+  return {navigateToStop, navigateToTop, navigateToElement};
 }

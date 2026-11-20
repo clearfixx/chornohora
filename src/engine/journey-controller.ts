@@ -188,6 +188,15 @@ export class JourneyController {
     this.store.setNavigation(null);
   };
 
+  private onResize = (): void => {
+    // Navigation destinations are measured against the current viewport.
+    // A resize (including orientation changes) invalidates the old target:
+    // keep the browser's present scroll position instead of seeking stale geometry.
+    this.cancelNavigation();
+    this.cancelWheel();
+    this.schedule();
+  };
+
   private onTouchStart = (): void => {
     this.cancelNavigation();
     this.cancelWheel();
@@ -219,7 +228,7 @@ export class JourneyController {
     // document.scrollingElement. This was the cause of the static hiker and route.
     this.scrollListenerTarget = this.isDocumentScroller(this.scrollElement) ? window : this.scrollElement;
     this.scrollListenerTarget.addEventListener('scroll', this.schedule, {passive: true});
-    window.addEventListener('resize', this.schedule, {passive: true});
+    window.addEventListener('resize', this.onResize, {passive: true});
     window.addEventListener('wheel', this.wheel, {passive: false});
     window.addEventListener('touchstart', this.onTouchStart, {passive: true});
     window.addEventListener('pointerdown', this.onPointerDown, {passive: true});
@@ -304,7 +313,7 @@ export class JourneyController {
     this.mounted = false;
     this.scrollListenerTarget?.removeEventListener('scroll', this.schedule);
     this.scrollListenerTarget = null;
-    window.removeEventListener('resize', this.schedule);
+    window.removeEventListener('resize', this.onResize);
     window.removeEventListener('wheel', this.wheel);
     window.removeEventListener('touchstart', this.onTouchStart);
     window.removeEventListener('pointerdown', this.onPointerDown);

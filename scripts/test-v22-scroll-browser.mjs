@@ -1397,6 +1397,84 @@ const checkReactFramePacing = async () => {
   }
 };
 
+// Diagnostic only: isolated paint changes never ship to the real React scene.
+// Each variant reruns the same reverse wheel gesture at the Petros seam.
+const checkReactPetrosPaintCosts = async () => {
+  await command('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+  await command('Emulation.setTouchEmulationEnabled',{enabled:false});
+  await command('Page.navigate',{url:'http://127.0.0.1:'+port+'/uk?preview=react'});
+  for(let i=0;i<80;i++) {
+    if(await evaluate("!!document.querySelector('[data-react-journey] .track[data-journey-ready]')")) break;
+    if(i===79) throw Error('Petros ablation scene not ready');
+    await delay(100);
+  }
+  const geometry=await evaluate(`(() => {
+    const track=document.querySelector('[data-react-journey] .track');
+    const stage=track.querySelector('.stage');
+    return {top:track.getBoundingClientRect().top+scrollY,
+      travel:track.offsetHeight-stage.offsetHeight};
+  })()`);
+  assert.ok(geometry.travel>500,'Petros ablation geometry missing');
+  const variants=[
+    {name:'original',css:''},
+    {name:'no-aurora-blur',css:'.stage .aur{filter:none!important;}'},
+    {name:'no-orb-shadow',css:'.stage .orb{box-shadow:none!important;}'},
+    {name:'no-both',css:'.stage .aur{filter:none!important;}.stage .orb{box-shadow:none!important;}'},
+  ];
+  const comparisons=[];
+  for(const variant of variants) {
+    await evaluate(`(() => {
+      document.getElementById('react-petros-perf-ablation')?.remove();
+      const style=document.createElement('style');
+      style.id='react-petros-perf-ablation';
+      style.textContent=`+JSON.stringify(variant.css)+`;
+      document.head.append(style);
+    })()`);
+    const target=geometry.top+geometry.travel+60;
+    await evaluate("window.scrollTo({top:"+target+",behavior:'instant'})");
+    await delay(200);
+    const start=await evaluate('scrollY');
+    await evaluate(`(() => {
+      window.__petrosAblationIntervals=[];
+      window.__petrosAblationDone=false;
+      let previous=null;
+      let beginning=null;
+      const frame=timestamp=>{
+        if(beginning===null) beginning=timestamp;
+        if(previous!==null) window.__petrosAblationIntervals.push(timestamp-previous);
+        previous=timestamp;
+        if(timestamp-beginning<1000) requestAnimationFrame(frame);
+        else window.__petrosAblationDone=true;
+      };
+      requestAnimationFrame(frame);
+    })()`);
+    for(let i=0;i<10;i++) {
+      await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:620,y:400,deltaY:-120,deltaX:0});
+      await delay(35);
+    }
+    await delay(800);
+    const result=await evaluate(`({
+      intervals:window.__petrosAblationIntervals || [],
+      finished:window.__petrosAblationDone===true,
+      y:scrollY,
+    })`);
+    assert.ok(result.finished && result.intervals.length>=5,
+      'Petros paint ablation incomplete: '+JSON.stringify({variant:variant.name,count:result.intervals.length}));
+    assert.ok(result.y<start-100,
+      'Petros paint ablation wheel did not move: '+JSON.stringify({variant:variant.name,start,end:result.y}));
+    const sorted=result.intervals.filter(Number.isFinite).sort((a,b)=>a-b);
+    const value=p=>Math.round(sorted[Math.floor((sorted.length-1)*p)]*10)/10;
+    const record={variant:variant.name,frames:sorted.length,
+      medianMs:value(.5),p95Ms:value(.95),
+      framesOver50ms:sorted.filter(t=>t>50).length};
+    comparisons.push(record);
+    console.log('PETROS PAINT ABLATION '+JSON.stringify(record));
+  }
+  await evaluate("document.getElementById('react-petros-perf-ablation')?.remove()");
+  writeFileSync(join(screenshots,'petros-paint-ablation.json'),
+    JSON.stringify({locale:'uk',windowMs:1000,comparisons},null,2));
+};
+
 // Independent React-only responsive and reduced-motion quality gate.
 // Runs after the expensive original/native parity captures, so it does not
 // repeat their geometry/screenshot work for each additional breakpoint.
@@ -1582,6 +1660,7 @@ try {
   await checkReactBookingFooterSeam();
   await checkReactScrollOwnershipStress();
   await checkReactFramePacing();
+  await checkReactPetrosPaintCosts();
   await checkReactResponsiveAndMotion();
   writeFileSync(join(screenshots, 'geometry.json'), JSON.stringify({samples: geometrySamples}, null, 2));
   writeFileSync(join(screenshots, 'frame-pacing.json'), JSON.stringify({samples: framePacingSamples}, null, 2));

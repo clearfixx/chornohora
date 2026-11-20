@@ -45,7 +45,7 @@ const legacyOrbKeyframes = `@keyframes orb{
   78%{left:62%;top:700px;scale:1.2}
   88%{left:66%;top:100px;scale:1}
   98%,100%{left:62%;top:520px;scale:1.1}
-}`;
+}`.replace(/^  /gm, '');
 const compositedOrbKeyframes = `@keyframes orb{
   0%{translate:0 0;scale:1}
   16%{translate:-2vw -220px;scale:1.1}
@@ -57,7 +57,7 @@ const compositedOrbKeyframes = `@keyframes orb{
   78%{translate:0 100px;scale:1.2}
   88%{translate:4vw -500px;scale:1}
   98%,100%{translate:0 -80px;scale:1.1}
-}`;
+}`.replace(/^  /gm, '');
 if (!referenceCss.includes(legacyOrbKeyframes)) {
   throw new Error('Expected v22 orb keyframes changed; review the React-only optimization.');
 }

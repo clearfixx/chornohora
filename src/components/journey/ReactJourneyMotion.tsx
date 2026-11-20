@@ -92,8 +92,14 @@ export function ReactRouteIndicator({store}: {store: JourneyStore}) {
       const rect = source.getBoundingClientRect();
       const width = tooltip.offsetWidth;
       const height = tooltip.offsetHeight;
-      const left = Math.max(12, Math.min(window.innerWidth - width - 12, rect.left + rect.width / 2 - width / 2));
-      const top = Math.max(12, rect.top - height - 18);
+      // The portal is viewport-fixed: constrain both axes, including when
+      // the browser viewport is short or the tooltip content wraps on mobile.
+      const margin = 12;
+      const left = Math.max(margin, Math.min(window.innerWidth - width - margin, rect.left + rect.width / 2 - width / 2));
+      const above = rect.top - height - 18;
+      const below = rect.bottom + 18;
+      const desiredTop = above >= margin ? above : below + height + margin <= window.innerHeight ? below : above;
+      const top = Math.max(margin, Math.min(window.innerHeight - height - margin, desiredTop));
       setTooltipPosition(previous => Math.abs(previous.left - left) < .5 && Math.abs(previous.top - top) < .5
         ? previous : {left, top});
     };

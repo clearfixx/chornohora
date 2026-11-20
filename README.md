@@ -1,17 +1,56 @@
 # Чорногора — Чотири неба
 
-Migration of the approved v22 illustrated mountain journey to Next.js 16, React 19, TypeScript, `next-intl`, Motion and pnpm.
+Interactive illustrated journey through four Carpathian locations. The approved **v22** remains an immutable visual and behavioral reference while the landing is migrated to **Next.js 16 / React 19 / TypeScript** with `next-intl` (UA/EN), Motion and pnpm.
 
-**Development status:** scaffold only; not yet the finished animated site. Production on Vercel is gated on visual and interaction parity with v22.
+## Migration status
 
-## Run
+**Active branch:** `feat/react-journey-engine` (Draft PR #2 into `feat/nextjs-migration`).
+
+- `/uk` and `/en` without query parameters still render the **approved v22 reference** through the legacy route. Do not treat this route as the completed React version.
+- `/uk?preview=react` and `/en?preview=react` render the isolated React-owned scene, traveler, navigation, drawer, location tooltips, booking **draft** and footer.
+- `?preview=native` is a legacy compatibility/comparison mode, **not** a production target.
+- The v22 reference under `public/legacy` is frozen. Preserve visual geometry, approved timing, and scene assets unless a user-approved redesign explicitly overrides the relevant reference.
+- The React booking form is **demonstration only**: local validation/preview/copy; it does not transmit requests. Server submission is deferred until migration acceptance.
+- The canonical route switch, production deployment, and merging the Draft PR remain blocked on human visual/interaction acceptance, including repeat testing of rapid wheel/trackpad reversal around Petros ↔ booking/footer.
+
+## Local development
+
+Prerequisites: Node.js 22, pnpm 11.9.0, Chromium for browser tests.
 
 ```bash
 corepack enable
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open `http://localhost:3000/uk` or `/en`.
+Open `http://localhost:3000/uk?preview=react` or `/en?preview=react` to inspect the migration without modifying the canonical v22 route.
 
-See [docs/MIGRATION.md](docs/MIGRATION.md) for requirements and testing criteria. The complete v22 legacy source is not yet committed: it must be imported before animation migration; do not treat the current placeholder as the product.
+## Quality gates
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:journey
+pnpm check:react-css
+pnpm check:react-assets
+pnpm check:react-ownership
+pnpm test:react-ownership
+pnpm test:jsx-source
+pnpm build
+pnpm test:browser
+pnpm test:browser-scroll
+pnpm test:geometry
+```
+
+The GitHub Actions migration workflow additionally exercises the immutable v22 source and visual-comparison checks. The **2026-11-20 CI run #421** passed its complete job, including browser/scroll coverage. Automated success is not equivalent to real-device acceptance; see the quality gate before changing canonical route ownership.
+
+For opt-in scrolling diagnostics, open `/uk?preview=react&trace=1` and inspect `window.__journeyTrace?.()` in browser DevTools; no production telemetry is sent.
+
+## Documentation
+
+- [Migration quality gate](docs/MIGRATION_QUALITY_GATE.md) — current acceptance checklist and constraints
+- [React execution plan](docs/REACT_MIGRATION_EXECUTION.md) — implementation, debt ledger and parity checkpoints
+- [Journey controller](docs/JOURNEY_CONTROLLER.md) — scroll ownership, cancellation and diagnostics
+- [Migration reference](docs/MIGRATION.md) — preserved visual/interaction requirements
+
+**Do not merge into `main` or replace the canonical v22 route until all acceptance gates are completed.**

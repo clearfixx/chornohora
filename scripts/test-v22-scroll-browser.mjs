@@ -1561,7 +1561,7 @@ const checkReactPetrosPaintCosts = async () => {
       width,height:900,deviceScaleFactor:1,mobile:width<700,
     });
     await command('Emulation.setTouchEmulationEnabled',{
-      enabled:width<700,maxTouchPoints:width<700?1:0,
+      enabled:width<700,maxTouchPoints:1,
     });
     await command('Page.navigate',{url:'http://127.0.0.1:'+port+'/'+locale+'?preview=react'});
     for(let attempt=0;attempt<80;attempt++) {

@@ -1419,6 +1419,25 @@ const checkReactPetrosPaintCosts = async () => {
       travel:track.offsetHeight-stage.offsetHeight};
   })()`);
   assert.ok(geometry.travel>500,'Petros ablation geometry missing');
+
+  // Runtime capability report: --disable-gpu only controls launch flags.
+  // A "GPU allowed" launch does not prove hardware acceleration is active.
+  const renderingCapabilities=await evaluate(`(() => {
+    const canvas=document.createElement('canvas');
+    const gl=canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    const debug=gl?.getExtension('WEBGL_debug_renderer_info');
+    const canvas2d=document.createElement('canvas').getContext('2d');
+    return {
+      devicePixelRatio,
+      webglAvailable:!!gl,
+      webglVendor:gl ? String(gl.getParameter(debug?.UNMASKED_VENDOR_WEBGL || gl.VENDOR)) : null,
+      webglRenderer:gl ? String(gl.getParameter(debug?.UNMASKED_RENDERER_WEBGL || gl.RENDERER)) : null,
+      maxTextureSize:gl ? Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) : null,
+      canvas2dAvailable:!!canvas2d,
+      userAgent:navigator.userAgent,
+    };
+  })()`);
+  console.log('PETROS RENDER BACKEND '+JSON.stringify(renderingCapabilities));
   // Interleave the reference to detect thermal / shared-runner drift.
   // Reduced blur radii are measured as candidates, NOT approved style changes.
   const variants=[
@@ -1656,7 +1675,7 @@ const checkReactPetrosPaintCosts = async () => {
   }));
   console.log('PETROS PAINT ABLATION SUMMARY '+JSON.stringify({controlMedian,normalized}));
   writeFileSync(join(screenshots,'petros-paint-ablation.json'),
-    JSON.stringify({locale:'uk',windowMs:1000,renderMode:gpuOptIn?'gpu-allowed':'headless-software',controlMedian,comparisons:normalized},null,2));
+    JSON.stringify({locale:'uk',windowMs:1000,renderMode:gpuOptIn?'gpu-allowed':'headless-software',renderingCapabilities,controlMedian,comparisons:normalized},null,2));
 };
 
 // Independent React-only responsive and reduced-motion quality gate.

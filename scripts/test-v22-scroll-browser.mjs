@@ -1086,11 +1086,14 @@ const checkReactIntermediateJourney = async () => {
           return {
             x:Number.parseFloat(root.querySelector('.hiker').style.getPropertyValue('--hiker-x')),
             active:[...root.querySelectorAll('.route-ui-v6 .stop.is-active')].map(el=>Number(el.dataset.peak)),
+            meteorsActive:root.querySelector('[data-petros-meteors]')?.classList.contains('is-active'),
           };
         })()`);
         const expected=samples[i];
         assert.deepEqual(state.active,expected.active,
           `Reverse scroll active stop differs: ${locale}/${width}/${p}`);
+        assert.equal(state.meteorsActive,expected.meteorsActive,
+          `Petros meteor phase differs on reverse scroll: ${locale}/${width}/${p}`);
         assert.ok(Math.abs(state.x-expected.x)<.3,
           `Traveler did not return to its forward checkpoint: ${JSON.stringify({p,state,expected})}`);
       }

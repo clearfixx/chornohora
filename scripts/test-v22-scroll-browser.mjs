@@ -1442,6 +1442,16 @@ const checkReactPetrosPaintCosts = async () => {
       style.textContent=`+JSON.stringify(variant.css)+`;
       document.head.append(style);
     })()`);
+    // Review visual differences at the actual night-scene checkpoints before
+    // considering a smaller blur radius in the shipped stylesheet.
+    if (['original-before','aurora-blur-24px','no-aurora-blur'].includes(variant.name)) {
+      for(const progress of [.83,.88]) {
+        const position=geometry.top+geometry.travel*progress;
+        await evaluate("window.scrollTo({top:"+position+",behavior:'instant'})");
+        await delay(180);
+        await capture('uk',1440,'aurora-'+variant.name,'progress-'+Math.round(progress*100));
+      }
+    }
     const target=geometry.top+geometry.travel+60;
     await evaluate("window.scrollTo({top:"+target+",behavior:'instant'})");
     await delay(200);

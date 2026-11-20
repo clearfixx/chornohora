@@ -237,13 +237,9 @@ export function ReactRouteIndicator({store}: {store: JourneyStore}) {
   );
 }
 
-export function ReactHiker({store}: {store: JourneyStore}) {
-  const t = useTranslations('Journey');
-  const {progress} = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
-  const fraction = clamp((progress - anchors[0]) / (anchors[3] - anchors[0]));
-  const x = (6 + 79 * fraction) + 'vw';
-  return (
-<svg aria-label={t("travelerAlt")} className="fx hiker" height="124" role="img" style={{"left":"0px","--hiker-x":x,"bottom":"86px","zIndex":"11","transformOrigin":"50% 100%"} as React.CSSProperties} viewBox="0 0 60 120" width="62">
+/** Static traveler artwork is invariant while progress only moves the outer SVG. */
+const HikerArtwork = memo(function HikerArtwork() {
+  return <>
 <path d="M17 66 L27 66 L25 112 L15 112 Z" fill="#140A3A"></path><path d="M33 66 L43 66 L47 112 L37 112 Z" fill="#140A3A"></path>
 <rect fill="#FFD23F" height="7" rx="3" width="16" x="12" y="110"></rect><rect fill="#FFD23F" height="7" rx="3" width="17" x="36" y="110"></rect>
 <rect fill="#FFD23F" height="36" rx="6" width="16" x="6" y="28"></rect>
@@ -251,6 +247,17 @@ export function ReactHiker({store}: {store: JourneyStore}) {
 <circle cx="31" cy="14" fill="#FFD9B8" r="9"></circle><path d="M20 13 Q31 -2 42 13 Z" fill="#FFD23F"></path>
 <path d="M40 34 L52 66" fill="none" stroke="#FF6B2C" strokeLinecap="round" strokeWidth="7"></path>
 <path d="M52 56 L56 118" fill="none" stroke="#fff" strokeLinecap="round" strokeWidth="2.5"></path>
+  </>;
+});
+
+export function ReactHiker({store}: {store: JourneyStore}) {
+  const t = useTranslations('Journey');
+  const {progress} = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
+  const fraction = clamp((progress - anchors[0]) / (anchors[3] - anchors[0]));
+  const x = (6 + 79 * fraction) + 'vw';
+  return (
+<svg aria-label={t("travelerAlt")} className="fx hiker" height="124" role="img" style={{"left":"0px","--hiker-x":x,"bottom":"86px","zIndex":"11","transformOrigin":"50% 100%"} as React.CSSProperties} viewBox="0 0 60 120" width="62">
+<HikerArtwork />
 </svg>
   );
 }

@@ -72,7 +72,7 @@ export class JourneyController {
     // Detect a scrollbar drag, browser focus restoration or an external
     // scrollTo while wheel easing is pending. Never pull the user back.
     if (this.wheelFrame && wheelScrollWasInterrupted(this.scrollElement.scrollTop, this.wheelAppliedTop)) {
-      this.trace('external-scroll', this.scrollElement.scrollTop - this.wheelAppliedTop);
+      this.trace('external-scroll', this.scrollElement.scrollTop - this.wheelAppliedTop!);
       this.cancelWheel();
     }
     const travel = this.getTravel();

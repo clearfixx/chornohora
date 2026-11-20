@@ -657,7 +657,7 @@ body{margin:0;background:#140B3A}
 
 @media (prefers-reduced-motion:no-preference){
 @supports (animation-timeline:view()){
-.stage,.stage *,.nav .ul{animation-timeline:--cyc;animation-range:contain 0% contain 100%;animation-fill-mode:both;animation-timing-function:linear}
+.stage,.stage :is(.l1,.l2,.l3,.l4,.tr,.cl,.birds,.orb,.rays,.stars,.aur,.ghost,.herottl,.herosub,.mouse,.show,.nmi,.final,.hiker,.fill,.d1,.d2,.d3,.d4,.alt,.ul,.r1,.r2,.r3,.r4,.n1,.n2,.n3,.n4,.k1,.k2,.k3,.k4,.g1,.g2,.g3,.g4,.fl,.fn),.nav .ul{animation-timeline:--cyc;animation-range:contain 0% contain 100%;animation-fill-mode:both;animation-timing-function:linear}
 .stage{animation-name:cycle}
 .l1{--tx:-500px;animation-name:drift}
 .l2{--tx:-900px;animation-name:drift}

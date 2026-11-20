@@ -1180,6 +1180,27 @@ const checkReactScrollOwnershipStress = async () => {
   assert.ok(trace.length<=400 && trace.some(e=>e.event==='external-scroll'),
     'External override was not recorded: '+JSON.stringify(trace.slice(-8)));
 
+  // A fresh gesture after a completed wheel run must NOT inherit a stale RAF
+  // origin. Previously, a manual jump between gestures could make the next
+  // frame misclassify legitimate wheel input as an external interruption.
+  await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:610,y:430,deltaY:170,deltaX:0});
+  await delay(900);
+  const completedWheel=await evaluate('scrollY');
+  assert.ok(completedWheel>settled+25,
+    'Wheel did not recover after external override: '+JSON.stringify({settled,completedWheel}));
+  const secondManual=geometry.top+geometry.travel*.55;
+  await evaluate("window.scrollTo({top:"+secondManual+",behavior:'instant'})");
+  await delay(180);
+  const checkpoint=await evaluate('scrollY');
+  assert.ok(Math.abs(checkpoint-secondManual)<20,
+    'Could not establish post-wheel manual checkpoint: '+JSON.stringify({secondManual,checkpoint}));
+  await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:610,y:430,deltaY:-170,deltaX:0});
+  await delay(500);
+  const resumedWheel=await evaluate('scrollY');
+  assert.ok(resumedWheel<checkpoint-25,
+    'New wheel gesture cancelled by stale completed-gesture position: '+
+      JSON.stringify({checkpoint,resumedWheel}));
+
   // Wheel over a booking field must remain native and not schedule page easing.
   const center=await evaluate("(() => { const el=document.querySelector('[data-react-journey] #f-msg'); el.scrollIntoView({block:'center',behavior:'instant'}); const r=el.getBoundingClientRect(); return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)}; })()");
   assert.ok(center.x>0 && center.y>0 && center.y<900,'Textarea not visible');

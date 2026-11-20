@@ -1,6 +1,6 @@
 # Migration quality gate
 
-Last verified: 2026-11-19. Migration development branch: `feat/react-journey-engine` (Draft PR #2 targets `feat/nextjs-migration`).
+Last verified: 2026-11-20. Migration development branch: `feat/react-journey-engine` (Draft PR #2 targets `feat/nextjs-migration`).
 The React extraction is under review in Draft PR #2 (`feat/react-journey-engine`).
 
 ## Current facts
@@ -78,3 +78,11 @@ The 11 media resources consumed by React (logo, six gallery SVGs, four local fon
 ## Continuous booking/footer seam acceptance
 
 The Chromium scroll suite now also runs a locale-specific physical wheel sequence beginning within the booking region, continuing down toward the footer, reversing immediately and crossing back into the mountain track. It asserts that the real starting scrollY is established, down/up samples never oscillate by more than 2px, and the return crosses the actual journey end boundary by over 100px. Runs independently for UA and EN at 1440px; this complements prior summit-specific and mobile/touch checks. Human acceptance of fast trackpad momentum remains required.
+
+## CI verification — 2026-11-20
+
+GitHub Actions run [#421](https://github.com/clearfixx/chornohora/actions/runs/44666737800) completed successfully at commit `af04265`. It passed lint, TypeScript, unit/source/ownership checks, production build, Chromium browser and scroll suites, geometry comparison, and the original/native screenshot comparison. An earlier run failed TypeScript nullability in the scroll diagnostics; the follow-up fix was included in #421.
+
+The wheel controller additionally clears its last applied origin at the start of each *new* gesture and checks for externally changed scroll coordinates before the next easing frame. The Chromium ownership-stress scenario tests both external interruption and completion followed by a manual jump and a fresh wheel gesture.
+
+**Still blocking:** real-device manual reversal/stress acceptance, human review of redesigned SVG silhouettes and tooltips, and sign-off to switch the canonical iframe route to React. The form is draft-only; server delivery is explicitly deferred until after migration. Do not infer production readiness or merge permission from CI success alone.

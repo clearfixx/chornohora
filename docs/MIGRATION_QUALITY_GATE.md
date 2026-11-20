@@ -90,3 +90,7 @@ The wheel controller additionally clears its last applied origin at the start of
 ## Scene-art and reverse-timeline regression — 2026-11-20
 
 The 11-point React journey Chromium matrix (UA/EN × 390/1440) now checks that all three intentionally redesigned reference mountain SVGs retain their exact viewBox dimensions, expected lit-facet path counts and stacking indices. It also checks that Petros meteor activation follows the approved normalized interval `[0.76, 0.94)` while scrolling forward **and** returns to the same state at each checkpoint on reverse scroll. This is a structural/timeline safeguard, not a substitute for human evaluation of actual scene artwork or animation appearance. The frozen `public/legacy` source and approved scroll timing are unchanged.
+
+## Traveler and forest occlusion gate — 2026-11-20
+
+The eleven-checkpoint Chromium matrix now checks the forest composition in UA/EN at both 390px mobile and 1440px desktop. The back-forest SVG must remain behind the traveler and the foreground forest above it in computed stacking order; both forest layers must retain their existing 5000×220 viewBox and SVG geometry, and foreground pointer events must remain disabled. The assertions run at every forward checkpoint to detect incidental React/CSS regressions without altering approved artwork or motion. This structural layer check does **not** establish pixel-perfect occlusion at every intermediate traveler location; full visual review is still required prior to switching the canonical route.

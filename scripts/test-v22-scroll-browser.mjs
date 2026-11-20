@@ -1427,6 +1427,13 @@ const checkReactPetrosPaintCosts = async () => {
     {name:'no-aurora-blur',css:'.stage .aur{filter:none!important;}'},
   ];
   const comparisons=[];
+  // CDP counters distinguish main-thread layout, style and script from
+  // paint/compositor costs that cannot be inferred from rAF intervals alone.
+  await command('Performance.enable');
+  const performanceCounters = async () => {
+    const reply=await command('Performance.getMetrics');
+    return Object.fromEntries(reply.result.metrics.map(metric=>[metric.name,metric.value]));
+  };
   for(const variant of variants) {
     await evaluate(`(() => {
       document.getElementById('react-petros-perf-ablation')?.remove();
@@ -1439,6 +1446,7 @@ const checkReactPetrosPaintCosts = async () => {
     await evaluate("window.scrollTo({top:"+target+",behavior:'instant'})");
     await delay(200);
     const start=await evaluate('scrollY');
+    const beforeCounters=await performanceCounters();
     await evaluate(`(() => {
       window.__petrosAblationIntervals=[];
       window.__petrosAblationDone=false;
@@ -1467,11 +1475,18 @@ const checkReactPetrosPaintCosts = async () => {
       'Petros paint ablation incomplete: '+JSON.stringify({variant:variant.name,count:result.intervals.length}));
     assert.ok(result.y<start-100,
       'Petros paint ablation wheel did not move: '+JSON.stringify({variant:variant.name,start,end:result.y}));
+    const afterCounters=await performanceCounters();
+    const metricChanges=Object.fromEntries(
+      ['LayoutCount','RecalcStyleCount','LayoutDuration','RecalcStyleDuration','ScriptDuration','TaskDuration']
+        .filter(name=>Number.isFinite(beforeCounters[name]) && Number.isFinite(afterCounters[name]))
+        .map(name=>[name,Math.round((afterCounters[name]-beforeCounters[name])*10000)/10000]),
+    );
     const sorted=result.intervals.filter(Number.isFinite).sort((a,b)=>a-b);
     const value=p=>Math.round(sorted[Math.floor((sorted.length-1)*p)]*10)/10;
     const record={variant:variant.name,frames:sorted.length,
       medianMs:value(.5),p95Ms:value(.95),
-      framesOver50ms:sorted.filter(t=>t>50).length};
+      framesOver50ms:sorted.filter(t=>t>50).length,
+      mainThread:metricChanges};
     comparisons.push(record);
     console.log('PETROS PAINT ABLATION '+JSON.stringify(record));
   }
@@ -1486,7 +1501,7 @@ const checkReactPetrosPaintCosts = async () => {
   }));
   console.log('PETROS PAINT ABLATION SUMMARY '+JSON.stringify({controlMedian,normalized}));
   writeFileSync(join(screenshots,'petros-paint-ablation.json'),
-    JSON.stringify({locale:'uk',windowMs:1000,controlMedian,comparisons:normalized},null,2));
+    JSON.stringify({locale:'uk',windowMs:1000,renderMode:'headless-software',controlMedian,comparisons:normalized},null,2));
 };
 
 // Independent React-only responsive and reduced-motion quality gate.

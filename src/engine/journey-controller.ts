@@ -21,6 +21,11 @@ export class JourneyController {
   private traceLog: JourneyTraceEntry[] = [];
   private scrollListenerTarget: Window | HTMLElement | null = null;
   private scrollElement: HTMLElement | null = null;
+  // Layout measurements are invalidated by resize, not by each scroll frame.
+  // Reading offsetHeight/getBoundingClientRect in every RAF may force layout
+  // while the browser is animating large SVG layers.
+  private trackStart = 0;
+  private travel = 0;
   private resizeObserver: ResizeObserver | null = null;
   private mounted = false;
 
@@ -62,9 +67,16 @@ export class JourneyController {
   }
 
   private getTravel(): number {
-    const stage = this.track.querySelector<HTMLElement>('.stage');
-    return Math.max(0, this.track.offsetHeight - (stage?.offsetHeight ?? window.innerHeight));
+    return this.travel;
   }
+
+  private updateGeometry = (): void => {
+    if (!this.mounted || !this.scrollElement) return;
+    const stage = this.track.querySelector<HTMLElement>('.stage');
+    this.travel = Math.max(0, this.track.offsetHeight - (stage?.offsetHeight ?? window.innerHeight));
+    this.trackStart = this.trackTop(this.scrollElement);
+    this.schedule();
+  };
 
   private sample = (): void => {
     this.sampleFrame = 0;
@@ -75,8 +87,8 @@ export class JourneyController {
       this.trace('external-scroll', this.scrollElement.scrollTop - this.wheelAppliedTop!);
       this.cancelWheel();
     }
-    const travel = this.getTravel();
-    const value = travel > 0 ? (this.scrollElement.scrollTop - this.trackTop(this.scrollElement)) / travel : 0;
+    const travel = this.travel;
+    const value = travel > 0 ? (this.scrollElement.scrollTop - this.trackStart) / travel : 0;
     this.trace('sample', value * 10000);
     this.store.setProgress(value);
   };
@@ -194,7 +206,7 @@ export class JourneyController {
     // keep the browser's present scroll position instead of seeking stale geometry.
     this.cancelNavigation();
     this.cancelWheel();
-    this.schedule();
+    this.updateGeometry();
   };
 
   private onTouchStart = (): void => {
@@ -234,18 +246,19 @@ export class JourneyController {
     window.addEventListener('pointerdown', this.onPointerDown, {passive: true});
     window.addEventListener('keydown', this.onKeyDown);
     if (typeof ResizeObserver !== 'undefined') {
-      this.resizeObserver = new ResizeObserver(this.schedule);
+      this.resizeObserver = new ResizeObserver(this.updateGeometry);
       this.resizeObserver.observe(this.track);
       const stage = this.track.querySelector<HTMLElement>('.stage');
       if (stage) this.resizeObserver.observe(stage);
     }
-    this.schedule();
+    this.updateGeometry();
     return () => this.unmount();
   }
 
   /** Animate only intentional, click-initiated navigation. */
   navigate(id: JourneyStopId): void {
     if (!this.mounted) return;
+    this.updateGeometry();
     const travel = this.getTravel();
     // Reduced motion and engines without scroll timelines display the four
     // destinations as vertically stacked content. A percentage of zero travel
@@ -260,7 +273,7 @@ export class JourneyController {
       return;
     }
     const scroller = this.scrollElement ?? this.getScroller();
-    const top = getStopScrollTop(this.trackTop(scroller), travel, 0, id);
+    const top = getStopScrollTop(this.trackStart, travel, 0, id);
     this.animateTo(scroller, top, id);
   }
 
@@ -327,5 +340,7 @@ export class JourneyController {
     delete this.track.dataset.journeyReady;
     if (this.traceEnabled) delete (window as Window & {__journeyTrace?: () => JourneyTraceEntry[]}).__journeyTrace;
     this.scrollElement = null;
+    this.trackStart = 0;
+    this.travel = 0;
   }
 }

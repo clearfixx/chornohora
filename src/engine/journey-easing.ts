@@ -14,8 +14,8 @@ export function easeInOutCubic(t: number): number {
 export function journeyDuration(distance: number, viewportHeight: number): number {
   if (!Number.isFinite(distance) || !Number.isFinite(viewportHeight)) return 2500;
   const screens = Math.abs(distance) / Math.max(1, viewportHeight);
-  // 12% quicker than the previous preview without changing cubic easing.
-  return Math.round(Math.min(4600, Math.max(2300, 1800 + screens * 780)) / 1.12);
+  // 15% quicker than the original policy; the easing curve stays unchanged.
+  return Math.round(Math.min(4600, Math.max(2300, 1800 + screens * 780)) / 1.15);
 }
 
 /** Detect an external scrollbar, focus or programmatic scroll during wheel easing. */

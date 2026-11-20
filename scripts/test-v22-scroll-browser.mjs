@@ -1040,6 +1040,14 @@ const checkReactIntermediateJourney = async () => {
               zIndex:Number(getComputedStyle(el).zIndex),
             })),
             meteorsActive:scene.querySelector('[data-petros-meteors]')?.classList.contains('is-active'),
+            forestLayers:[...scene.querySelectorAll('.ly.tr')].map(el=>({
+              foreground:el.classList.contains('forest-foreground'),
+              zIndex:Number(getComputedStyle(el).zIndex),
+              pathCount:el.querySelectorAll('svg path').length,
+              pointerEvents:getComputedStyle(el).pointerEvents,
+              viewBox:el.querySelector('svg')?.getAttribute('viewBox'),
+            })),
+            hikerZIndex:Number(getComputedStyle(hiker).zIndex),
             documentWidth:document.documentElement.scrollWidth,
           };
         })()`);
@@ -1063,6 +1071,17 @@ const checkReactIntermediateJourney = async () => {
           `Mountain parallax layer order changed at ${locale}/${width}/${p}`);
         assert.equal(state.meteorsActive,p>=.76 && p<.94,
           `Petros meteors active outside approved interval at ${locale}/${width}/${p}`);
+        assert.equal(state.forestLayers.length,2,
+          `Both forest layers required at ${locale}/${width}/${p}`);
+        assert.deepEqual(state.forestLayers.map(layer=>layer.foreground),[false,true],
+          `Forest back/foreground DOM order changed at ${locale}/${width}/${p}`);
+        assert.ok(state.forestLayers.every(layer=>layer.pathCount===1 && layer.viewBox==='0 0 5000 220'),
+          `Forest SVG geometry missing at ${locale}/${width}/${p}: ${JSON.stringify(state.forestLayers)}`);
+        assert.ok(state.forestLayers[0].zIndex < state.hikerZIndex &&
+          state.hikerZIndex < state.forestLayers[1].zIndex,
+          `Traveler must sit between forest layers at ${locale}/${width}/${p}: ${JSON.stringify(state)}`);
+        assert.equal(state.forestLayers[1].pointerEvents,'none',
+          `Foreground trees must not intercept controls at ${locale}/${width}/${p}`);
         const previous = samples.at(-1);
         if (previous) {
           assert.ok(state.x >= previous.x-.2 && state.fill >= previous.fill-.01,

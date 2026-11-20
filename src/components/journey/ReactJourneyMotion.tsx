@@ -56,10 +56,39 @@ const RouteStops = memo(function RouteStops({passedMask, activeIndex, activeTool
   );
 });
 
-/** Route bar repaints as React state, not through mutation observers or legacy scripts. */
+/** The fill is the only continuously updated part of the route indicator.
+ * Keep the tooltip portal, marker cards and event listeners outside its render loop. */
+function RouteProgressFill({store, centers, lineStyle}: {
+  store: JourneyStore; centers: readonly number[]; lineStyle: CSSProperties;
+}) {
+  const progress = useSyncExternalStore(
+    store.subscribe,
+    () => store.getSnapshot().progress,
+    () => store.getServerSnapshot().progress,
+  );
+  const fillStyle: CSSProperties = {...lineStyle, transform: 'scaleX(' + getRouteFill(progress, centers) + ')'};
+  return <div className="fill" style={{"position":"absolute","left":"6vw","right":"6vw","top":"28px","height":"3px","background":"#ffae64","transformOrigin":"left center",...fillStyle} as React.CSSProperties}></div>;
+}
+
+/** Compress active marker and passed thresholds into one stable primitive.
+ * React 19 avoids re-rendering the shell when progress changes within a stop. */
+function getRouteMarkerState(store: JourneyStore): number {
+  const {progress, activeIndex} = store.getSnapshot();
+  const passedMask = anchors.reduce((mask, anchor, index) =>
+    progress >= anchor - .0005 ? mask | (1 << index) : mask, 0);
+  return ((activeIndex + 1) << 4) | passedMask;
+}
+
+/** The route shell only re-renders when marker states or tooltips change. */
 export function ReactRouteIndicator({store}: {store: JourneyStore}) {
   const t = useTranslations('Journey');
-  const {progress, activeIndex} = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
+  const markerState = useSyncExternalStore(
+    store.subscribe,
+    () => getRouteMarkerState(store),
+    () => getRouteMarkerState(store),
+  );
+  const passedMask = markerState & 15;
+  const activeIndex = (markerState >> 4) - 1;
   const barRef = useRef<HTMLDivElement>(null);
   const [centers, setCenters] = useState<number[]>([]);
   const [activeTooltip, setActiveTooltip] = useState<number | null>(null);
@@ -163,14 +192,13 @@ export function ReactRouteIndicator({store}: {store: JourneyStore}) {
   const first = centers[0] ?? 0;
   const span = Math.max(0, (centers[3] ?? 0) - first);
   const lineStyle: CSSProperties = span ? {left: first, right: 'auto', width: span} : {};
-  const fillStyle: CSSProperties = {...lineStyle, transform: 'scaleX(' + getRouteFill(progress, centers) + ')'};
   return (
 <>
 <div ref={barRef} onPointerOver={onPointerOver} onPointerOut={onPointerOut} onFocusCapture={onFocus} onBlurCapture={onBlur} className="band route-ui-v6" style={{"position":"absolute","left":"0","right":"0","bottom":"0","height":"92px","background":"var(--m4)","zIndex":"10"} as React.CSSProperties}>
 <div style={{"position":"absolute","left":"6vw","right":"6vw","top":"28px","height":"3px","background":"rgba(255,255,255,.28)",...lineStyle} as React.CSSProperties}></div>
-<div className="fill" style={{"position":"absolute","left":"6vw","right":"6vw","top":"28px","height":"3px","background":"#ffae64","transformOrigin":"left center",...fillStyle} as React.CSSProperties}></div>
+<RouteProgressFill store={store} centers={centers} lineStyle={lineStyle}/>
 <RouteStops
-  passedMask={anchors.reduce((mask, anchor, index) => progress >= anchor - .0005 ? mask | (1 << index) : mask, 0)}
+  passedMask={passedMask}
   activeIndex={activeIndex}
   activeTooltip={activeTooltip}
 />

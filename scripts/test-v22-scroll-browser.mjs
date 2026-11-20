@@ -1299,6 +1299,75 @@ const checkReactScrollOwnershipStress = async () => {
   console.log('SCROLL OWNERSHIP STRESS '+JSON.stringify({manual,dragY,settled,resized,after}));
 };
 
+// Capture frame pacing at the two transitions reported as costly on desktop.
+// Diagnostics are intentionally NOT pass/fail FPS thresholds: headless CI
+// shares runners and cannot represent the user's GPU. Functional checks still
+// require scroll progress; metrics make regressions visible in job logs.
+const checkReactFramePacing = async () => {
+  await command('Emulation.setDeviceMetricsOverride', {
+    width:1440,height:900,deviceScaleFactor:1,mobile:false,
+  });
+  await command('Emulation.setTouchEmulationEnabled',{enabled:false});
+  for (const locale of ['uk','en']) {
+    await command('Page.navigate',{url:`http://127.0.0.1:${port}/${locale}?preview=react`});
+    for (let n=0;n<80;n++) {
+      if(await evaluate("!!document.querySelector('[data-react-journey] .track[data-journey-ready]')")) break;
+      if(n===79) throw Error('Frame-pacing journey not ready: '+locale);
+      await delay(100);
+    }
+    const geometry=await evaluate(`(() => {
+      const track=document.querySelector('[data-react-journey] .track');
+      const stage=track.querySelector('.stage');
+      return {top:track.getBoundingClientRect().top+scrollY,
+        travel:track.offsetHeight-stage.offsetHeight};
+    })()`);
+    assert.ok(geometry.travel>500,'Frame-pacing track geometry missing');
+    for (const point of [
+      {name:'hero-hoverla',progress:.08,direction:1},
+      {name:'booking-petros',progress:1,direction:-1},
+    ]) {
+      const target=geometry.top+geometry.travel*point.progress+
+        (point.progress===1 ? 60 : 0);
+      await evaluate("window.scrollTo({top:"+target+",behavior:'instant'})");
+      await delay(180);
+      const start=await evaluate('scrollY');
+      await evaluate(`(() => {
+        window.__journeyFrameIntervals=[];
+        let last=null;
+        let frames=0;
+        const record=t=>{
+          if(last!==null) window.__journeyFrameIntervals.push(t-last);
+          last=t;
+          if(++frames<75) requestAnimationFrame(record);
+        };
+        requestAnimationFrame(record);
+      })()`);
+      for(let i=0;i<12;i++) {
+        await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:620,y:400,
+          deltaY:point.direction*120,deltaX:0});
+        await delay(32);
+      }
+      await delay(750);
+      const values=await evaluate(`(() => ({
+        intervals:window.__journeyFrameIntervals || [],y:scrollY,
+      }))()`);
+      assert.ok(values.intervals.length>=35,
+        'Frame samples incomplete: '+JSON.stringify({locale,point:point.name,count:values.intervals.length}));
+      assert.ok((values.y-start)*point.direction>100,
+        'Frame metric wheel did not move: '+JSON.stringify({locale,point:point.name,start,end:values.y}));
+      const sorted=values.intervals.slice().sort((a,b)=>a-b);
+      const percentile=p=>Math.round(sorted[Math.min(sorted.length-1,Math.floor((sorted.length-1)*p))]*10)/10;
+      const report={locale,point:point.name,frames:sorted.length,
+        medianMs:percentile(.5),p95Ms:percentile(.95),
+        framesOver34ms:sorted.filter(n=>n>34).length,
+        framesOver50ms:sorted.filter(n=>n>50).length,
+      };
+      console.log('REACT FRAME PACING '+JSON.stringify(report));
+      geometrySamples.push({kind:'react-frame-pacing',...report});
+    }
+  }
+};
+
 // Independent React-only responsive and reduced-motion quality gate.
 // Runs after the expensive original/native parity captures, so it does not
 // repeat their geometry/screenshot work for each additional breakpoint.
@@ -1483,6 +1552,7 @@ try {
   await checkReactIntermediateJourney();
   await checkReactBookingFooterSeam();
   await checkReactScrollOwnershipStress();
+  await checkReactFramePacing();
   await checkReactResponsiveAndMotion();
   writeFileSync(join(screenshots, 'geometry.json'), JSON.stringify({samples: geometrySamples}, null, 2));
   console.log('Saved geometry measurements:', geometrySamples.length);

@@ -1577,6 +1577,7 @@ const checkReactPetrosPaintCosts = async () => {
     })()`);
     assert.ok(responsiveGeometry.travel>500,
       'Responsive aurora geometry missing: '+locale+'/'+width);
+    let originalAnimationContract=null;
     for(const variant of ['original','cached']) {
       const cached=variant==='cached';
       const raster=await setCachedAurora(cached);
@@ -1615,7 +1616,23 @@ const checkReactPetrosPaintCosts = async () => {
           assert.equal(layer.imageHeight,layer.expectedHeight,'Raster height mismatches layer');
         }
       }
-      responsiveAurora.push({locale,width,variant,...layers});
+      // Confirm the raster experiment preserves the parent animation model.
+      // Current opacity/translate values depend on snapshot timing and must
+      // not be compared directly across separate scroll captures.
+      const animationContract=await evaluate(`(() => [...document.querySelectorAll('[data-react-journey] .stage .aur')]
+        .map(el => {
+          const style=getComputedStyle(el);
+          return {animationName:style.animationName,
+            animationTimeline:style.animationTimeline,
+            mixBlendMode:style.mixBlendMode,
+            position:style.position,
+            borderRadius:style.borderRadius};
+        }))()`);
+      assert.equal(animationContract.length,2,'Aurora animation layers missing');
+      if(variant==='original') originalAnimationContract=animationContract;
+      else assert.deepEqual(animationContract,originalAnimationContract,
+        'Cached aurora changed timeline/blending/geometry at '+locale+'/'+width);
+      responsiveAurora.push({locale,width,variant,...layers,animationContract});
       for(const progress of [.83,.88]) {
         const position=responsiveGeometry.top+responsiveGeometry.travel*progress;
         await evaluate("window.scrollTo({top:"+position+",behavior:'instant'})");

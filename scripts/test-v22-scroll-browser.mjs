@@ -20,6 +20,7 @@ const profile = mkdtempSync(join(tmpdir(), 'chornohora-cdp-'));
 const screenshots = join(process.cwd(), 'artifacts', 'v22-browser');
 mkdirSync(screenshots, {recursive: true});
 const geometrySamples = [];
+const framePacingSamples = [];
 const server = spawn('pnpm', ['start', '--port', String(port)], {
   detached: true, stdio: 'ignore',
 });
@@ -1363,7 +1364,7 @@ const checkReactFramePacing = async () => {
         framesOver50ms:sorted.filter(n=>n>50).length,
       };
       console.log('REACT FRAME PACING '+JSON.stringify(report));
-      geometrySamples.push({kind:'react-frame-pacing',...report});
+      framePacingSamples.push(report);
     }
   }
 };
@@ -1555,6 +1556,7 @@ try {
   await checkReactFramePacing();
   await checkReactResponsiveAndMotion();
   writeFileSync(join(screenshots, 'geometry.json'), JSON.stringify({samples: geometrySamples}, null, 2));
+  writeFileSync(join(screenshots, 'frame-pacing.json'), JSON.stringify({samples: framePacingSamples}, null, 2));
   console.log('Saved geometry measurements:', geometrySamples.length);
 } finally {
   ws?.close();

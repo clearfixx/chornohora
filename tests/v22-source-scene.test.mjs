@@ -56,8 +56,15 @@ test('React has independent checked-in CSS with exact immutable legacy rule orde
   const original = readFileSync('public/legacy/styles.css', 'utf8').replace(/\r\n?/g,'\n');
   const scene = readFileSync('public/v22-react-scene.css', 'utf8').replace(/\r\n?/g,'\n');
   const standalone = readFileSync('public/react-journey.css','utf8').replace(/\r\n?/g,'\n');
-  assert.equal(standalone, (original+'\n'+scene).replaceAll('/legacy/assets/', '/journey/assets/'),
-    'React CSS must retain both former stylesheet contents exactly and in order');
+  // The React-only performance transform intentionally scopes one timeline
+  // selector away from thousands of non-animated SVG descendants. Verify that
+  // reversing ONLY that selector reproduces the frozen CSS byte for byte.
+  const optimizedSelectors = standalone.match(/\\.stage,\\.stage :is\\([^\\n{}]+\\),\\.nav \\.ul(?=\\{animation-timeline:--cyc;)/g) ?? [];
+  assert.equal(optimizedSelectors.length, 1, 'Expected exactly one React-only timeline selector');
+  const originalTimeline = '.stage,.stage *,.nav .ul';
+  const restored = standalone.replace(optimizedSelectors[0], originalTimeline);
+  assert.equal(restored, (original+'\n'+scene).replaceAll('/legacy/assets/', '/journey/assets/'),
+    'React CSS must preserve frozen rule order and content except the scoped timeline selector');
   const reactBranch = page.split("if (preview === 'react')")[1]?.split("if (preview === 'native')")[0] ?? '';
   assert.match(reactBranch, /href="\/react-journey\.css"/);
   assert.doesNotMatch(reactBranch, /href="\/legacy\/styles\.css"|href="\/v22-react-scene\.css"|getV22SourceScene/);

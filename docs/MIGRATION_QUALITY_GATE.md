@@ -86,3 +86,7 @@ GitHub Actions run [#421](https://github.com/clearfixx/chornohora/actions/runs/4
 The wheel controller additionally clears its last applied origin at the start of each *new* gesture and checks for externally changed scroll coordinates before the next easing frame. The Chromium ownership-stress scenario tests both external interruption and completion followed by a manual jump and a fresh wheel gesture.
 
 **Still blocking:** real-device manual reversal/stress acceptance, human review of redesigned SVG silhouettes and tooltips, and sign-off to switch the canonical iframe route to React. The form is draft-only; server delivery is explicitly deferred until after migration. Do not infer production readiness or merge permission from CI success alone.
+
+## Scene-art and reverse-timeline regression — 2026-11-20
+
+The 11-point React journey Chromium matrix (UA/EN × 390/1440) now checks that all three intentionally redesigned reference mountain SVGs retain their exact viewBox dimensions, expected lit-facet path counts and stacking indices. It also checks that Petros meteor activation follows the approved normalized interval `[0.76, 0.94)` while scrolling forward **and** returns to the same state at each checkpoint on reverse scroll. This is a structural/timeline safeguard, not a substitute for human evaluation of actual scene artwork or animation appearance. The frozen `public/legacy` source and approved scroll timing are unchanged.

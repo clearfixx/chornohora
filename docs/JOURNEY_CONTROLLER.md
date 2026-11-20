@@ -47,3 +47,7 @@ The React wheel controller now checks the last applied scroll position **at the 
 ### New-gesture stale origin regression — 2026-11-20
 
 A completed wheel easing sequence may leave its last programmatic scroll position cached. If a browser/manual scroll follows it, the next distinct wheel gesture must start from the actual scroll position rather than interpreting the new location as interference with the old gesture. The controller now clears the stale applied-wheel origin when starting a new wheel sequence. The Chromium ownership-stress scenario now verifies recovery immediately after an interrupted wheel sequence and again after a fully completed sequence followed by direct scrollbar-style repositioning. These are additions to the existing Petros ↔ booking/footer seam checks. Release acceptance still requires a green CI run and real-device reverse-scroll validation; v22 and approved motion timing remain untouched.
+
+### Viewport resize during navigation — 2026-11-20
+
+The React controller cancels both pending click-navigation RAF and wheel easing when the viewport resizes, then samples its current position. This avoids a stale navigation target (computed with the earlier viewport geometry) pulling the page after an orientation/viewport-height change. The existing Chromium stress scenario now also asserts the post-resize scroll coordinate remains steady before it issues the opposite wheel gesture. Manual mobile rotation acceptance is still required; this change does not adjust approved navigation durations or scene timing.

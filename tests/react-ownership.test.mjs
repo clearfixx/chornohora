@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync, rmSync, writeFileSync} from 'node:fs';
+import {mkdtempSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {resolveLocalImport, scanReactImports} from '../scripts/check-react-ownership.mjs';
@@ -29,4 +29,16 @@ test('local aliases and relatives resolve only within src', () => {
   assert.ok(resolveLocalImport(from,'@/engine/journey-store')?.endsWith('journey-store.ts'));
   assert.ok(resolveLocalImport(from,'./ReactJourneyMotion')?.endsWith('ReactJourneyMotion.tsx'));
   assert.equal(resolveLocalImport(from,'react'),null);
+});
+
+
+test('React stylesheet does not attach scroll timelines to every SVG descendant', () => {
+  const css=readFileSync(join(process.cwd(),'public/react-journey.css'),'utf8');
+  const legacy=readFileSync(join(process.cwd(),'public/v22-react-scene.css'),'utf8');
+  assert.ok(!css.includes('.stage,.stage *,.nav .ul{animation-timeline:--cyc;'),
+    'Broad timeline selector causes SVG path animation overhead');
+  assert.ok(css.includes('.stage,.stage :is(') && css.includes('),.nav .ul{animation-timeline:--cyc;'),
+    'React-only optimized scroll timeline must remain active');
+  assert.ok(legacy.includes('.stage,.stage *,.nav .ul{animation-timeline:--cyc;'),
+    'Frozen v22 extracted stylesheet must not be modified');
 });

@@ -62,9 +62,18 @@ test('React has independent checked-in CSS with exact immutable legacy rule orde
   const optimizedSelectors = standalone.match(/\.stage,\.stage :is\([^\n{}]+\),\.nav \.ul(?=\{animation-timeline:--cyc;)/g) ?? [];
   assert.equal(optimizedSelectors.length, 1, 'Expected exactly one React-only timeline selector');
   const originalTimeline = '.stage,.stage *,.nav .ul';
-  const restored = standalone.replace(optimizedSelectors[0], originalTimeline);
+  const originalOrb = scene.match(/@keyframes orb\\{[\\s\\S]*?\\n\\}/)?.[0];
+  const compositedOrb = standalone.match(/@keyframes orb\\{[\\s\\S]*?\\n\\}/)?.[0];
+  assert.ok(originalOrb && compositedOrb, 'Both CSS variants must retain orb keyframes');
+  assert.match(compositedOrb, /translate:-6vw -300px/);
+  assert.doesNotMatch(compositedOrb, /left:|top:/,
+    'Composited React orbit must not animate layout geometry');
+  // Reverse exactly the two explicitly approved React-only optimizations.
+  // Every other CSS byte must still match the immutable v22 sources.
+  const restored = standalone.replace(optimizedSelectors[0], originalTimeline)
+    .replace(compositedOrb, originalOrb);
   assert.equal(restored, (original+'\n'+scene).replaceAll('/legacy/assets/', '/journey/assets/'),
-    'React CSS must preserve frozen rule order and content except the scoped timeline selector');
+    'React CSS must preserve frozen rule order and content except two approved transformations');
   const reactBranch = page.split("if (preview === 'react')")[1]?.split("if (preview === 'native')")[0] ?? '';
   assert.match(reactBranch, /href="\/react-journey\.css"/);
   assert.doesNotMatch(reactBranch, /href="\/legacy\/styles\.css"|href="\/v22-react-scene\.css"|getV22SourceScene/);

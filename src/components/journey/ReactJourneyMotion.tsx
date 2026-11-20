@@ -58,6 +58,7 @@ const RouteStops = memo(function RouteStops({passedMask, activeIndex, activeTool
 
 /** Route bar repaints as React state, not through mutation observers or legacy scripts. */
 export function ReactRouteIndicator({store}: {store: JourneyStore}) {
+  const t = useTranslations('Journey');
   const {progress, activeIndex} = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
   const barRef = useRef<HTMLDivElement>(null);
   const [centers, setCenters] = useState<number[]>([]);

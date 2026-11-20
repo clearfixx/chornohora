@@ -59,7 +59,7 @@ test('React has independent checked-in CSS with exact immutable legacy rule orde
   // The React-only performance transform intentionally scopes one timeline
   // selector away from thousands of non-animated SVG descendants. Verify that
   // reversing ONLY that selector reproduces the frozen CSS byte for byte.
-  const optimizedSelectors = standalone.match(/\\.stage,\\.stage :is\\([^\\n{}]+\\),\\.nav \\.ul(?=\\{animation-timeline:--cyc;)/g) ?? [];
+  const optimizedSelectors = standalone.match(/\.stage,\.stage :is\([^\n{}]+\),\.nav \.ul(?=\{animation-timeline:--cyc;)/g) ?? [];
   assert.equal(optimizedSelectors.length, 1, 'Expected exactly one React-only timeline selector');
   const originalTimeline = '.stage,.stage *,.nav .ul';
   const restored = standalone.replace(optimizedSelectors[0], originalTimeline);

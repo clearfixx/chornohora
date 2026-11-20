@@ -1,6 +1,6 @@
 'use client';
 
-import {useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
+import {memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
 import type {CSSProperties, FocusEvent, PointerEvent} from 'react';
 import {ROUTE_STOPS, clampProgress} from '@/lib/journey';
@@ -35,14 +35,29 @@ export function getRouteFill(progress: number, centers: readonly number[]): numb
   }
   return 1;
 }
-function stopClass(progress: number, activeIndex: number, index: number): string {
-  return 'stop' + (progress >= anchors[index] - .0005 ? ' is-passed' : '') +
+function stopClass(passedMask: number, activeIndex: number, index: number): string {
+  return 'stop' + ((passedMask & (1 << index)) ? ' is-passed' : '') +
     (activeIndex === index ? ' is-active' : '');
 }
 
+/** Four tooltip cards are static between route threshold changes.
+ * Only the route fill and hiker need the continuous frame progress. */
+const RouteStops = memo(function RouteStops({passedMask, activeIndex, activeTooltip}: {
+  passedMask: number; activeIndex: number; activeTooltip: number | null;
+}) {
+  const t = useTranslations('Journey');
+  return (
+    <div className="stops">
+<a aria-describedby={activeTooltip === 0 ? 'react-route-tooltip' : 'peak-1-b'} aria-label={t("tooltipNavigate") + " " + t("peak1")} className={stopClass(passedMask, activeIndex, 0)} aria-current={activeIndex === 0 ? 'step' : undefined} data-peak="1" href="#govla" data-journey-action="goGovla"><span className="dot d1"></span><span className="route-badge"><span className="route-symbol">☀</span><span className="route-labels"><span className="route-phase">01 / {t("phase1").toUpperCase()}</span><span className="stop-name">{t("peak1")}</span></span></span><span className="stop-card" id="peak-1-b" role="tooltip"><span className="eyebrow">01 / {t("phase1")}</span><strong>{t("peak1")}</strong><p>{t("tooltipShortDesc1")}</p><span className="facts"><span><b>{t("tooltipElevation")}</b> {t('tooltipHeight1')}</span><span><b>{t("tooltipCoords")}</b> 48.160° N, 24.500° E</span></span></span></a>
+<a aria-describedby={activeTooltip === 1 ? 'react-route-tooltip' : 'peak-2-b'} aria-label={t("tooltipNavigate") + " " + t("peak2")} className={stopClass(passedMask, activeIndex, 1)} aria-current={activeIndex === 1 ? 'step' : undefined} data-peak="2" href="#breb" data-journey-action="goBreb"><span className="dot d2"></span><span className="route-badge"><span className="route-symbol">≋</span><span className="route-labels"><span className="route-phase">02 / {t("phase2").toUpperCase()}</span><span className="stop-name">{t("peak2")}</span></span></span><span className="stop-card" id="peak-2-b" role="tooltip"><span className="eyebrow">02 / {t("phase2")}</span><strong>{t("peak2")}</strong><p>{t("tooltipShortDesc2")}</p><span className="facts"><span><b>{t("tooltipElevation")}</b> {t('tooltipHeight2')}</span><span><b>{t("tooltipCoords")}</b> 48.102° N, 24.563° E</span></span></span></a>
+<a aria-describedby={activeTooltip === 2 ? 'react-route-tooltip' : 'peak-3-b'} aria-label={t("tooltipNavigate") + " " + t("peak3")} className={stopClass(passedMask, activeIndex, 2)} aria-current={activeIndex === 2 ? 'step' : undefined} data-peak="3" href="#nes" data-journey-action="goNes"><span className="dot d3"></span><span className="route-badge"><span className="route-symbol">♧</span><span className="route-labels"><span className="route-phase">03 / {t("phase3").toUpperCase()}</span><span className="stop-name">{t("peak3")}</span></span></span><span className="stop-card" id="peak-3-b" role="tooltip"><span className="eyebrow">03 / {t("phase3")}</span><strong>{t("peak3")}</strong><p>{t("tooltipShortDesc3")}</p><span className="facts"><span><b>{t("tooltipElevation")}</b> {t('tooltipHeight3')}</span><span><b>{t("tooltipCoords")}</b> 48.123° N, 24.541° E</span></span></span></a>
+<a aria-describedby={activeTooltip === 3 ? 'react-route-tooltip' : 'peak-4-b'} aria-label={t("tooltipNavigate") + " " + t("peak4")} className={stopClass(passedMask, activeIndex, 3)} aria-current={activeIndex === 3 ? 'step' : undefined} data-peak="4" href="#petros" data-journey-action="goPetros"><span className="dot d4"></span><span className="route-badge"><span className="route-symbol">☾</span><span className="route-labels"><span className="route-phase">04 / {t("phase4").toUpperCase()}</span><span className="stop-name">{t("peak4")}</span></span></span><span className="stop-card" id="peak-4-b" role="tooltip"><span className="eyebrow">04 / {t("phase4")}</span><strong>{t("peak4")}</strong><p>{t("tooltipShortDesc4")}</p><span className="facts"><span><b>{t("tooltipElevation")}</b> {t('tooltipHeight4')}</span><span><b>{t("tooltipCoords")}</b> 48.171° N, 24.421° E</span></span></span></a>
+</div>
+  );
+});
+
 /** Route bar repaints as React state, not through mutation observers or legacy scripts. */
 export function ReactRouteIndicator({store}: {store: JourneyStore}) {
-  const t = useTranslations('Journey');
   const {progress, activeIndex} = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
   const barRef = useRef<HTMLDivElement>(null);
   const [centers, setCenters] = useState<number[]>([]);
@@ -153,12 +168,11 @@ export function ReactRouteIndicator({store}: {store: JourneyStore}) {
 <div ref={barRef} onPointerOver={onPointerOver} onPointerOut={onPointerOut} onFocusCapture={onFocus} onBlurCapture={onBlur} className="band route-ui-v6" style={{"position":"absolute","left":"0","right":"0","bottom":"0","height":"92px","background":"var(--m4)","zIndex":"10"} as React.CSSProperties}>
 <div style={{"position":"absolute","left":"6vw","right":"6vw","top":"28px","height":"3px","background":"rgba(255,255,255,.28)",...lineStyle} as React.CSSProperties}></div>
 <div className="fill" style={{"position":"absolute","left":"6vw","right":"6vw","top":"28px","height":"3px","background":"#ffae64","transformOrigin":"left center",...fillStyle} as React.CSSProperties}></div>
-<div className="stops">
-<a aria-describedby={activeTooltip === 0 ? 'react-route-tooltip' : 'peak-1-b'} aria-label={t("tooltipNavigate") + " " + t("peak1")} className={stopClass(progress, activeIndex, 0)} aria-current={activeIndex === 0 ? 'step' : undefined} data-peak="1" href="#govla" data-journey-action="goGovla"><span className="dot d1"></span><span className="route-badge"><span className="route-symbol">☀</span><span className="route-labels"><span className="route-phase">01 / {t("phase1").toUpperCase()}</span><span className="stop-name">{t("peak1")}</span></span></span><span className="stop-card" id="peak-1-b" role="tooltip"><span className="eyebrow">01 / {t("phase1")}</span><strong>{t("peak1")}</strong><p>{t("tooltipShortDesc1")}</p><span className="facts"><span><b>{t("tooltipElevation")}</b> {t('tooltipHeight1')}</span><span><b>{t("tooltipCoords")}</b> 48.160° N, 24.500° E</span></span></span></a>
-<a aria-describedby={activeTooltip === 1 ? 'react-route-tooltip' : 'peak-2-b'} aria-label={t("tooltipNavigate") + " " + t("peak2")} className={stopClass(progress, activeIndex, 1)} aria-current={activeIndex === 1 ? 'step' : undefined} data-peak="2" href="#breb" data-journey-action="goBreb"><span className="dot d2"></span><span className="route-badge"><span className="route-symbol">≋</span><span className="route-labels"><span className="route-phase">02 / {t("phase2").toUpperCase()}</span><span className="stop-name">{t("peak2")}</span></span></span><span className="stop-card" id="peak-2-b" role="tooltip"><span className="eyebrow">02 / {t("phase2")}</span><strong>{t("peak2")}</strong><p>{t("tooltipShortDesc2")}</p><span className="facts"><span><b>{t("tooltipElevation")}</b> {t('tooltipHeight2')}</span><span><b>{t("tooltipCoords")}</b> 48.102° N, 24.563° E</span></span></span></a>
-<a aria-describedby={activeTooltip === 2 ? 'react-route-tooltip' : 'peak-3-b'} aria-label={t("tooltipNavigate") + " " + t("peak3")} className={stopClass(progress, activeIndex, 2)} aria-current={activeIndex === 2 ? 'step' : undefined} data-peak="3" href="#nes" data-journey-action="goNes"><span className="dot d3"></span><span className="route-badge"><span className="route-symbol">♧</span><span className="route-labels"><span className="route-phase">03 / {t("phase3").toUpperCase()}</span><span className="stop-name">{t("peak3")}</span></span></span><span className="stop-card" id="peak-3-b" role="tooltip"><span className="eyebrow">03 / {t("phase3")}</span><strong>{t("peak3")}</strong><p>{t("tooltipShortDesc3")}</p><span className="facts"><span><b>{t("tooltipElevation")}</b> {t('tooltipHeight3')}</span><span><b>{t("tooltipCoords")}</b> 48.123° N, 24.541° E</span></span></span></a>
-<a aria-describedby={activeTooltip === 3 ? 'react-route-tooltip' : 'peak-4-b'} aria-label={t("tooltipNavigate") + " " + t("peak4")} className={stopClass(progress, activeIndex, 3)} aria-current={activeIndex === 3 ? 'step' : undefined} data-peak="4" href="#petros" data-journey-action="goPetros"><span className="dot d4"></span><span className="route-badge"><span className="route-symbol">☾</span><span className="route-labels"><span className="route-phase">04 / {t("phase4").toUpperCase()}</span><span className="stop-name">{t("peak4")}</span></span></span><span className="stop-card" id="peak-4-b" role="tooltip"><span className="eyebrow">04 / {t("phase4")}</span><strong>{t("peak4")}</strong><p>{t("tooltipShortDesc4")}</p><span className="facts"><span><b>{t("tooltipElevation")}</b> {t('tooltipHeight4')}</span><span><b>{t("tooltipCoords")}</b> 48.171° N, 24.421° E</span></span></span></a>
-</div>
+<RouteStops
+  passedMask={anchors.reduce((mask, anchor, index) => progress >= anchor - .0005 ? mask | (1 << index) : mask, 0)}
+  activeIndex={activeIndex}
+  activeTooltip={activeTooltip}
+/>
 </div>
 {activeTooltip !== null && typeof document !== 'undefined' && createPortal(
   <div

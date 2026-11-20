@@ -5,8 +5,9 @@ import {JourneyStore} from './journey-store.ts';
 type JourneyTraceEntry = {t: number; event: string; y: number; target: number; dir: number; detail?: number};
 
 /**
- * Browser scrolling remains native for wheel, touch and keyboard.
- * Only explicit navigation animates at a controlled speed.
+ * Touch and keyboard scrolling remain native. Wheel input uses a single
+ * eased policy across the journey and the booking/footer seam.
+ * Explicit navigation animates at a controlled speed.
  * All measurements are read-only; React owns the rendered scene.
  */
 export class JourneyController {
@@ -131,6 +132,9 @@ export class JourneyController {
     // Reversing wheel direction must discard pending momentum from the old
     // direction; otherwise two successive inputs can visibly fight each other.
     if (this.wheelDirection && direction !== this.wheelDirection) this.cancelWheel();
+    // A completed easing sequence must not carry its last applied position
+    // into a new gesture. The user might have scrolled natively meanwhile.
+    if (!this.wheelFrame) this.wheelAppliedTop = null;
     const base = this.wheelFrame ? this.wheelTarget : now;
     const target = Math.min(maximum, Math.max(0, base + delta));
     if (Math.abs(target - now) < 0.1) {

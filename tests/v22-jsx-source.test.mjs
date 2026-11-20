@@ -68,6 +68,10 @@ test('React traveler and four-stop progress panel subscribe independently to the
   assert.match(motion, /<RouteStops[\s\S]*passedMask=\{passedMask\}/);
   assert.match(motion, /function getRouteMarkerState\(/);
   assert.match(motion, /--hiker-x/);
+  assert.match(motion, /const HikerArtwork = memo\(/);
+  assert.match(motion, /<HikerArtwork \/>/);
+  assert.match(motion, /<path d="M17 66 L27 66 L25 112 L15 112 Z"/);
+  assert.match(motion, /<path d="M52 56 L56 118"/);
 });
 
 

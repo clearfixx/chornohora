@@ -24,12 +24,16 @@ const framePacingSamples = [];
 const server = spawn('pnpm', ['start', '--port', String(port)], {
   detached: true, stdio: 'ignore',
 });
+const gpuOptIn = process.env.CHORNOHORA_BROWSER_GPU === '1';
+// Keep the existing deterministic software-rendered CI default. An explicit
+// opt-in enables Chrome's normal GPU path on machines that support one.
 const chrome = spawn(browser, [
-  '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
+  '--headless=new', '--no-sandbox', ...(!gpuOptIn ? ['--disable-gpu'] : []), '--disable-dev-shm-usage',
   '--no-first-run', '--no-default-browser-check',
   `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`,
   '--window-size=1440,900', 'about:blank',
 ], {stdio: 'ignore'});
+console.log('BROWSER RENDER MODE '+(gpuOptIn?'GPU allowed by flags; actual acceleration not guaranteed':'GPU disabled (software CI baseline)'));
 let ws;
 const pending = new Map();
 let sequence = 0;
@@ -1511,7 +1515,7 @@ const checkReactPetrosPaintCosts = async () => {
   }));
   console.log('PETROS PAINT ABLATION SUMMARY '+JSON.stringify({controlMedian,normalized}));
   writeFileSync(join(screenshots,'petros-paint-ablation.json'),
-    JSON.stringify({locale:'uk',windowMs:1000,renderMode:'headless-software',controlMedian,comparisons:normalized},null,2));
+    JSON.stringify({locale:'uk',windowMs:1000,renderMode:gpuOptIn?'gpu-allowed':'headless-software',controlMedian,comparisons:normalized},null,2));
 };
 
 // Independent React-only responsive and reduced-motion quality gate.

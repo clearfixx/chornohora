@@ -1,6 +1,6 @@
 'use client';
 
-import {memo, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {useJourneyProgress} from '@/hooks/useJourneyProgress';
 import {JourneyStore} from '@/engine/journey-store';
 import {JourneyStage} from '@/features/journey/components/JourneyStage';
@@ -24,11 +24,18 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [store] = useState(() => new JourneyStore());
   const [menuOpen, setMenuOpen] = useState(false);
-  const {progress, navigateToStop, navigateToTop, navigateToElement} = useJourneyProgress(trackRef, store);
+  const {navigateToStop, navigateToTop, navigateToElement} = useJourneyProgress(trackRef, store);
+  // A boolean selector prevents the entire preview tree from rendering at
+  // every wheel animation frame; only the threshold transition matters here.
+  const routeStarted = useSyncExternalStore(
+    store.subscribe,
+    () => store.getSnapshot().progress >= 0.2095,
+    () => false,
+  );
 
   useEffect(() => {
-    document.body.classList.toggle('route-started', progress >= 0.2095);
-  }, [progress]);
+    document.body.classList.toggle('route-started', routeStarted);
+  }, [routeStarted]);
   useEffect(() => () => document.body.classList.remove('route-started'), []);
 
   useLayoutEffect(() => {

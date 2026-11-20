@@ -61,7 +61,9 @@ test('React traveler and four-stop progress panel subscribe independently to the
   assert.match(jsx, /<ReactHiker store=\{store\}/);
   assert.match(motion, /useSyncExternalStore\(store\.subscribe, store\.getSnapshot, store\.getServerSnapshot\)/);
   assert.match(motion, /getRouteFill\(progress, centers\)/);
-  assert.match(motion, /className=\{stopClass\(progress, activeIndex/);
+  assert.match(motion, /className=\{stopClass\(passedMask, activeIndex/);
+  assert.match(motion, /const RouteStops = memo\(/);
+  assert.match(motion, /<RouteStops[\s\S]*passedMask=\{anchors\.reduce\(/);
   assert.match(motion, /--hiker-x/);
 });
 

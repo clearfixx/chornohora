@@ -31,10 +31,40 @@ const referenceCss = sources.map(source => normalize(readFileSync(source, 'utf8'
 if (!referenceCss.includes(legacyTimelineSelector + '{animation-timeline:--cyc;')) {
   throw new Error('Expected v22 timeline selector changed; review the React-only optimization.');
 }
+// Motion path coordinates are unchanged. Moving the orb by left/top causes
+// repeated layout during the scroll timeline; translate can be composited.
+// Its original base is left:62%, top:600px in the full-viewport stage.
+const legacyOrbKeyframes = `@keyframes orb{
+  0%{left:62%;top:600px;scale:1}
+  16%{left:60%;top:380px;scale:1.1}
+  28%{left:56%;top:300px;scale:1}
+  36%{left:64%;top:90px;scale:.9}
+  49%{left:68%;top:120px;scale:.9}
+  57%{left:66%;top:400px;scale:1.3}
+  70%{left:64%;top:500px;scale:1.5}
+  78%{left:62%;top:700px;scale:1.2}
+  88%{left:66%;top:100px;scale:1}
+  98%,100%{left:62%;top:520px;scale:1.1}
+}`;
+const compositedOrbKeyframes = `@keyframes orb{
+  0%{translate:0 0;scale:1}
+  16%{translate:-2vw -220px;scale:1.1}
+  28%{translate:-6vw -300px;scale:1}
+  36%{translate:2vw -510px;scale:.9}
+  49%{translate:6vw -480px;scale:.9}
+  57%{translate:4vw -200px;scale:1.3}
+  70%{translate:2vw -100px;scale:1.5}
+  78%{translate:0 100px;scale:1.2}
+  88%{translate:4vw -500px;scale:1}
+  98%,100%{translate:0 -80px;scale:1.1}
+}`;
+if (!referenceCss.includes(legacyOrbKeyframes)) {
+  throw new Error('Expected v22 orb keyframes changed; review the React-only optimization.');
+}
 const expected = referenceCss.replace(
   legacyTimelineSelector + '{animation-timeline:--cyc;',
   optimizedTimelineSelector + '{animation-timeline:--cyc;',
-);
+).replace(legacyOrbKeyframes, compositedOrbKeyframes);
 const check = process.argv.includes('--check');
 let current = '';
 try {current = normalize(readFileSync(destination, 'utf8'));} catch (error) {

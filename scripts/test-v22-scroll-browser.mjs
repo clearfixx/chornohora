@@ -1331,37 +1331,65 @@ const checkReactFramePacing = async () => {
         (point.progress===1 ? 60 : 0);
       await evaluate("window.scrollTo({top:"+target+",behavior:'instant'})");
       await delay(180);
+      // Compare equal-duration idle and scrolling windows in this SAME
+      // Chromium process/viewport. Historical runs sampled 75 frames but
+      // only waited a fixed time, so busy scenes returned fewer samples.
+      const recordFrames = async durationMs => {
+        await evaluate(`(() => {
+          window.__journeyFrameIntervals=[];
+          window.__journeyFrameFinished=false;
+          let previous=null;
+          const start=performance.now();
+          const tick=now=>{
+            if(previous!==null) window.__journeyFrameIntervals.push(now-previous);
+            previous=now;
+            if(now-start<${durationMs}) requestAnimationFrame(tick);
+            else window.__journeyFrameFinished=true;
+          };
+          requestAnimationFrame(tick);
+        })()`);
+      };
+      const summarize = intervals => {
+        const sorted=intervals.filter(n=>Number.isFinite(n)&&n>0).sort((a,b)=>a-b);
+        const percentile=p=>sorted.length
+          ? Math.round(sorted[Math.min(sorted.length-1,Math.floor((sorted.length-1)*p))]*10)/10
+          : null;
+        return {frames:sorted.length,medianMs:percentile(.5),p95Ms:percentile(.95),
+          framesOver34ms:sorted.filter(n=>n>34).length,
+          framesOver50ms:sorted.filter(n=>n>50).length};
+      };
+      await recordFrames(750);
+      await delay(900);
+      const idle=await evaluate(`({
+        intervals:window.__journeyFrameIntervals || [],
+        finished:window.__journeyFrameFinished === true,
+      })`);
+      assert.ok(idle.finished && idle.intervals.length>=5,
+        'Idle frame sampling incomplete: '+JSON.stringify({locale,point:point.name,count:idle.intervals.length}));
       const start=await evaluate('scrollY');
-      await evaluate(`(() => {
-        window.__journeyFrameIntervals=[];
-        let last=null;
-        let frames=0;
-        const record=t=>{
-          if(last!==null) window.__journeyFrameIntervals.push(t-last);
-          last=t;
-          if(++frames<75) requestAnimationFrame(record);
-        };
-        requestAnimationFrame(record);
-      })()`);
+      await recordFrames(1200);
       for(let i=0;i<12;i++) {
         await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:620,y:400,
           deltaY:point.direction*120,deltaX:0});
         await delay(32);
       }
-      await delay(750);
-      const values=await evaluate(`(() => ({
+      await delay(950);
+      const values=await evaluate(`({
         intervals:window.__journeyFrameIntervals || [],y:scrollY,
-      }))()`);
-      assert.ok(values.intervals.length>=35,
-        'Frame samples incomplete: '+JSON.stringify({locale,point:point.name,count:values.intervals.length}));
+        finished:window.__journeyFrameFinished === true,
+      })`);
+      assert.ok(values.finished && values.intervals.length>=5,
+        'Scroll frame sampling incomplete: '+JSON.stringify({locale,point:point.name,count:values.intervals.length}));
       assert.ok((values.y-start)*point.direction>100,
         'Frame metric wheel did not move: '+JSON.stringify({locale,point:point.name,start,end:values.y}));
-      const sorted=values.intervals.slice().sort((a,b)=>a-b);
-      const percentile=p=>Math.round(sorted[Math.min(sorted.length-1,Math.floor((sorted.length-1)*p))]*10)/10;
-      const report={locale,point:point.name,frames:sorted.length,
-        medianMs:percentile(.5),p95Ms:percentile(.95),
-        framesOver34ms:sorted.filter(n=>n>34).length,
-        framesOver50ms:sorted.filter(n=>n>50).length,
+      const baseline=summarize(idle.intervals);
+      const active=summarize(values.intervals);
+      const report={locale,point:point.name,
+        sampleWindowMs:1200,idleWindowMs:750,
+        ...active,
+        idleMedianMs:baseline.medianMs,idleP95Ms:baseline.p95Ms,
+        medianSlowdown:baseline.medianMs && active.medianMs
+          ? Math.round((active.medianMs/baseline.medianMs)*100)/100 : null,
       };
       console.log('REACT FRAME PACING '+JSON.stringify(report));
       framePacingSamples.push(report);

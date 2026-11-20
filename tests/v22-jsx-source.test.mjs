@@ -63,7 +63,10 @@ test('React traveler and four-stop progress panel subscribe independently to the
   assert.match(motion, /getRouteFill\(progress, centers\)/);
   assert.match(motion, /className=\{stopClass\(passedMask, activeIndex/);
   assert.match(motion, /const RouteStops = memo\(/);
-  assert.match(motion, /<RouteStops[\s\S]*passedMask=\{anchors\.reduce\(/);
+  assert.match(motion, /function RouteProgressFill\(/);
+  assert.match(motion, /<RouteProgressFill store=\{store\} centers=\{centers\}/);
+  assert.match(motion, /<RouteStops[\s\S]*passedMask=\{passedMask\}/);
+  assert.match(motion, /function getRouteMarkerState\(/);
   assert.match(motion, /--hiker-x/);
 });
 

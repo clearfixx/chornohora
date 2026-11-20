@@ -1033,6 +1033,13 @@ const checkReactIntermediateJourney = async () => {
             routeVisible:getComputedStyle(panel).visibility,
             hikerVisible:getComputedStyle(hiker).visibility,
             stage: {left:stageRect.left,right:stageRect.right,width:stageRect.width},
+            mountainLayers:[...scene.querySelectorAll('.reference-mountain')].map(el=>({
+              className:el.className,
+              pathCount:el.querySelectorAll('svg path').length,
+              viewBox:el.querySelector('svg')?.getAttribute('viewBox'),
+              zIndex:Number(getComputedStyle(el).zIndex),
+            })),
+            meteorsActive:scene.querySelector('[data-petros-meteors]')?.classList.contains('is-active'),
             documentWidth:document.documentElement.scrollWidth,
           };
         })()`);
@@ -1047,6 +1054,15 @@ const checkReactIntermediateJourney = async () => {
           `Traveler/route geometry invalid: ${JSON.stringify(state)}`);
         assert.ok(state.documentWidth <= width+4 && state.stage.width > width*.9,
           `Intermediate layout overflow at ${locale}/${width}/${p}: ${JSON.stringify(state)}`);
+        assert.deepEqual(state.mountainLayers.map(layer=>layer.pathCount),[1,2,2],
+          `Reference mountain silhouettes/facets missing at ${locale}/${width}/${p}: ${JSON.stringify(state.mountainLayers)}`);
+        assert.deepEqual(state.mountainLayers.map(layer=>layer.viewBox),
+          ['0 0 4200 560','0 0 4200 800','0 0 4200 440'],
+          `Mountain SVG dimensions changed at ${locale}/${width}/${p}`);
+        assert.deepEqual(state.mountainLayers.map(layer=>layer.zIndex),[4,5,7],
+          `Mountain parallax layer order changed at ${locale}/${width}/${p}`);
+        assert.equal(state.meteorsActive,p>=.76 && p<.94,
+          `Petros meteors active outside approved interval at ${locale}/${width}/${p}`);
         const previous = samples.at(-1);
         if (previous) {
           assert.ok(state.x >= previous.x-.2 && state.fill >= previous.fill-.01,

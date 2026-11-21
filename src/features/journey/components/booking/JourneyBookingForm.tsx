@@ -1,7 +1,7 @@
 'use client';
 
 import {useEffect, useRef, useState, type FormEvent} from 'react';
-import {isValidFutureOrTodayDate, localISODate} from '@/features/journey/booking/validation';
+import {isPlausiblePhoneNumber, isValidFutureOrTodayDate, localISODate} from '@/features/journey/booking/validation';
 import {useTranslations} from 'next-intl';
 
 type RequestDraft = {
@@ -53,6 +53,12 @@ export function JourneyBookingForm() {
       name: get('name'), phone: get('tel'), email: get('email'),
       date: get('date'), people: get('people'), message: get('message'),
     };
+    if (!isPlausiblePhoneNumber(nextDraft.phone)) {
+      const phoneInput = form.elements.namedItem('tel') as HTMLInputElement | null;
+      phoneInput?.setCustomValidity(t('bookingPhoneInvalid'));
+      phoneInput?.reportValidity();
+      return;
+    }
     if (!isValidFutureOrTodayDate(nextDraft.date)) {
       const dateInput = form.elements.namedItem('date') as HTMLInputElement | null;
       dateInput?.setCustomValidity(t('bookingDatePast'));
@@ -102,7 +108,7 @@ export function JourneyBookingForm() {
   return <form ref={formRef} onSubmit={onPrepare} style={{display:'flex',flexDirection:'column',gap:'18px'}}>
     <div className="fld"><label htmlFor="f-name">{t('bookingName')}</label><input autoComplete="name" id="f-name" name="name" defaultValue={savedDraft?.name} placeholder={t('bookingNamePlaceholder')} required type="text" maxLength={120}/></div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(200px,100%),1fr))',gap:'18px'}}>
-      <div className="fld"><label htmlFor="f-tel">{t('bookingPhone')}</label><input autoComplete="tel" id="f-tel" name="tel" defaultValue={savedDraft?.phone} placeholder="+380" required type="tel" maxLength={40}/></div>
+      <div className="fld"><label htmlFor="f-tel">{t('bookingPhone')}</label><input autoComplete="tel" id="f-tel" name="tel" defaultValue={savedDraft?.phone} placeholder="+380" onInput={event => event.currentTarget.setCustomValidity('')} required type="tel" inputMode="tel" maxLength={40}/></div>
       <div className="fld"><label htmlFor="f-mail">{t('bookingEmail')}</label><input autoComplete="email" id="f-mail" name="email" defaultValue={savedDraft?.email} placeholder="name@mail.com" type="email" maxLength={254}/></div>
     </div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(200px,100%),1fr))',gap:'18px'}}>

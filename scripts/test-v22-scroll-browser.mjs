@@ -1913,18 +1913,24 @@ const checkReactResponsiveAndMotion = async () => {
           for(const type of ['focusin','focusout','pointerover','pointerout','scroll']) {
             window.addEventListener(type,record,true);
           }
-          // A restored page can already have this marker focused. In that
-          // case .focus() is a no-op and React never receives a fresh focusin.
-          // Model actual keyboard re-entry by clearing focus, then focusing
-          // the marker again (without synthetic focus event dispatch).
+          // A restored page may already have the marker focused. Leave that
+          // state in a separate browser task so React can process blur before
+          // focus is re-entered; do not synthesize browser focus events.
           if (document.activeElement === marker) marker.blur();
-          marker?.focus({preventScroll:true});
-          return {present:!!marker,focused:document.activeElement===marker,
-            focusInObserved:window.__routeTooltipDebug.some(e=>e.type==='focusin' && e.peak==='2'),
+          return {present:!!marker,afterBlur:document.activeElement?.tagName,
             actual:scrollY};
         })()`);
-        assert.ok(focus.present && focus.focused && focus.focusInObserved,
-          `Mobile route marker cannot receive focus/focusin at ${locale}/${width}: ${JSON.stringify(focus)}`);
+        await delay(50);
+        const focusedMarker=await evaluate(`(() => {
+          const marker=document.querySelector('[data-react-journey] .route-ui-v6 .stop[data-peak="2"]');
+          marker?.focus({preventScroll:true});
+          return {focused:document.activeElement===marker,
+            focusInObserved:(window.__routeTooltipDebug||[]).some(e=>e.type==='focusin' && e.peak==='2'),
+            events:(window.__routeTooltipDebug||[]).slice(-8),
+            activeTag:document.activeElement?.tagName,activePeak:document.activeElement?.dataset?.peak};
+        })()`);
+        assert.ok(focus.present && focusedMarker.focused,
+          `Mobile route marker cannot receive focus at ${locale}/${width}: ${JSON.stringify({focus,focusedMarker})}`);
         let tip;
         for (let attempt=0;attempt<12;attempt++) {
           tip=await evaluate(`(() => {
@@ -1946,7 +1952,7 @@ const checkReactResponsiveAndMotion = async () => {
         }))()`);
         assert.ok(tip && tip.left>=10 && tip.right<=width-10 &&
           tip.top>=10 && tip.bottom<=tip.viewportHeight-10,
-          `Mobile route tooltip clipped at ${locale}/${width}: ${JSON.stringify({tip,focus,target,tooltipDebug})}`);
+          `Mobile route tooltip clipped at ${locale}/${width}: ${JSON.stringify({tip,focus,focusedMarker,target,tooltipDebug})}`);
         // Preserve the v22 behavior: actual user scrolling dismisses the
         // focused tooltip even though zero-delta scroll notifications do not.
         await evaluate("window.scrollBy({top: 45, behavior: 'instant'})");

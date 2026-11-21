@@ -137,6 +137,7 @@
     "footerGalleryAlt5": "Ілюстрація Карпат: Стежка до Петроса",
     "footerGalleryAlt6": "Ілюстрація Карпат: Нічне небо",
     "footerDemoProfile": "{network} — демонстраційний профіль",
-    "footerDemoSocialTitle": "{network} · демонстрація"
+    "footerDemoSocialTitle": "{network} · демонстрація",
+    "bookingPhoneInvalid": "Введіть коректний номер телефону (7–15 цифр)."
   }
 }

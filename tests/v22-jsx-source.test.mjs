@@ -168,3 +168,26 @@ test('UK and EN dictionaries contain equivalent Journey keys', () => {
   assert.ok(en.heroHeading.includes('ridge'));
   assert.ok(en.peak1==='Hoverla' && en.finalTitle==='Morning again');
 });
+
+
+test('all React journey route hrefs target actual stage anchor ids', () => {
+  const stage=readFileSync('src/features/journey/components/JourneyStage.tsx','utf8');
+  const motion=readFileSync('src/components/journey/ReactJourneyMotion.tsx','utf8');
+  const footer=readFileSync('src/features/journey/components/JourneyFooter.tsx','utf8');
+  const drawer=readFileSync('src/features/journey/components/JourneyDrawer.tsx','utf8');
+  const hero=readFileSync('src/features/journey/components/JourneyHero.tsx','utf8');
+  const ids=new Set([...stage.matchAll(/\\bid="([^"]+)"/g)].map(match=>match[1]));
+  ids.add('book'); // BookingSection owns the form target outside the stage track
+  const routeHrefs=[motion,footer,drawer,hero].flatMap(text=>
+    [...text.matchAll(/href="#([^"]+)"[^>]*data-(?:journey-action|route-target)/g)]
+      .map(match=>match[1]));
+  assert.ok(routeHrefs.length>=12,'Expected route links in multiple page sections');
+  for(const href of routeHrefs) {
+    assert.ok(ids.has(href),'React navigation links to missing section #'+href);
+  }
+  for(const href of ['govla','brebeneskul','nesamovyte','petros']) {
+    assert.ok(routeHrefs.includes(href),'Missing route anchor link: '+href);
+  }
+  assert.doesNotMatch(motion+footer,/href="#(?:breb|nes)"/,
+    'Legacy abbreviated hrefs do not resolve without JavaScript navigation');
+});

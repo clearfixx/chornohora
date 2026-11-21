@@ -277,6 +277,43 @@ export class JourneyController {
     this.animateTo(scroller, top, id);
   }
 
+  /** Restore a URL fragment without playing a multi-second click animation.
+   * This is used on initial deep links and browser Back/Forward.
+   */
+  jumpToStop(id: JourneyStopId): void {
+    if (!this.mounted) return;
+    this.updateGeometry();
+    if (this.travel <= 1) {
+      const index = (['govla', 'brebeneskul', 'nesamovyte', 'petros'] as JourneyStopId[]).indexOf(id);
+      const location = this.track.querySelector<HTMLElement>('.place.r' + (index + 1));
+      if (location) this.jumpToElement(location);
+      return;
+    }
+    const scroller = this.scrollElement ?? this.getScroller();
+    this.jumpTo(scroller, getStopScrollTop(this.trackStart, this.travel, 0, id));
+  }
+
+  jumpToElement(element: HTMLElement): void {
+    if (!this.mounted) return;
+    const scroller = this.scrollElement ?? this.getScroller();
+    const offset = element.getBoundingClientRect().top -
+      (this.isDocumentScroller(scroller) ? 0 : scroller.getBoundingClientRect().top);
+    this.jumpTo(scroller, scroller.scrollTop + offset);
+  }
+
+  jumpToTop(): void {
+    if (!this.mounted) return;
+    this.jumpTo(this.scrollElement ?? this.getScroller(), 0);
+  }
+
+  private jumpTo(scroller: HTMLElement, requestedTop: number): void {
+    this.cancelNavigation();
+    this.cancelWheel();
+    const maximum = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    scroller.scrollTo({top: Math.min(maximum, Math.max(0, requestedTop)), behavior: 'instant'});
+    this.schedule();
+  }
+
   navigateToElement(element: HTMLElement): void {
     if (!this.mounted) return;
     const scroller = this.scrollElement ?? this.getScroller();

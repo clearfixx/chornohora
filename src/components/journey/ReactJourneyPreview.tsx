@@ -120,7 +120,9 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
   useEffect(() => {
     if (!ready) return;
     // Wait until the controller has measured the rendered journey track.
-    const frame = requestAnimationFrame(restoreFromHash);
+    // With no fragment on initial entry, keep the browser's restored scroll
+    // position instead of forcing the user back to the Hero.
+    const frame = window.location.hash ? requestAnimationFrame(restoreFromHash) : 0;
     window.addEventListener('popstate', restoreFromHash);
     window.addEventListener('hashchange', restoreFromHash);
     return () => {

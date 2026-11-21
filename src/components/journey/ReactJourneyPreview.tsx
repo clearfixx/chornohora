@@ -176,10 +176,12 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
 
   const toggleMenu = useCallback(() => {
     if (!menuOpen) {
-      const active = document.activeElement;
-      focusReturnRef.current = active instanceof HTMLElement
-        ? active
-        : document.querySelector<HTMLElement>('[data-react-journey] [data-route-menu-toggle]');
+      // Programmatic .click() and pointer activation may leave focus on
+      // <body>. The semantic return target is the menu toggle, not whatever
+      // element happened to be active before opening.
+      focusReturnRef.current = document.querySelector<HTMLElement>(
+        '[data-react-journey] [data-route-menu-toggle]',
+      );
     }
     setMenuOpen(value => !value);
   }, [menuOpen]);

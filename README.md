@@ -52,12 +52,13 @@ The Chromium scroll suite supports Chrome or Edge on Windows (standard install l
 pnpm install --frozen-lockfile
 pnpm build
 $env:CHORNOHORA_BROWSER_GPU = "1"
+$env:CHORNOHORA_PERF_DIAGNOSTICS = "1"
 # Optional if Chrome/Edge is installed outside standard locations:
 # $env:CHORNOHORA_CHROME_BIN = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
 pnpm test:browser-scroll
 ```
 
-The suite writes `artifacts/v22-browser/petros-paint-ablation.json` (including WebGL renderer) and screenshots. **GPU allowed does not guarantee hardware acceleration**: check the reported renderer and treat SwiftShader as software fallback. The complete browser suite is intentionally intensive and tests navigation as well as performance. Never use a green automated run alone to approve a canonical route switch.
+The default suite tests navigation, responsive layout, and scroll regressions without running time-consuming paint ablations. Setting `CHORNOHORA_PERF_DIAGNOSTICS=1` additionally captures FPS metrics, responsive aurora comparisons, and `artifacts/v22-browser/petros-paint-ablation.json` (including WebGL renderer). **GPU allowed does not guarantee hardware acceleration**: check the reported renderer and treat SwiftShader as software fallback. Never use a green automated run alone to approve a canonical route switch.
 
 For opt-in scrolling diagnostics, open `/uk?preview=react&trace=1` and inspect `window.__journeyTrace?.()` in browser DevTools; no production telemetry is sent.
 

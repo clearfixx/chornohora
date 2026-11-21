@@ -32,7 +32,9 @@
     "check:react-css": "node scripts/sync-react-css.mjs --check",
     "check:react-ownership": "node scripts/check-react-ownership.mjs",
     "test:react-ownership": "node --test tests/react-ownership.test.mjs",
-    "check:react-assets": "node scripts/check-react-assets.mjs"
+    "check:react-assets": "node scripts/check-react-assets.mjs",
+    "test:petros-perf": "node scripts/run-petros-diagnostics.mjs --software",
+    "test:petros-perf:gpu": "node scripts/run-petros-diagnostics.mjs --gpu"
   },
   "dependencies": {
     "next": "^16.0.0",

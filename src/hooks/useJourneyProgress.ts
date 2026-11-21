@@ -29,5 +29,9 @@ export function useJourneyProgress(trackRef: RefObject<HTMLElement | null>, stor
   const navigateToStop = useCallback((id: JourneyStopId) => controller?.navigate(id), [controller]);
   const navigateToTop = useCallback(() => controller?.navigateToTop(), [controller]);
   const navigateToElement = useCallback((element: HTMLElement) => controller?.navigateToElement(element), [controller]);
-  return {navigateToStop, navigateToTop, navigateToElement};
+  const jumpToStop = useCallback((id: JourneyStopId) => controller?.jumpToStop(id), [controller]);
+  const jumpToTop = useCallback(() => controller?.jumpToTop(), [controller]);
+  const jumpToElement = useCallback((element: HTMLElement) => controller?.jumpToElement(element), [controller]);
+  return {ready: controller !== null, navigateToStop, navigateToTop, navigateToElement,
+    jumpToStop, jumpToTop, jumpToElement};
 }

@@ -1848,26 +1848,46 @@ const checkReactResponsiveAndMotion = async () => {
       // rendered in a fixed portal and must remain fully visible without
       // relying on mouse hover or a desktop-height viewport.
       if (width <= 430) {
-        await evaluate(`(async () => {
+        // A route tooltip intentionally closes on scroll. In headless Chrome
+        // the final asynchronous scroll event can arrive after two rAFs and
+        // dismiss a tooltip opened immediately after scrollTo(). Settle scroll
+        // before focusing, never suppress the tooltip's on-scroll behavior.
+        const target=await evaluate(`(async () => {
           const track=document.querySelector('[data-react-journey] .track');
           const stage=track.querySelector('.stage');
           const top=track.getBoundingClientRect().top+scrollY;
           const travel=track.offsetHeight-stage.offsetHeight;
-          window.scrollTo({top:top+travel*.42,behavior:'instant'});
+          const wanted=top+travel*.42;
+          window.scrollTo({top:wanted,behavior:'instant'});
           await new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));
-          track.querySelector('.route-ui-v6 .stop[data-peak="2"]').focus({preventScroll:true});
+          return {wanted,actual:scrollY};
         })()`);
-        await delay(130);
-        const tip=await evaluate(`(() => {
-          const el=document.querySelector('[data-react-route-tooltip="2"]');
-          if (!el) return null;
-          const rect=el.getBoundingClientRect();
-          return {left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom,
-            viewportWidth:innerWidth,viewportHeight:innerHeight};
+        assert.ok(Math.abs(target.actual-target.wanted)<15,
+          `Mobile route marker checkpoint not reached at ${locale}/${width}: ${JSON.stringify(target)}`);
+        await delay(240);
+        const focus=await evaluate(`(() => {
+          const marker=document.querySelector('[data-react-journey] .route-ui-v6 .stop[data-peak="2"]');
+          marker?.focus({preventScroll:true});
+          return {present:!!marker,focused:document.activeElement===marker,
+            actual:scrollY};
         })()`);
+        assert.ok(focus.present && focus.focused,
+          `Mobile route marker cannot receive focus at ${locale}/${width}: ${JSON.stringify(focus)}`);
+        let tip;
+        for (let attempt=0;attempt<12;attempt++) {
+          tip=await evaluate(`(() => {
+            const el=document.querySelector('[data-react-route-tooltip="2"]');
+            if (!el) return null;
+            const rect=el.getBoundingClientRect();
+            return {left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom,
+              viewportWidth:innerWidth,viewportHeight:innerHeight};
+          })()`);
+          if (tip) break;
+          await delay(50);
+        }
         assert.ok(tip && tip.left>=10 && tip.right<=width-10 &&
           tip.top>=10 && tip.bottom<=tip.viewportHeight-10,
-          `Mobile route tooltip clipped at ${locale}/${width}: ${JSON.stringify(tip)}`);
+          `Mobile route tooltip clipped at ${locale}/${width}: ${JSON.stringify({tip,focus,target})}`);
         await evaluate('document.activeElement?.blur()');
       }
       if (width === 1280) {

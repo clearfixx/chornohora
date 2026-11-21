@@ -10,6 +10,9 @@ type DrawerProps = {
 export function JourneyDrawer({open, onDismiss, onNavigate}: DrawerProps) {
   const t = useTranslations('Journey');
   const onClick = (event: React.MouseEvent<HTMLElement>) => {
+    // Preserve standard anchor behavior for Ctrl/Cmd/Shift/Alt-click.
+    // Only a primary, unmodified click should start a smooth page transition.
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.defaultPrevented) return;
     const node = event.target;
     if (!(node instanceof Element)) return;
     if (node.closest('[data-route-menu-close]')) {

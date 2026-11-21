@@ -1893,6 +1893,15 @@ const checkReactResponsiveAndMotion = async () => {
         await delay(240);
         const focus=await evaluate(`(() => {
           const marker=document.querySelector('[data-react-journey] .route-ui-v6 .stop[data-peak="2"]');
+          window.__routeTooltipDebug=[];
+          const record=event=>window.__routeTooltipDebug.push({
+            type:event.type,at:Math.round(performance.now()),
+            target:event.target?.tagName,peak:event.target?.closest?.('.stop')?.dataset.peak,
+            scrollY,focused:document.activeElement===marker,
+          });
+          for(const type of ['focusin','focusout','pointerover','pointerout','scroll']) {
+            window.addEventListener(type,record,true);
+          }
           marker?.focus({preventScroll:true});
           return {present:!!marker,focused:document.activeElement===marker,
             actual:scrollY};
@@ -1911,9 +1920,16 @@ const checkReactResponsiveAndMotion = async () => {
           if (tip) break;
           await delay(50);
         }
+        const tooltipDebug=tip ? null : await evaluate(`(() => ({
+          events:(window.__routeTooltipDebug||[]).slice(-30),
+          activeTag:document.activeElement?.tagName,
+          activePeak:document.activeElement?.dataset?.peak,
+          foundAnyTooltip:!!document.querySelector('[data-react-route-tooltip]'),
+          scrollY,
+        }))()`);
         assert.ok(tip && tip.left>=10 && tip.right<=width-10 &&
           tip.top>=10 && tip.bottom<=tip.viewportHeight-10,
-          `Mobile route tooltip clipped at ${locale}/${width}: ${JSON.stringify({tip,focus,target})}`);
+          `Mobile route tooltip clipped at ${locale}/${width}: ${JSON.stringify({tip,focus,target,tooltipDebug})}`);
         // Preserve the v22 behavior: actual user scrolling dismisses the
         // focused tooltip even though zero-delta scroll notifications do not.
         await evaluate("window.scrollBy({top: 45, behavior: 'instant'})");

@@ -633,8 +633,23 @@ const check = async (locale, width) => {
     }
     assert.equal(closed.opened, false, 'React drawer failed to close');
     assert.equal(closed.backgroundInert, false, 'React background stayed inert after drawer closed');
-    const focusRestored=await evaluate("document.activeElement === document.querySelector('[data-react-journey] [data-route-menu-toggle]')");
-    assert.equal(focusRestored, true, 'React drawer did not restore focus to its trigger');
+    // Closing the modal restores focus on a post-commit animation frame.
+    // Capture the actual focus target and inert state if the contract fails.
+    let focusRestored;
+    for (let attempt = 0; attempt < 15; attempt++) {
+      focusRestored = await evaluate(`(() => {
+        const toggle=document.querySelector('[data-react-journey] [data-route-menu-toggle]');
+        const active=document.activeElement;
+        return {restored:active===toggle,activeTag:active?.tagName,
+          activeClass:typeof active?.className==='string'?active.className:null,
+          togglePresent:!!toggle,toggleInert:!!toggle?.closest('[inert]'),
+          bodyOpen:document.body.classList.contains('route-menu-open')};
+      })()`);
+      if (focusRestored.restored) break;
+      await delay(35);
+    }
+    assert.ok(focusRestored.restored,
+      'React drawer did not restore focus to its trigger: '+JSON.stringify(focusRestored));
     assert.equal(closed.transform, 'none', 'perspective effect not reset on close within 2.1 s');
     assert.ok(Math.abs(closed.scroll - beforeMenu) < 3,
       `closing drawer changed scroll: ${JSON.stringify({beforeMenu, closed})}`);

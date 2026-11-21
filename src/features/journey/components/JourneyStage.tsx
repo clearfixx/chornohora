@@ -24,6 +24,9 @@ type StageProps = {
 
 export function JourneyStage({trackRef, store, locale, menuOpen, onAction, onToggleMenu}: StageProps) {
   const onClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    // Preserve standard anchor behavior for Ctrl/Cmd/Shift/Alt-click.
+    // Only a primary, unmodified click should start a smooth page transition.
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.defaultPrevented) return;
     const node = event.target;
     if (!(node instanceof Element)) return;
     if (node.closest('[data-route-menu-toggle]')) {

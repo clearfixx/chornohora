@@ -123,8 +123,11 @@ export function ReactRouteIndicator({store}: {store: JourneyStore}) {
   };
   const onPointerOut = (event: PointerEvent<HTMLDivElement>) => {
     const stop = event.target instanceof Element ? event.target.closest<HTMLElement>('.stop[data-peak]') : null;
+    // Pointer-out must not close a tooltip currently owned by keyboard focus.
+    // Resizing/scrolling can move the hit target under a stationary pointer.
     if (stop && stop === activeSource.current &&
-        !(event.relatedTarget instanceof Node && stop.contains(event.relatedTarget))) closeTooltip();
+        !(event.relatedTarget instanceof Node && stop.contains(event.relatedTarget)) &&
+        !stop.contains(document.activeElement)) closeTooltip();
   };
   const onFocus = (event: FocusEvent<HTMLDivElement>) => activateFrom(event.target);
   const onBlur = (event: FocusEvent<HTMLDivElement>) => {

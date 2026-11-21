@@ -137,3 +137,17 @@ The diagnostic browser test now records runtime capabilities with each Petros pa
 ### Click-navigation external-scroll ownership — 2026-11-21
 
 A further Petros → booking/footer stability fix applies the already-tested `wheelScrollWasInterrupted` threshold to **click-initiated navigation RAF**. A browser-owned scroll operation (manual scrollbar change, focus restoration, or external `scrollTo`) more than 80 CSS pixels away from the last frame's applied position now cancels the pending click-animation, schedules an updated progress sample, and, with `?trace=1`, records `navigation-external-scroll`. Previously only eased wheel scrolling had this protection; a pending nav RAF could pull the user back even after the browser had moved them. The accompanying Chromium stress test starts real footer → Petros navigation, jumps externally while it is active, and asserts the page stays at the externally chosen position instead of bouncing back. This does **not** change click-duration (+15% policy), easing, wheel input, scenery, or frozen v22. Await the full CI run and real-device rapid reversal acceptance before considering the release blocker closed.
+
+### Reproducible Petros performance diagnostics on Windows — 2026-11-21
+
+Two **opt-in** pnpm commands now run the full existing browser-scroll suite plus the Petros-only paint experiments with the same cross-platform Node launcher (no POSIX shell environment assignment required):
+
+```powershell
+pnpm build
+pnpm test:petros-perf
+pnpm test:petros-perf:gpu
+```
+
+Run them separately with no development server bound to the browser-test port (3188), and keep Chrome/Edge closed only if it is locking the temporary profile. The launcher sets `CHORNOHORA_PERF_DIAGNOSTICS=1` and explicitly selects `CHORNOHORA_BROWSER_GPU=0` (stable software baseline) or `=1` (GPU permitted), without changing the normal `pnpm test:browser-scroll` path or CI defaults. The Windows browser binary can be found in common Chrome/Edge install directories; use `$env:CHORNOHORA_CHROME_BIN = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"` if automatic detection fails.
+
+Artifacts are written under `artifacts/v22-browser/`, including `petros-paint-ablation.json`, `petros-aurora-responsive.json`, and screenshots. Examine the reported WebGL renderer before attributing a GPU-enabled result to the actual graphics card; SwiftShader/software fallback is possible. These experiments manipulate **only** a disposable browser test page. A performance delta alone does not authorize any change to the frozen v22 Aurora look, scroll speed, navigation behavior, or `main` branch.

@@ -42,7 +42,7 @@ pnpm test:browser-scroll
 pnpm test:geometry
 ```
 
-The GitHub Actions migration workflow additionally exercises the immutable v22 source and visual-comparison checks. The **2026-11-20 CI run #421** passed its complete job, including browser/scroll coverage. Automated success is not equivalent to real-device acceptance; see the quality gate before changing canonical route ownership.
+The GitHub Actions migration workflow additionally exercises the immutable v22 source and visual-comparison checks. The later **CI runs #551, #555 and #557** passed their full jobs, including browser/scroll coverage. The #555 renderer report identifies **SwiftShader** (software rendering) rather than a physical GPU; a green software-CI benchmark is not evidence of smooth hardware-accelerated scrolling on the target device. Automated success is not equivalent to real-device acceptance; see the quality gate before changing canonical route ownership.
 
 For opt-in scrolling diagnostics, open `/uk?preview=react&trace=1` and inspect `window.__journeyTrace?.()` in browser DevTools; no production telemetry is sent.
 

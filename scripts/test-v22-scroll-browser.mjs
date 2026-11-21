@@ -593,6 +593,17 @@ const check = async (locale, width) => {
       `React perspective effect absent or track transformed: ${JSON.stringify(opened)}`);
     assert.ok(Math.abs(opened.scroll - beforeMenu) < 3,
       `opening drawer changed scroll position: ${JSON.stringify({beforeMenu, opened})}`);
+    // Inert must prevent actual keyboard focus from escaping into the
+    // underlying navbar, not just appear as a DOM boolean.
+    const focusContainment = await evaluate(`(() => {
+      const outside=document.querySelector('[data-react-journey] .nav-book-cta');
+      outside.focus({preventScroll:true});
+      const drawer=document.getElementById('route-drawer');
+      return {inside:drawer.contains(document.activeElement),
+        active:document.activeElement?.className};
+    })()`);
+    assert.equal(focusContainment.inside, true,
+      'React drawer allowed focus into inert background: '+JSON.stringify(focusContainment));
     await evaluate("document.querySelector('#route-drawer .route-drawer-close').click()");
     // CSS transitions depend on actual compositor frames. A fixed 720 ms
     // sleep occasionally catches a near-identity matrix3d a frame before the
@@ -610,6 +621,8 @@ const check = async (locale, width) => {
     }
     assert.equal(closed.opened, false, 'React drawer failed to close');
     assert.equal(closed.backgroundInert, false, 'React background stayed inert after drawer closed');
+    const focusRestored=await evaluate("document.activeElement === document.querySelector('[data-react-journey] [data-route-menu-toggle]')");
+    assert.equal(focusRestored, true, 'React drawer did not restore focus to its trigger');
     assert.equal(closed.transform, 'none', 'perspective effect not reset on close within 2.1 s');
     assert.ok(Math.abs(closed.scroll - beforeMenu) < 3,
       `closing drawer changed scroll: ${JSON.stringify({beforeMenu, closed})}`);

@@ -12,3 +12,15 @@ export function isValidFutureOrTodayDate(date: string, now: Date = new Date()): 
   if (checked.getFullYear() !== year || checked.getMonth() !== month - 1 || checked.getDate() !== day) return false;
   return date >= localISODate(now);
 }
+
+
+/** Minimal, country-agnostic contact check; this is a demo request, not phone verification.
+ * Accept international or local numbers with common visual separators.
+ * Reject text-only entries and implausibly short/long digit counts.
+ */
+export function isPlausiblePhoneNumber(value: string): boolean {
+  const phone = value.trim();
+  if (!/^\+?[0-9\s().-]+$/.test(phone)) return false;
+  const digits = phone.replace(/\D/g, '');
+  return digits.length >= 7 && digits.length <= 15;
+}

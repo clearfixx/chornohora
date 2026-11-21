@@ -1934,8 +1934,13 @@ try {
   await checkReactIntermediateJourney();
   await checkReactBookingFooterSeam();
   await checkReactScrollOwnershipStress();
-  await checkReactFramePacing();
-  await checkReactPetrosPaintCosts();
+  // Renderer/FPS ablations are diagnostic, not release gates. Running them in
+  // every CI job needlessly delays feedback on real interaction regressions.
+  // Opt in explicitly on the target GPU device when measuring Petros.
+  if (process.env.CHORNOHORA_PERF_DIAGNOSTICS === '1') {
+    await checkReactFramePacing();
+    await checkReactPetrosPaintCosts();
+  }
   await checkReactResponsiveAndMotion();
   writeFileSync(join(screenshots, 'geometry.json'), JSON.stringify({samples: geometrySamples}, null, 2));
   writeFileSync(join(screenshots, 'frame-pacing.json'), JSON.stringify({samples: framePacingSamples}, null, 2));

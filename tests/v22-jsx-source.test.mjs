@@ -176,7 +176,7 @@ test('all React journey route hrefs target actual stage anchor ids', () => {
   const footer=readFileSync('src/features/journey/components/JourneyFooter.tsx','utf8');
   const drawer=readFileSync('src/features/journey/components/JourneyDrawer.tsx','utf8');
   const hero=readFileSync('src/features/journey/components/JourneyHero.tsx','utf8');
-  const ids=new Set([...stage.matchAll(/\\bid="([^"]+)"/g)].map(match=>match[1]));
+  const ids=new Set([...stage.matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]));
   ids.add('book'); // BookingSection owns the form target outside the stage track
   const routeHrefs=[motion,footer,drawer,hero].flatMap(text=>
     [...text.matchAll(/href="#([^"]+)"[^>]*data-(?:journey-action|route-target)/g)]

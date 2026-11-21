@@ -305,12 +305,24 @@ export class JourneyController {
     }
     const duration = journeyDuration(distance, scroller.clientHeight);
     let began: number | null = null;
+    let lastAppliedTop: number | null = null;
     this.store.setNavigation(stop);
     const tick = (timestamp: number): void => {
       if (!this.mounted) return;
+      // A browser-owned scroll/focus restoration can happen between two
+      // click-navigation frames without firing pointerdown or a wheel event.
+      // Respect its new position instead of pulling the page back.
+      if (wheelScrollWasInterrupted(scroller.scrollTop, lastAppliedTop)) {
+        this.trace('navigation-external-scroll', scroller.scrollTop - lastAppliedTop!);
+        this.cancelNavigation();
+        this.schedule();
+        return;
+      }
       if (began === null) began = timestamp;
       const t = Math.min(1, (timestamp - began) / duration);
-      scroller.scrollTo({top: start + distance * easeInOutCubic(t), behavior: 'instant'});
+      const next = start + distance * easeInOutCubic(t);
+      lastAppliedTop = next;
+      scroller.scrollTo({top: next, behavior: 'instant'});
       this.schedule();
       if (t < 1) this.navigationFrame = requestAnimationFrame(tick);
       else {

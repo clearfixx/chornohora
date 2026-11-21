@@ -1315,7 +1315,7 @@ const checkReactScrollOwnershipStress = async () => {
   await evaluate("window.scrollTo({top:"+navigationStart+",behavior:'instant'})");
   await delay(170);
   await evaluate("document.querySelector('[data-react-journey] .footer-route [data-journey-action=\"goPetros\"]').click()");
-  await delay(130);
+  await delay(470);
   const navigationApplied=await evaluate('scrollY');
   assert.ok(navigationApplied>navigationStart+2,
     'Click navigation was not in progress for external scroll test: '+

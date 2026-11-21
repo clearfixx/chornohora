@@ -17,6 +17,7 @@ export function JourneyBookingForm() {
   const t = useTranslations('Journey');
   const formRef = useRef<HTMLFormElement>(null);
   const previewTitleRef = useRef<HTMLHeadingElement>(null);
+  const returnFocusToForm = useRef(false);
   const [draft, setDraft] = useState<RequestDraft | null>(null);
   const [savedDraft, setSavedDraft] = useState<RequestDraft | null>(null);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
@@ -26,7 +27,21 @@ export function JourneyBookingForm() {
     const input = formRef.current?.querySelector<HTMLInputElement>('input[name="date"]');
     if (input) input.min = localISODate();
   }, [draft]);
-  useEffect(() => { if (draft) previewTitleRef.current?.focus({preventScroll: true}); }, [draft]);
+  useEffect(() => {
+    if (draft) {
+      previewTitleRef.current?.focus({preventScroll: true});
+    } else if (returnFocusToForm.current) {
+      returnFocusToForm.current = false;
+      formRef.current?.querySelector<HTMLInputElement>('input[name="name"]')?.focus({preventScroll: true});
+    }
+  }, [draft]);
+
+  const returnToForm = (fresh: boolean) => {
+    returnFocusToForm.current = true;
+    if (fresh) setSavedDraft(null);
+    setCopyState('idle');
+    setDraft(null);
+  };
 
   const onPrepare = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -78,11 +93,8 @@ export function JourneyBookingForm() {
         copyState === 'error' ? t('bookingCopyFail') : t('bookingNeedsBackend')}</p>
       <div className="journey-booking-actions">
         <button type="button" className="cta" onClick={copySummary}>{t('bookingCopy')}</button>
-        <button type="button" className="journey-booking-secondary" onClick={() => {
-          setDraft(null);
-          setCopyState('idle');
-          requestAnimationFrame(() => formRef.current?.querySelector<HTMLInputElement>('input[name="name"]')?.focus());
-        }}>{t('bookingEdit')}</button>
+        <button type="button" className="journey-booking-secondary" onClick={() => returnToForm(false)}>{t('bookingEdit')}</button>
+        <button type="button" className="journey-booking-secondary" onClick={() => returnToForm(true)}>{t('bookingReset')}</button>
       </div>
     </div>
   );
@@ -98,7 +110,7 @@ export function JourneyBookingForm() {
       <div className="fld"><label htmlFor="f-n">{t('bookingPeople')}</label><input id="f-n" max="12" min="1" name="people" required type="number" defaultValue={savedDraft?.people ?? "2"}/></div>
     </div>
     <div className="fld"><label htmlFor="f-msg">{t('bookingMessage')}</label><textarea id="f-msg" name="message" defaultValue={savedDraft?.message} maxLength={2000} placeholder={t('bookingMessagePlaceholder')}/></div>
-    <label className="chk"><input name="consent" defaultChecked={Boolean(savedDraft)} required type="checkbox"/><span>{t('bookingConsent')}</span></label>
+    <label className="chk"><input name="consent" required type="checkbox"/><span>{t('bookingConsent')}</span></label>
     <button className="cta" style={{width:'100%',justifyContent:'center',border:'0',cursor:'pointer',background:'#FFE14D'}} type="submit">{t('bookingPrepare')}</button>
     <p style={{margin:0,font:'400 14px/1.4 Onest,system-ui,sans-serif',color:'#4A3E80'}}>{t('bookingResponseUnknown')}</p>
     <p style={{margin:0,font:'400 13px/1.4 Onest,system-ui,sans-serif',color:'#4A3E80'}}>{t('bookingPreviewNotice')}</p>

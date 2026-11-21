@@ -106,9 +106,9 @@ The user has explicitly prioritized **finishing the homepage before building a p
 ### Verified in the feature branch
 
 - Full checks passed for CI **#551, #555 and #557**, including React JSX ownership, lint/type/build and Chromium browser interactions.
-- Browser-only Petros aurora paint profiling finds a software-rendering bottleneck with CSS blur. Chromium #555 reports \`ANGLE (... SwiftShader ...)\`, **not a dedicated GPU**. Therefore these CI frame times cannot determine real-device acceptance.
+- Browser-only Petros aurora paint profiling finds a software-rendering bottleneck with CSS blur. Chromium #555 reports `ANGLE (... SwiftShader ...)`, **not a dedicated GPU**. Therefore these CI frame times cannot determine real-device acceptance.
 - The cached Canvas aurora experiment is **diagnostic only**, not enabled in the product. Its initial screenshots at desktop/mobile/tablet show promising similarity but not full, time-synchronized visual parity.
-- React-owned renderer is available at **\`/uk?preview=react\`** and **\`/en?preview=react\`**. Canonical **\`/uk\`** and **\`/en\`** still use the frozen v22 reference; no route switch or merge was approved.
+- React-owned renderer is available at **`/uk?preview=react`** and **`/en?preview=react`**. Canonical **`/uk`** and **`/en`** still use the frozen v22 reference; no route switch or merge was approved.
 - Booking on the React preview is a local demonstration/draft and does not transmit submissions. Do not describe it as a working production booking backend.
 
 ### Required acceptance work before shipping React as the homepage
@@ -125,10 +125,10 @@ The user has explicitly prioritized **finishing the homepage before building a p
 
 ### Manual acceptance steps (use the existing preview; do not alter production)
 
-1. Compare **\`http://localhost:3000/uk\`** (frozen reference) with **\`http://localhost:3000/uk?preview=react\`** in a production build at desktop width. Repeat in **\`/en\`**.
+1. Compare **`http://localhost:3000/uk`** (frozen reference) with **`http://localhost:3000/uk?preview=react`** in a production build at desktop width. Repeat in **`/en`**.
 2. Scroll slowly through all four mountain locations, then repeatedly reverse rapidly around **Petros → booking → footer**. Also test starting with the booking form focused.
 3. Test the Hero scroll indicator, route dots, navbar/drawer, language switching, tooltip keyboard focus/Escape, booking validation/draft, and footer navigation.
 4. Test phone widths **390 px** and **320 px**, tablet **768 px**, and reduced-motion preference. Check that sections remain accessible and no horizontal overflow appears.
-5. If a scroll jump occurs, reproduce at **\`?preview=react&trace=1\`** and export **\`window.__journeyTrace?.()\`** from DevTools. Do not mask or relax the regression assertion.
+5. If a scroll jump occurs, reproduce at **`?preview=react&trace=1`** and export **`window.__journeyTrace?.()`** from DevTools. Do not mask or relax the regression assertion.
 
 **Release rule:** A green CI run, promising cache FPS, or a single clean manual scroll does not by itself authorize replacing the canonical v22 homepage. Once the above manual checks are accepted, switch routes in a separate controlled release package and only then begin preloader/404/500 work.

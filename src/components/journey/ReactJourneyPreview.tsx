@@ -15,8 +15,12 @@ const actionToStop: Record<string, JourneyStopId> = {
   goGovla: 'govla', goBreb: 'brebeneskul',
   goNes: 'nesamovyte', goPetros: 'petros',
 };
-const drawerToStop: Record<string, JourneyStopId> = {
-  '0': 'govla', '1': 'brebeneskul', '2': 'nesamovyte', '3': 'petros',
+const drawerToAction: Record<string, string> = {
+  '0': 'goGovla', '1': 'goBreb', '2': 'goNes', '3': 'goPetros',
+};
+const hashToStop: Record<string, JourneyStopId> = {
+  govla: 'govla', brebeneskul: 'brebeneskul',
+  nesamovyte: 'nesamovyte', petros: 'petros',
 };
 
 /** Isolated experimental React preview; the approved canonical v22 is unchanged. */
@@ -24,7 +28,8 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [store] = useState(() => new JourneyStore());
   const [menuOpen, setMenuOpen] = useState(false);
-  const {navigateToStop, navigateToTop, navigateToElement} = useJourneyProgress(trackRef, store);
+  const {ready, navigateToStop, navigateToTop, navigateToElement,
+    jumpToStop, jumpToTop, jumpToElement} = useJourneyProgress(trackRef, store);
   // A boolean selector prevents the entire preview tree from rendering at
   // every wheel animation frame; only the threshold transition matters here.
   const routeStarted = useSyncExternalStore(
@@ -98,27 +103,57 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
     };
   }, [menuOpen]);
 
+  // Deep links and browser history restore the scene immediately; a click
+  // remains animated by the existing +15% approved navigation policy.
+  const restoreFromHash = useCallback(() => {
+    const hash = window.location.hash.slice(1);
+    if (hash === 'start' || hash === '') jumpToTop();
+    else if (hash === 'book') {
+      const book = document.getElementById('book');
+      if (book) jumpToElement(book);
+    } else {
+      const stop = hashToStop[hash];
+      if (stop) jumpToStop(stop);
+    }
+  }, [jumpToStop, jumpToTop, jumpToElement]);
+
+  useEffect(() => {
+    if (!ready) return;
+    // Wait until the controller has measured the rendered journey track.
+    const frame = requestAnimationFrame(restoreFromHash);
+    window.addEventListener('popstate', restoreFromHash);
+    window.addEventListener('hashchange', restoreFromHash);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('popstate', restoreFromHash);
+      window.removeEventListener('hashchange', restoreFromHash);
+    };
+  }, [ready, restoreFromHash]);
+
   const navigate = useCallback((action: string) => {
+    const stop = actionToStop[action];
+    const hash = action === 'goStart' ? 'start' : action === 'goBook' ? 'book' : stop;
+    if (!hash) return;
     setMenuOpen(false);
-    if (action === 'goStart') {
-      navigateToTop();
-    } else if (action === 'goBook') {
+    // pushState records an addressable destination without triggering native
+    // anchor scrolling, which would fight the React scroll controller.
+    if (window.location.hash !== '#' + hash) {
+      const url = new URL(window.location.href);
+      url.hash = hash;
+      window.history.pushState(window.history.state, '', url);
+    }
+    if (action === 'goStart') navigateToTop();
+    else if (action === 'goBook') {
       const section = document.getElementById('book');
       if (section) navigateToElement(section);
-    } else {
-      const stop = actionToStop[action];
-      if (stop) navigateToStop(stop);
-    }
+    } else if (stop) navigateToStop(stop);
   }, [navigateToStop, navigateToTop, navigateToElement]);
 
   const navigateFromDrawer = useCallback((target: string) => {
-    if (target === 'book') navigate('goBook');
-    else {
-      const stop = drawerToStop[target];
-      if (stop) navigateToStop(stop);
-      setMenuOpen(false);
-    }
-  }, [navigate, navigateToStop]);
+    const action = target === 'book' ? 'goBook' : drawerToAction[target];
+    if (action) navigate(action);
+    else setMenuOpen(false);
+  }, [navigate]);
 
   const toggleMenu = useCallback(() => setMenuOpen(value => !value), []);
   const closeMenu = useCallback(() => setMenuOpen(false), []);

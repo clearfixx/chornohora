@@ -173,6 +173,12 @@ export class JourneyController {
   private tickWheel = (): void => {
     this.wheelFrame = 0;
     if (!this.mounted || !this.scrollElement) return;
+    // Opening the drawer can happen between wheel frames, even without
+    // another wheel event. Freeze pending easing immediately.
+    if (document.body.classList.contains('route-menu-open')) {
+      this.cancelWheel();
+      return;
+    }
     const scroller = this.scrollElement;
     // Check BEFORE writing this RAF frame: a scrollbar drag or another scroll
     // between frames must win over the pending wheel momentum.
@@ -356,6 +362,13 @@ export class JourneyController {
     this.store.setNavigation(stop);
     const tick = (timestamp: number): void => {
       if (!this.mounted) return;
+      // A route menu opened during animated navigation takes priority over
+      // the pending motion. Navigation started by a drawer link resumes only
+      // after the menu has closed.
+      if (document.body.classList.contains('route-menu-open')) {
+        this.cancelNavigation();
+        return;
+      }
       // A browser-owned scroll/focus restoration can happen between two
       // click-navigation frames without firing pointerdown or a wheel event.
       // Respect its new position instead of pulling the page back.

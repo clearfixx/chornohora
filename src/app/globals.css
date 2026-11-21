@@ -55,7 +55,7 @@ a {color: inherit;}
   }
 }
 
-/* Native v22 acceptance fixes: no duplicated language switch or tilted scene. */
+/* Native compatibility-only fixes: do not suppress the approved perspective animation in React preview. */
 [data-v22-source-scene] .nav-language a {
   color: inherit;
   text-decoration: none;
@@ -69,16 +69,16 @@ a {color: inherit;}
   outline: 2px solid #ffe14d;
   outline-offset: 3px;
 }
-body:has([data-v22-source-scene]).route-menu-open .track .stage {
+body:has([data-v22-source-scene]:not([data-react-journey])).route-menu-open .track .stage {
   transform: none !important;
   filter: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
-body:has([data-v22-source-scene]).route-menu-open .track {
+body:has([data-v22-source-scene]:not([data-react-journey])).route-menu-open .track {
   pointer-events: auto;
 }
-body:has([data-v22-source-scene]).route-menu-open .route-menu-scrim {
+body:has([data-v22-source-scene]:not([data-react-journey])).route-menu-open .route-menu-scrim {
   background: rgba(5,3,20,.68);
 }
 @media (max-width: 700px) {
@@ -149,4 +149,190 @@ body:has([data-v22-source-scene]).route-menu-open .route-menu-scrim {
     margin-inline: auto !important;
     text-align: center !important;
   }
+}
+
+
+/* React-preview journey pacing: longer scroll travel means more wheel turns
+   per original scene. The approved original iframe and ?preview=native are unchanged.
+   Wheel smoothing is continuous across React preview, including booking/footer, to avoid boundary speed jumps. Preserve native touch, keyboard and reduced-motion scrolling. */
+[data-react-journey] .track {
+  --S: 12800px;
+}
+
+/* React preview reuses the approved v19 perspective drawer animation from
+   public/legacy/styles.css. The native comparison intentionally stays flat.
+   Transform ONLY the viewport-sized .stage, never the tall .track: rotating
+   the track breaks scrolling and scroll-linked animation geometry. */
+@media (prefers-reduced-motion: reduce) {
+  body:has([data-react-journey]).route-menu-open .track .stage {
+    transform: none !important;
+    filter: none !important;
+  }
+}
+
+/* New mountain SVG geometry comes from the supplied design reference.
+   The original approved parallax transform classes stay in place. */
+[data-react-journey] .reference-mountain svg {display:block;max-width:none}
+[data-react-journey] .location-subtitle {
+  margin: 8px 0 14px;
+  color: #ffdab6;
+  font: 700 clamp(17px,2.1vw,27px)/1.25 Onest,system-ui,sans-serif;
+  letter-spacing: .01em;
+}
+[data-react-journey] .shooting-stars {position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;opacity:0;visibility:hidden}
+/* Meteor visibility is tied to the fourth route scene, independent of the
+   scroll controller. The stars are purely decorative and never intercept input. */
+[data-react-journey] .meteor {position:absolute;width:95px;height:2px;border-radius:3px;background:linear-gradient(90deg,transparent,#ffe4b2);transform:rotate(-24deg);opacity:0}
+[data-react-journey] .meteor-one {left:20%;top:27%;animation:petros-shoot 7s linear 1s infinite}
+[data-react-journey] .meteor-two {left:79%;top:16%;animation:petros-shoot 9s linear 4s infinite}
+@keyframes petros-shoot {
+  0%,78% {opacity:0;translate:0 0}
+  80% {opacity:1}
+  100% {opacity:0;translate:-170px 76px}
+}
+@media (prefers-reduced-motion:reduce) {
+  [data-react-journey] .meteor {animation:none!important;opacity:0!important}
+}
+
+/* Hover previews reproduce the four SVG thumbnail compositions from the supplied reference. */
+[data-react-journey] .route-floating-tooltip,
+.route-floating-tooltip:has(.reference-tooltip-layout) {
+  width:min(455px,calc(100vw - 24px))!important;
+  max-height:min(370px,75vh)!important;
+  padding:16px!important;
+  border-color:rgba(255,255,255,.24)!important;
+  background:rgba(27,15,55,.97)!important;
+  backdrop-filter:blur(16px);
+}
+.reference-tooltip-layout {display:grid;grid-template-columns: minmax(0,143px) minmax(0,1fr);gap:16px}
+.reference-tooltip-preview {border-radius:12px;overflow:hidden;aspect-ratio:143/130}
+.reference-tooltip-preview svg {display:block;width:100%;height:100%}
+.reference-tooltip-content strong {font:800 clamp(18px,2vw,26px)/1.12 Unbounded,Onest,sans-serif;margin:8px 0}
+.reference-tooltip-content p {font:400 13px/1.5 Onest,system-ui,sans-serif;color:rgba(255,255,255,.9)}
+.reference-tooltip-facts {display:flex;flex-wrap:wrap;list-style:none;gap:10px 20px;margin:14px 0 0;padding:0}
+.reference-tooltip-facts li {display:flex;align-items:center;gap:8px;font:600 13px/1.3 Onest,sans-serif;color:#fff}
+.reference-tooltip-facts svg {flex:none;color:#f4d5e7}
+[data-react-journey] .shooting-stars.is-active {opacity:1;visibility:visible}
+@media (max-width:480px) {
+  .reference-tooltip-layout {grid-template-columns:110px minmax(0,1fr);gap:12px}
+  .reference-tooltip-content strong {font-size:17px}
+  .reference-tooltip-content p {font-size:12px}
+}
+
+/* Final message must not inherit the peak-name (.nmi) exit animation.
+   The scene itself retains its approved scroll-linked entrance. */
+[data-react-journey] .final .final-heading {
+  overflow: visible;
+  line-height: 1.14;
+  padding-block: .08em .14em;
+  margin-bottom: 18px;
+}
+[data-react-journey] .final .final-heading,
+[data-react-journey] .final .lead { position: relative; }
+
+/* The supplied reference defines a separate --lit facet palette; the
+   React-only keyframes below animate it alongside the three mountain planes. */
+
+/* Night-only lunar treatment. Retain sun rays in daytime and the original
+   scroll-linked positioning/size of the orb in all four scenes. */
+[data-react-journey] .orb { isolation: isolate; }
+[data-react-journey] .moon-craters {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 650ms ease;
+}
+[data-react-journey] .moon-crater {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  background: rgba(154, 165, 203, .17);
+  box-shadow: inset 2px 2px 5px rgba(111, 124, 167, .14),
+    2px 2px 4px rgba(255,255,255,.13);
+  border: 1px solid rgba(207, 211, 233, .17);
+}
+[data-react-journey] .moon-crater-one {width:22%;height:22%;left:19%;top:23%}
+[data-react-journey] .moon-crater-two {width:14%;height:14%;left:61%;top:17%;opacity:.7}
+[data-react-journey] .moon-crater-three {width:27%;height:27%;left:53%;top:53%;opacity:.8}
+[data-react-journey] .moon-crater-four {width:10%;height:10%;left:30%;top:68%;opacity:.55}
+[data-react-journey]:has(.shooting-stars.is-active) .orb .rays {
+  opacity: 0 !important;
+  visibility: hidden;
+}
+[data-react-journey]:has(.shooting-stars.is-active) .orb .moon-craters {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-react-journey] .moon-craters {transition: none}
+}
+
+
+/* Exact mountain and illuminated-facet colors from the approved HTML reference
+   "Чорногора1 — чотири неба.html". Preserve all existing sky/orb/cloud
+   values and scroll percentages from the current React renderer.
+   Scope to the React preview: the immutable v22 renderer stays unchanged. */
+@property --lit { syntax: '<color>'; inherits: true; initial-value: #FF8F2E; }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    [data-react-journey] .track .stage { animation-name: journey-reference-mountains; }
+  }
+}
+@keyframes journey-reference-mountains {
+
+0%{--s1:#140B4A;--s2:#4B2395;--s3:#FF6F61;--m1:#7C4DA8;--m2:#3A2C78;--m3:#2A1C5C;--m4:#20104F;--orb:#FFD166;--glow:#FF5A8A66;--cl:#FF9AB88C;--lit:#FF8F2E}
+16%,28%{--s1:#6B2FD6;--s2:#FF4F8B;--s3:#FFC247;--m1:#7C4DA8;--m2:#3A2C78;--m3:#2A1C5C;--m4:#2B1160;--orb:#FFF1A8;--glow:#FFE06699;--cl:#FFD6E4D9;--lit:#FF8F2E}
+36%,49%{--s1:#0B57F0;--s2:#1E90F5;--s3:#D4F77A;--m1:#5FD0C8;--m2:#1C9C8E;--m3:#0E6F68;--m4:#064A45;--orb:#FFFBD0;--glow:#FFFFC88C;--cl:#FFFFFFF2;--lit:#E8FFB0}
+57%,70%{--s1:#3A1590;--s2:#FF3E7F;--s3:#FF9A2E;--m1:#D45AA8;--m2:#7A2A8C;--m3:#5C1D80;--m4:#2E0F58;--orb:#FF5A2B;--glow:#FF5A2B8C;--cl:#FFAA82CC;--lit:#FFB070}
+78%,88%{--s1:#060833;--s2:#1B1A75;--s3:#12A3A0;--m1:#3446B0;--m2:#222C88;--m3:#161C62;--m4:#0A0E38;--orb:#F2F0FF;--glow:#B4BEFF73;--cl:#5A64BE59;--lit:#6F86FF}
+98%,100%{--s1:#6B2FD6;--s2:#FF4F8B;--s3:#FFC247;--m1:#7C4DA8;--m2:#3A2C78;--m3:#2A1C5C;--m4:#2B1160;--orb:#FFF1A8;--glow:#FFE06699;--cl:#FFD6E4D9;--lit:#FF8F2E}
+}
+
+/* React-owned booking draft: no counterfeit "sent" state without a backend. */
+.journey-booking-preview {display:flex;flex-direction:column;gap:16px;color:#1B0B5A}
+.journey-booking-preview h3 {font:800 clamp(24px,3vw,36px)/1.15 Unbounded,Onest,sans-serif;margin:0}
+.journey-booking-preview p {font:400 15px/1.5 Onest,sans-serif;margin:0}
+.journey-booking-summary-label {font:700 15px/1.3 Onest,sans-serif}
+.journey-booking-preview textarea {width:100%;min-height:160px;box-sizing:border-box;border:1px solid #cbc2ec;border-radius:12px;padding:14px;background:#f9f7ff;color:#1B0B5A;font:400 15px/1.5 Onest,sans-serif;resize:vertical}
+.journey-booking-actions {display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.journey-booking-actions .cta {border:0;cursor:pointer;background:#ffe14d}
+.journey-booking-secondary {padding:12px 18px;background:#efebfc;color:#1B0B5A;border:1px solid #dcd6f2;border-radius:16px;cursor:pointer;font:700 15px/1.4 Onest,sans-serif}
+
+
+/* At 320px the full UA/EN wordmark pushes the language toggle and menu
+   outside the viewport. Keep the branded icon and both functional controls. */
+@media (max-width: 340px) {
+  [data-react-journey] .nav .brand-type { display: none !important; }
+  [data-react-journey] .nav .logo { flex: 0 0 auto; min-width: 0; }
+}
+
+
+/* React-preview night timing: the original 78–88% lunar rise happens after
+   Petros is already established (83%). Begin rising during the transition
+   from Nesamovyte, so the moon is overhead at Petros rather than on exit.
+   Keep the sun's dawn/day/evening trajectory unchanged. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    [data-react-journey] .track .orb {
+      animation-name: journey-earlier-petros-moon;
+    }
+  }
+}
+@keyframes journey-earlier-petros-moon {
+  0%   {left:62%;top:600px;scale:1}
+  16%  {left:60%;top:380px;scale:1.1}
+  28%  {left:56%;top:300px;scale:1}
+  36%  {left:64%;top:90px;scale:.9}
+  49%  {left:68%;top:120px;scale:.9}
+  57%  {left:66%;top:400px;scale:1.3}
+  70%  {left:64%;top:500px;scale:1.5}
+  76%  {left:62%;top:680px;scale:1.2}
+  79%  {left:63%;top:340px;scale:1.1}
+  83%  {left:66%;top:105px;scale:1}
+  88%  {left:66%;top:90px;scale:1}
+  93%  {left:65%;top:145px;scale:1.05}
+  98%,100% {left:62%;top:520px;scale:1.1}
 }

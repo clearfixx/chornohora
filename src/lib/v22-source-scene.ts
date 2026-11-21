@@ -49,6 +49,9 @@ export function getV22SourceScene() {
   const styleEnd = helmet.lastIndexOf('</style>');
   if (styleStart < 0 || styleEnd < 0) throw new Error('Approved v22 CSS missing');
   const inlineCss = helmet.slice(styleStart + '<style>'.length, styleEnd)
-    .replace(/url\((["']?)assets\//g, 'url($1/legacy/assets/');
+    .replace(/url\((["']?)assets\//g, 'url($1/legacy/assets/')
+    // HTML parsing normalizes CRLF/CR to LF in <style> text. Match that
+    // normalization before React hydrates, including on Windows checkouts.
+    .replace(/\r\n?/g, '\n');
   return {html: rebase(scene), drawerHtml: rebase(drawer), inlineCss};
 }

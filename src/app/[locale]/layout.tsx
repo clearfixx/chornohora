@@ -1,11 +1,19 @@
 import type {Metadata} from 'next';
 import {NextIntlClientProvider, hasLocale} from 'next-intl';
-import {setRequestLocale} from 'next-intl/server';
+import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {routing} from '@/i18n/routing';
 import '../globals.css';
 
-export const metadata: Metadata = {title: 'Чорногора — Чотири неба', description: 'Одна подорож. Чотири небеса.'};
+export async function generateMetadata({params}: {params: Promise<{locale: string}>}): Promise<Metadata> {
+  const {locale} = await params;
+  if (!hasLocale(routing.locales, locale)) return {};
+  const t = await getTranslations({locale, namespace: 'Journey'});
+  return {
+    title: t('brand') + ' — ' + t('brandSmall'),
+    description: t('heroTagline'),
+  };
+}
 export function generateStaticParams() {return routing.locales.map((locale) => ({locale}));}
 export default async function LocaleLayout({children, params}: {children: React.ReactNode; params: Promise<{locale: string}>}) {
   const {locale} = await params;

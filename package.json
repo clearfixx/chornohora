@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:journey": "node --experimental-strip-types --test tests/journey.test.mjs",
+    "test:journey": "node --experimental-strip-types --test tests/journey.test.mjs tests/journey-engine.test.mjs tests/journey-easing.test.mjs tests/journey-booking-validation.test.mjs",
     "test:source": "node --test tests/source.test.mjs",
     "audit:v22": "node scripts/audit-v22.mjs",
     "inventory:v22": "node scripts/inventory-v22.mjs",
@@ -26,7 +26,15 @@
     "test:browser": "node scripts/smoke-native-browser.mjs",
     "test:browser-scroll": "node scripts/test-v22-scroll-browser.mjs",
     "test:geometry": "node scripts/compare-v22-geometry.mjs",
-    "test:v22-ghost": "node --test tests/v22-ghost-titles.test.mjs"
+    "test:v22-ghost": "node --test tests/v22-ghost-titles.test.mjs",
+    "test:jsx-source": "node --test tests/v22-jsx-source.test.mjs",
+    "sync:react-css": "node scripts/sync-react-css.mjs",
+    "check:react-css": "node scripts/sync-react-css.mjs --check",
+    "check:react-ownership": "node scripts/check-react-ownership.mjs",
+    "test:react-ownership": "node --test tests/react-ownership.test.mjs",
+    "check:react-assets": "node scripts/check-react-assets.mjs",
+    "test:petros-perf": "node scripts/run-petros-diagnostics.mjs --software",
+    "test:petros-perf:gpu": "node scripts/run-petros-diagnostics.mjs --gpu"
   },
   "dependencies": {
     "next": "^16.0.0",

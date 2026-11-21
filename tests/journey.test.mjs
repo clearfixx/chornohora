@@ -4,6 +4,7 @@ import {
   ROUTE_STOPS, clampProgress, getJourneyState,
   getStopProgress, getStopScrollTop,
 } from '../src/lib/journey.ts';
+import {getV22SourceScene} from '../src/lib/v22-source-scene.ts';
 
 test('approved v22 location timing is preserved', () => {
   assert.deepEqual(ROUTE_STOPS.map(({id, progress}) => [id, progress]), [
@@ -41,4 +42,11 @@ test('scroll targets include track document offset', () => {
 
 test('invalid stop IDs fail closed', () => {
   assert.throws(() => getStopProgress('missing'), /Unknown journey stop/);
+});
+
+test('inline v22 CSS is newline-normalized for SSR and hydration on Windows', () => {
+  const {inlineCss} = getV22SourceScene();
+  assert.ok(inlineCss.length > 1000);
+  assert.ok(!inlineCss.includes('\r'), 'style text cannot contain CR or CRLF');
+  assert.equal(inlineCss, inlineCss.replace(/\r\n?/g, '\n'));
 });

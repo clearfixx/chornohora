@@ -1309,6 +1309,31 @@ const checkReactScrollOwnershipStress = async () => {
     'New wheel gesture cancelled by stale completed-gesture position: '+
       JSON.stringify({checkpoint,resumedWheel}));
 
+  // A click-initiated navigation must not override a scrollbar/focus jump.
+  // This previously lacked the wheel animation's external-origin guard.
+  const navigationStart=geometry.top+geometry.travel*.31;
+  await evaluate("window.scrollTo({top:"+navigationStart+",behavior:'instant'})");
+  await delay(170);
+  await evaluate("document.querySelector('[data-react-journey] .footer-route [data-journey-action=\"goPetros\"]').click()");
+  await delay(130);
+  const navigationApplied=await evaluate('scrollY');
+  assert.ok(navigationApplied>navigationStart+2,
+    'Click navigation was not in progress for external scroll test: '+
+      JSON.stringify({navigationStart,navigationApplied}));
+  const navigationOverride=geometry.top+geometry.travel*.57;
+  await evaluate("window.scrollTo({top:"+navigationOverride+",behavior:'instant'})");
+  await delay(430);
+  const navigationSettled=await evaluate('scrollY');
+  await delay(330);
+  const navigationAfter=await evaluate('scrollY');
+  assert.ok(Math.abs(navigationSettled-navigationOverride)<35 &&
+      Math.abs(navigationAfter-navigationSettled)<5,
+    'Click navigation overrode externally chosen scroll position: '+
+      JSON.stringify({navigationStart,navigationApplied,navigationOverride,navigationSettled,navigationAfter}));
+  const navigationTrace=await evaluate('window.__journeyTrace()');
+  assert.ok(navigationTrace.some(entry=>entry.event==='navigation-external-scroll'),
+    'Click navigation external scroll was not recorded');
+
   // Wheel over a booking field must remain native and not schedule page easing.
   const center=await evaluate("(() => { const el=document.querySelector('[data-react-journey] #f-msg'); el.scrollIntoView({block:'center',behavior:'instant'}); const r=el.getBoundingClientRect(); return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)}; })()");
   assert.ok(center.x>0 && center.y>0 && center.y<900,'Textarea not visible');

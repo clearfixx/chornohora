@@ -95,6 +95,10 @@ export function ReactRouteIndicator({store}: {store: JourneyStore}) {
   const [tooltipPosition, setTooltipPosition] = useState({left: 12, top: 12});
   const tooltipRef = useRef<HTMLDivElement>(null);
   const activeSource = useRef<HTMLElement | null>(null);
+  // Only a real change in scroll position should dismiss a keyboard tooltip.
+  // Headless Chromium can deliver a trailing scroll event after scrollTo() has
+  // already reached its final offset, especially at narrow viewports.
+  const tooltipScrollOrigin = useRef({x: 0, y: 0});
 
   const closeTooltip = useCallback(() => {
     activeSource.current = null;
@@ -108,6 +112,7 @@ export function ReactRouteIndicator({store}: {store: JourneyStore}) {
     const index = Number(stop.dataset.peak) - 1;
     if (!Number.isInteger(index) || index < 0 || index >= tooltipData.length) return;
     activeSource.current = stop;
+    tooltipScrollOrigin.current = {x: window.scrollX, y: window.scrollY};
     setActiveTooltip(index);
   }, []);
 
@@ -155,7 +160,12 @@ export function ReactRouteIndicator({store}: {store: JourneyStore}) {
 
   useEffect(() => {
     if (activeTooltip === null) return;
-    const onScroll = () => closeTooltip();
+    const onScroll = () => {
+      const {x, y} = tooltipScrollOrigin.current;
+      if (Math.abs(window.scrollX - x) > 1 || Math.abs(window.scrollY - y) > 1) {
+        closeTooltip();
+      }
+    };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') closeTooltip();
     };

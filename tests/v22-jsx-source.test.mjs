@@ -191,3 +191,13 @@ test('all React journey route hrefs target actual stage anchor ids', () => {
   assert.doesNotMatch(motion+footer,/href="#(?:breb|nes)"/,
     'Legacy abbreviated hrefs do not resolve without JavaScript navigation');
 });
+
+test('React journey links preserve browser modified-click behavior', () => {
+  for (const component of ['JourneyStage', 'JourneyDrawer']) {
+    const file=readFileSync('src/features/journey/components/'+component+'.tsx','utf8');
+    assert.match(file,/event\.button !== 0 \|\| event\.metaKey \|\| event\.ctrlKey \|\| event\.shiftKey \|\| event\.altKey \|\| event\.defaultPrevented/,
+      component+' should not hijack non-primary or modified clicks');
+    assert.match(file,/event\.preventDefault\(\)/,
+      component+' should still handle regular internal navigation');
+  }
+});

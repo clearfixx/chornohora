@@ -1888,6 +1888,13 @@ const checkReactResponsiveAndMotion = async () => {
         assert.ok(tip && tip.left>=10 && tip.right<=width-10 &&
           tip.top>=10 && tip.bottom<=tip.viewportHeight-10,
           `Mobile route tooltip clipped at ${locale}/${width}: ${JSON.stringify({tip,focus,target})}`);
+        // Preserve the v22 behavior: actual user scrolling dismisses the
+        // focused tooltip even though zero-delta scroll notifications do not.
+        await evaluate("window.scrollBy({top: 45, behavior: 'instant'})");
+        await delay(160);
+        const dismissed=await evaluate("!document.querySelector('[data-react-route-tooltip=\"2\"]')");
+        assert.equal(dismissed, true,
+          `Mobile route tooltip did not dismiss after actual scroll at ${locale}/${width}`);
         await evaluate('document.activeElement?.blur()');
       }
       if (width === 1280) {

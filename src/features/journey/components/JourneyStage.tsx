@@ -2,6 +2,7 @@
  * This is a checked-in React JSX stage, NOT an HTML injection.
  * Interaction wiring and visual/browser acceptance are separate migration gates.
  */
+import {memo} from 'react';
 import type * as React from 'react';
 import type {RefObject} from 'react';
 import type {JourneyStore} from '@/engine/journey-store';
@@ -11,6 +12,15 @@ import {JourneyHero} from '@/features/journey/components/JourneyHero';
 import {JourneyLocationContent} from '@/features/journey/components/JourneyLocationContent';
 import {BookingSection} from '@/features/journey/components/BookingSection';
 import {JourneyFooter} from '@/features/journey/components/JourneyFooter';
+
+// Opening the modal drawer changes only navbar state. Preserve the heavy
+// mountain SVG subtree and copy between menu toggles. Store subscribers inside
+// JourneyScenery still update the hiker, sky and route as scrolling progresses.
+const MemoScenery = memo(JourneyScenery);
+const MemoHero = memo(JourneyHero);
+const MemoLocationContent = memo(JourneyLocationContent);
+const MemoBooking = memo(BookingSection);
+const MemoFooter = memo(JourneyFooter);
 
 type Locale = 'uk' | 'en';
 type StageProps = {
@@ -51,10 +61,10 @@ export function JourneyStage({trackRef, store, locale, menuOpen, onAction, onTog
 <div className="anc" id="nesamovyte" style={{"top":"calc(var(--S) * .63)"} as React.CSSProperties}></div>
 <div className="anc" id="petros" style={{"top":"calc(var(--S) * .83)"} as React.CSSProperties}></div>
 <div className="stage">
-<JourneyScenery store={store} /><JourneyHero /><JourneyLocationContent />
+<MemoScenery store={store} /><MemoHero /><MemoLocationContent />
 </div>
 </div>
-<BookingSection /><JourneyFooter />
+<MemoBooking /><MemoFooter />
 </div>
 
     </>

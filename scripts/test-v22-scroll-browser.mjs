@@ -1219,6 +1219,41 @@ const checkReactBookingFooterSeam = async () => {
     assert.ok(Math.abs(resting-prior)<5,
       'Wheel momentum kept oscillating after reversal sequence: '+
         JSON.stringify({locale,reversals,prior,resting}));
+
+    // The footer and navbar share the React-owned click-navigation adapter.
+    // Exercise the actual links in BOTH locales, rather than merely checking
+    // their href values or invoking the controller directly.
+    const scrollTarget = async (selector, expected, label) => {
+      const triggered=await evaluate(`(() => {
+        const el=document.querySelector(`+JSON.stringify(selector)+`);
+        if (!el) return false;
+        el.click();
+        return true;
+      })()`);
+      assert.ok(triggered,'Missing '+label+' navigation control: '+selector);
+      let actual=await evaluate('scrollY');
+      // The approved click motion takes up to 4s for long navigation.
+      for(let attempt=0;attempt<30;attempt++) {
+        if(Math.abs(actual-expected)<24) break;
+        await delay(160);
+        actual=await evaluate('scrollY');
+      }
+      assert.ok(Math.abs(actual-expected)<24,
+        'React '+label+' navigation failed: '+JSON.stringify({locale,selector,expected,actual}));
+      return actual;
+    };
+    await evaluate("window.scrollTo({top:"+Math.min(edges.max,edges.footer+80)+",behavior:'instant'})");
+    await delay(180);
+    const brebTarget=await evaluate(`(() => {
+      const t=document.querySelector('[data-react-journey] .track');
+      const stage=t.querySelector('.stage');
+      return t.getBoundingClientRect().top+scrollY+
+        (t.offsetHeight-stage.offsetHeight)*.42;
+    })()`);
+    await scrollTarget('.footer-route [data-journey-action="goBreb"]',
+      brebTarget,'footer-to-Brebeneskul');
+    await scrollTarget('.nav-book-cta[data-journey-action="goBook"]',
+      edges.book,'navbar-to-booking');
     console.log('BOOKING FOOTER SEAM '+locale+' '+JSON.stringify({edges,established,down:beforeReverse,up:goingUp.at(-1),reentered,reversals}));
   }
 };

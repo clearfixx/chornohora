@@ -609,13 +609,24 @@ const check = async (locale, width) => {
     // underlying navbar, not just appear as a DOM boolean.
     const focusContainment = await evaluate(`(() => {
       const outside=document.querySelector('[data-react-journey] .nav-book-cta');
-      outside.focus({preventScroll:true});
       const drawer=document.getElementById('route-drawer');
-      return {inside:drawer.contains(document.activeElement),
-        active:document.activeElement?.className};
+      const background=document.querySelector('[data-react-journey]');
+      outside.focus({preventScroll:true});
+      // Chromium may leave activeElement on <body> when focus() targets
+      // an inert node. The important invariant is that focus did NOT enter
+      // the background. A subsequent Tab must return it to the drawer.
+      const blocked=background.inert && document.activeElement!==outside &&
+        !background.contains(document.activeElement);
+      const afterBlocked=document.activeElement?.tagName;
+      document.dispatchEvent(new KeyboardEvent('keydown',{
+        key:'Tab',bubbles:true,cancelable:true,
+      }));
+      return {blocked,insideAfterTab:drawer.contains(document.activeElement),
+        afterBlocked,afterTab:document.activeElement?.tagName,
+        activeClass:document.activeElement?.className};
     })()`);
-    assert.equal(focusContainment.inside, true,
-      'React drawer allowed focus into inert background: '+JSON.stringify(focusContainment));
+    assert.ok(focusContainment.blocked && focusContainment.insideAfterTab,
+      'React drawer failed inert focus isolation / Tab recovery: '+JSON.stringify(focusContainment));
     await evaluate("document.querySelector('#route-drawer .route-drawer-close').click()");
     // CSS transitions depend on actual compositor frames. A fixed 720 ms
     // sleep occasionally catches a near-identity matrix3d a frame before the

@@ -345,13 +345,25 @@ const check = async (locale, width) => {
   const peaks = [['hero', 0, null], ['hoverla', .21, '1'], ['brebeneskul', .42, '2'], ['nesamovyte', .63, '3'], ['petros', .83, '4']];
   let previousX = -1;
   for (const [name, p, expectedStop] of peaks) {
-    const state = await evaluate(`(async () => {
-      window.scrollTo({top: ${name === 'hero' ? 0 : `(${geometry.top} + ${geometry.travel} * ${p})`}, behavior: 'instant'});
-      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-      const hiker = document.querySelector('.track .stage .hiker');
-      const active = [...document.querySelectorAll('.route-ui-v6 .stop.is-active')];
-      return {started: document.body.classList.contains('route-started'), x: hiker.style.getPropertyValue('--hiker-x'), active: active.map(el => el.dataset.peak), scroll: scrollY};
-    })()`);
+    // The native scroll handler can settle a frame after CSS/scroll restoration,
+    // particularly on Windows under GPU-enabled headless Chromium. Do not
+    // mistake a transient previous-stop class for the final checkpoint state.
+    // A bounded readiness check still fails if the state stays incorrect.
+    await evaluate(`window.scrollTo({top: ${name === 'hero' ? 0 : `(${geometry.top} + ${geometry.travel} * ${p})`}, behavior: 'instant'})`);
+    const expectedActive = expectedStop === null ? [] : [expectedStop];
+    let state;
+    for (let attempt = 0; attempt < 40; attempt++) {
+      state = await evaluate(`(async () => {
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const hiker = document.querySelector('.track .stage .hiker');
+        const active = [...document.querySelectorAll('.route-ui-v6 .stop.is-active')];
+        return {started: document.body.classList.contains('route-started'), x: hiker.style.getPropertyValue('--hiker-x'), active: active.map(el => el.dataset.peak), scroll: scrollY};
+      })()`);
+      if (state.started === (name !== 'hero') &&
+        JSON.stringify(state.active) === JSON.stringify(expectedActive) &&
+        (name !== 'hero' || Math.abs(state.scroll) < 2)) break;
+      await delay(50);
+    }
     assert.equal(state.started, name !== 'hero', `route panel mismatch at ${name} ${locale}/${width}`);
     assert.ok(state.x.endsWith('px'), `hiker position missing at ${name}`);
     const x = Number.parseFloat(state.x);

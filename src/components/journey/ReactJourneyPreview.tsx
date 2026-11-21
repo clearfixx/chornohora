@@ -124,7 +124,7 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   return <>
-    <div data-v22-source-scene="" data-react-journey="">
+    <div data-v22-source-scene="" data-react-journey="" inert={menuOpen}>
       <MemoStage
         trackRef={trackRef} store={store} locale={locale} menuOpen={menuOpen}
         onAction={navigate} onToggleMenu={toggleMenu}

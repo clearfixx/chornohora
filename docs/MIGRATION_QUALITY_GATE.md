@@ -98,3 +98,37 @@ The eleven-checkpoint Chromium matrix now checks the forest composition in UA/EN
 ## Mobile route tooltip viewport gate — 2026-11-20
 
 The React route tooltip portal now clamps its measured position on **both** viewport axes, placing the popover below the focused route marker if the normal above-marker placement lacks room, then constraining the final position to a 12px safe edge. The Chromium responsive matrix focuses the Brebeneskul route marker by keyboard at 320/375/430px in UA and EN and asserts the rendered portal fits the viewport. This does not alter tooltip illustrations, copy, or the immutable v22 reference; real mobile-device review remains required.
+
+## Homepage completion checkpoint — 2026-11-21
+
+The user has explicitly prioritized **finishing the homepage before building a preloader or error pages**. No scope expansion into those features is authorized in this branch.
+
+### Verified in the feature branch
+
+- Full checks passed for CI **#551, #555 and #557**, including React JSX ownership, lint/type/build and Chromium browser interactions.
+- Browser-only Petros aurora paint profiling finds a software-rendering bottleneck with CSS blur. Chromium #555 reports \`ANGLE (... SwiftShader ...)\`, **not a dedicated GPU**. Therefore these CI frame times cannot determine real-device acceptance.
+- The cached Canvas aurora experiment is **diagnostic only**, not enabled in the product. Its initial screenshots at desktop/mobile/tablet show promising similarity but not full, time-synchronized visual parity.
+- React-owned renderer is available at **\`/uk?preview=react\`** and **\`/en?preview=react\`**. Canonical **\`/uk\`** and **\`/en\`** still use the frozen v22 reference; no route switch or merge was approved.
+- Booking on the React preview is a local demonstration/draft and does not transmit submissions. Do not describe it as a working production booking backend.
+
+### Required acceptance work before shipping React as the homepage
+
+| Gate | Current status | Evidence needed |
+| --- | --- | --- |
+| Complete CI (both locales, responsive, keyboard, reduced-motion and form smoke) | Automated green at #557 | Re-run at final candidate HEAD |
+| Petros → booking → footer → Petros wheel / trackpad reversals | Automated regression green, manual **open** | Test on target Windows/desktop browser; no bounce, jump or involuntary return |
+| Approved v22 appearance, clouds, moon rise, traveler, route panels, navbar, footer | **Human visual review open** | Compare React preview against canonical reference with real scrolling, including both directions |
+| 390 px phone and 768 px tablet visual and touch parity | Screenshot geometry tests green, **device review open** | Verify no clipping, font/layout errors, menu or tooltip overflow, rotate viewport |
+| Auroras at Petros | Original CSS stays unchanged | GPU-enabled hardware profile; if no proven win+visual parity, **ship original effect** and document performance limitation |
+| Booking delivery | Explicitly demonstration-only | Either accept the draft-only scope for the homepage release or approve a separate server delivery scope before public use |
+| Canonical route ownership and merge | **Blocked pending acceptance** | Approved release decision, then switch route and retire legacy runtime from public React path; re-run all checks |
+
+### Manual acceptance steps (use the existing preview; do not alter production)
+
+1. Compare **\`http://localhost:3000/uk\`** (frozen reference) with **\`http://localhost:3000/uk?preview=react\`** in a production build at desktop width. Repeat in **\`/en\`**.
+2. Scroll slowly through all four mountain locations, then repeatedly reverse rapidly around **Petros → booking → footer**. Also test starting with the booking form focused.
+3. Test the Hero scroll indicator, route dots, navbar/drawer, language switching, tooltip keyboard focus/Escape, booking validation/draft, and footer navigation.
+4. Test phone widths **390 px** and **320 px**, tablet **768 px**, and reduced-motion preference. Check that sections remain accessible and no horizontal overflow appears.
+5. If a scroll jump occurs, reproduce at **\`?preview=react&trace=1\`** and export **\`window.__journeyTrace?.()\`** from DevTools. Do not mask or relax the regression assertion.
+
+**Release rule:** A green CI run, promising cache FPS, or a single clean manual scroll does not by itself authorize replacing the canonical v22 homepage. Once the above manual checks are accepted, switch routes in a separate controlled release package and only then begin preloader/404/500 work.

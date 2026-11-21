@@ -132,3 +132,7 @@ The user has explicitly prioritized **finishing the homepage before building a p
 5. If a scroll jump occurs, reproduce at **`?preview=react&trace=1`** and export **`window.__journeyTrace?.()`** from DevTools. Do not mask or relax the regression assertion.
 
 **Release rule:** A green CI run, promising cache FPS, or a single clean manual scroll does not by itself authorize replacing the canonical v22 homepage. Once the above manual checks are accepted, switch routes in a separate controlled release package and only then begin preloader/404/500 work.
+
+### React route anchor fallback repair — 2026-11-21
+
+The React route indicator and footer used legacy abbreviated `href="#breb"` and `href="#nes"`, while the real stage anchor ids are `brebeneskul` and `nesamovyte`. Delegated click navigation hid this mismatch during ordinary use, but links could not resolve correctly as native URL hash destinations (e.g., copy/open link, fallback navigation). Both components now point to the real ids without altering their event handlers, scroll easing, route progress, geometry or visual appearance. A JSX source regression checks every journey-action/route-target hash link against known stage/book ids and rejects the abbreviated forms. The frozen v22 source and canonical route remain unchanged. Confirm the new CI before treating this gate as verified.

@@ -44,6 +44,21 @@ pnpm test:geometry
 
 The GitHub Actions migration workflow additionally exercises the immutable v22 source and visual-comparison checks. The later **CI runs #551, #555 and #557** passed their full jobs, including browser/scroll coverage. The #555 renderer report identifies **SwiftShader** (software rendering) rather than a physical GPU; a green software-CI benchmark is not evidence of smooth hardware-accelerated scrolling on the target device. Automated success is not equivalent to real-device acceptance; see the quality gate before changing canonical route ownership.
 
+### Windows / hardware-allowed browser diagnostics
+
+The Chromium scroll suite supports Chrome or Edge on Windows (standard install locations) and an explicit `CHORNOHORA_CHROME_BIN` executable path. In PowerShell:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm build
+$env:CHORNOHORA_BROWSER_GPU = "1"
+# Optional if Chrome/Edge is installed outside standard locations:
+# $env:CHORNOHORA_CHROME_BIN = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+pnpm test:browser-scroll
+```
+
+The suite writes `artifacts/v22-browser/petros-paint-ablation.json` (including WebGL renderer) and screenshots. **GPU allowed does not guarantee hardware acceleration**: check the reported renderer and treat SwiftShader as software fallback. The complete browser suite is intentionally intensive and tests navigation as well as performance. Never use a green automated run alone to approve a canonical route switch.
+
 For opt-in scrolling diagnostics, open `/uk?preview=react&trace=1` and inspect `window.__journeyTrace?.()` in browser DevTools; no production telemetry is sent.
 
 ## Documentation

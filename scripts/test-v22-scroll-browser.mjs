@@ -6,14 +6,26 @@
 import assert from 'node:assert/strict';
 import {spawn, spawnSync} from 'node:child_process';
 import {once} from 'node:events';
-import {mkdirSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs';
+import {existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 
-const browser = ['google-chrome', 'chromium', 'chromium-browser']
-  .find(bin => spawnSync('which', [bin], {stdio: 'ignore'}).status === 0);
-if (!browser) throw new Error('Chrome/Chromium required');
+const windows = process.platform === 'win32';
+const explicitChrome = process.env.CHORNOHORA_CHROME_BIN;
+const windowsBrowsers = windows ? [
+  join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Google/Chrome/Application/chrome.exe'),
+  join(process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)', 'Google/Chrome/Application/chrome.exe'),
+  join(process.env.LOCALAPPDATA || '', 'Google/Chrome/Application/chrome.exe'),
+  join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Microsoft/Edge/Application/msedge.exe'),
+].filter(existsSync) : [];
+const browser = explicitChrome
+  ? (existsSync(explicitChrome) ? explicitChrome : null)
+  : windows
+    ? windowsBrowsers[0]
+    : ['google-chrome', 'chromium', 'chromium-browser']
+      .find(bin => spawnSync('which', [bin], {stdio: 'ignore'}).status === 0);
+if (!browser) throw new Error('Chrome/Chromium required; set CHORNOHORA_CHROME_BIN to the browser executable path');
 const port = 3188;
 const debugPort = 9338;
 const profile = mkdtempSync(join(tmpdir(), 'chornohora-cdp-'));
@@ -21,8 +33,8 @@ const screenshots = join(process.cwd(), 'artifacts', 'v22-browser');
 mkdirSync(screenshots, {recursive: true});
 const geometrySamples = [];
 const framePacingSamples = [];
-const server = spawn('pnpm', ['start', '--port', String(port)], {
-  detached: true, stdio: 'ignore',
+const server = spawn(windows ? 'pnpm.cmd' : 'pnpm', ['start', '--port', String(port)], {
+  detached: true, stdio: 'ignore', ...(windows ? {shell: true} : {}),
 });
 const gpuOptIn = process.env.CHORNOHORA_BROWSER_GPU === '1';
 // Keep the existing deterministic software-rendered CI default. An explicit
@@ -1932,7 +1944,15 @@ try {
   ws?.close();
   const browserExit = chrome.exitCode === null ? once(chrome, 'exit') : Promise.resolve();
   if (chrome.exitCode === null) chrome.kill('SIGTERM');
-  if (server.pid) { try { process.kill(-server.pid, 'SIGTERM'); } catch { server.kill('SIGTERM'); } }
+  if (server.pid) {
+    if (windows) {
+      // Windows has no Unix process groups. Stop the pnpm shell and its
+      // Next.js child rather than leaving a process on port 3188.
+      spawnSync('taskkill', ['/PID', String(server.pid), '/T', '/F'], {stdio: 'ignore'});
+    } else {
+      try { process.kill(-server.pid, 'SIGTERM'); } catch { server.kill('SIGTERM'); }
+    }
+  }
   await Promise.race([browserExit, delay(5000)]);
   // Chrome may flush profile files briefly after exit. Retry transient races.
   for (let attempt = 0; attempt < 8; attempt++) {

@@ -18,11 +18,12 @@ type StageProps = {
   store: JourneyStore;
   locale: Locale;
   menuOpen: boolean;
+  routeHash: string;
   onAction: (action: string) => void;
   onToggleMenu: () => void;
 };
 
-export function JourneyStage({trackRef, store, locale, menuOpen, onAction, onToggleMenu}: StageProps) {
+export function JourneyStage({trackRef, store, locale, menuOpen, routeHash, onAction, onToggleMenu}: StageProps) {
   const onClick = (event: React.MouseEvent<HTMLDivElement>) => {
     // Preserve standard anchor behavior for Ctrl/Cmd/Shift/Alt-click.
     // Only a primary, unmodified click should start a smooth page transition.
@@ -44,7 +45,7 @@ export function JourneyStage({trackRef, store, locale, menuOpen, onAction, onTog
     <>
 <div onClick={onClick} data-canvas-height="8000" data-canvas-width="1440" data-document-role="page" data-label="Чорногора" style={{"width":"100%","background":"#140B3A","fontFamily":"Onest,system-ui,sans-serif","color":"#fff"} as React.CSSProperties}>
 <div className="track" ref={trackRef}>
-<JourneyNavbar locale={locale} menuOpen={menuOpen} />
+<JourneyNavbar locale={locale} menuOpen={menuOpen} routeHash={routeHash} />
 <div className="anc" id="start" style={{"top":"0"} as React.CSSProperties}></div>
 <div className="anc" id="govla" style={{"top":"calc(var(--S) * .21)"} as React.CSSProperties}></div>
 <div className="anc" id="brebeneskul" style={{"top":"calc(var(--S) * .42)"} as React.CSSProperties}></div>

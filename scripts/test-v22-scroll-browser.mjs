@@ -584,10 +584,11 @@ const check = async (locale, width) => {
         origin: style.transformOrigin,
         trackTransform: getComputedStyle(track).transform,
         drawerVisible: getComputedStyle(drawer).visibility === 'visible',
+        backgroundInert: document.querySelector('[data-react-journey]').inert,
         scroll: scrollY,
       };
     })()`);
-    assert.ok(opened.bodyOpen && opened.drawerVisible &&
+    assert.ok(opened.bodyOpen && opened.drawerVisible && opened.backgroundInert &&
       opened.transform.startsWith('matrix3d(') && opened.trackTransform === 'none',
       `React perspective effect absent or track transformed: ${JSON.stringify(opened)}`);
     assert.ok(Math.abs(opened.scroll - beforeMenu) < 3,
@@ -600,6 +601,7 @@ const check = async (locale, width) => {
     for (let attempt = 0; attempt < 35; attempt++) {
       closed = await evaluate(`(() => ({
         opened: document.body.classList.contains('route-menu-open'),
+        backgroundInert: document.querySelector('[data-react-journey]').inert,
         transform: getComputedStyle(document.querySelector('[data-react-journey] .track .stage')).transform,
         scroll: scrollY,
       }))()`);
@@ -607,6 +609,7 @@ const check = async (locale, width) => {
       await delay(60);
     }
     assert.equal(closed.opened, false, 'React drawer failed to close');
+    assert.equal(closed.backgroundInert, false, 'React background stayed inert after drawer closed');
     assert.equal(closed.transform, 'none', 'perspective effect not reset on close within 2.1 s');
     assert.ok(Math.abs(closed.scroll - beforeMenu) < 3,
       `closing drawer changed scroll: ${JSON.stringify({beforeMenu, closed})}`);

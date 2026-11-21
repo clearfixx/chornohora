@@ -1390,13 +1390,39 @@ const checkReactScrollOwnershipStress = async () => {
     'Click navigation external scroll was not recorded');
 
   // Wheel over a booking field must remain native and not schedule page easing.
-  const center=await evaluate("(() => { const el=document.querySelector('[data-react-journey] #f-msg'); el.scrollIntoView({block:'center',behavior:'instant'}); const r=el.getBoundingClientRect(); return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)}; })()");
-  assert.ok(center.x>0 && center.y>0 && center.y<900,'Textarea not visible');
+  // Wait for the scroll position and real hit target to settle before
+  // dispatching a CDP wheel event. During a previous click-navigation, the
+  // browser may still be moving a fixed overlay over this coordinate; without
+  // hit-testing, the test can wheel the scene instead of the textarea.
+  await evaluate("document.querySelector('[data-react-journey] #f-msg').scrollIntoView({block:'center',behavior:'instant'})");
+  let center;
+  for (let attempt=0;attempt<35;attempt++) {
+    center=await evaluate(`(() => {
+      const field=document.querySelector('[data-react-journey] #f-msg');
+      const rect=field.getBoundingClientRect();
+      const x=Math.round(rect.left+rect.width/2);
+      const y=Math.round(rect.top+rect.height/2);
+      const hit=document.elementFromPoint(x,y);
+      return {x,y,scroll:scrollY,hitTag:hit?.tagName,
+        hitId:hit?.id,inside:!!hit?.closest('textarea#f-msg'),
+        fieldVisible:rect.top>=0 && rect.bottom<=innerHeight};
+    })()`);
+    if (center.inside && center.fieldVisible) break;
+    await delay(60);
+  }
+  assert.ok(center.inside && center.fieldVisible,
+    'Textarea not hit-testable after scroll: '+JSON.stringify(center));
   const targetsBefore=await evaluate("window.__journeyTrace().filter(e=>e.event==='wheel-target').length");
   await command('Input.dispatchMouseEvent',{type:'mouseWheel',x:center.x,y:center.y,deltaY:120,deltaX:0});
   await delay(200);
-  const targetsAfter=await evaluate("window.__journeyTrace().filter(e=>e.event==='wheel-target').length");
-  assert.equal(targetsAfter,targetsBefore,'Wheel on textarea intercepted by page controller');
+  const wheelOutcome=await evaluate(`(() => ({
+    targets:window.__journeyTrace().filter(e=>e.event==='wheel-target').length,
+    hit:document.elementFromPoint(${center.x},${center.y})?.tagName,
+    scroll:scrollY,
+  }))()`);
+  assert.equal(wheelOutcome.targets,targetsBefore,
+    'Wheel on textarea intercepted by page controller: '+
+    JSON.stringify({center,targetsBefore,wheelOutcome}));
 
   // Mid-navigation viewport resize and opposite wheel gesture.
   await evaluate("document.querySelector('[data-react-journey] a.mouse').click()");

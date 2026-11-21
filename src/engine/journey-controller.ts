@@ -104,6 +104,16 @@ export class JourneyController {
    */
   private wheel = (event: WheelEvent): void => {
     if (!this.mounted || !this.scrollElement) return;
+    // The drawer is a modal overlay. While it owns interaction, do not
+    // translate wheel input into programmatic background scrolling. Let the
+    // drawer's own overflow container scroll natively.
+    if (document.body.classList.contains('route-menu-open')) {
+      this.cancelWheel();
+      if (!(event.target instanceof Element && event.target.closest('[data-v22-source-drawer]'))) {
+        event.preventDefault();
+      }
+      return;
+    }
     this.cancelNavigation();
     const scroller = this.scrollElement;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

@@ -137,6 +137,7 @@
     "footerGalleryAlt5": "Carpathian illustration: trail to Petros",
     "footerGalleryAlt6": "Carpathian illustration: starry night sky",
     "footerDemoProfile": "{network} — demo profile",
-    "footerDemoSocialTitle": "{network} · demo"
+    "footerDemoSocialTitle": "{network} · demo",
+    "bookingPhoneInvalid": "Enter a valid phone number (7–15 digits)."
   }
 }

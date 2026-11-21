@@ -1913,12 +1913,18 @@ const checkReactResponsiveAndMotion = async () => {
           for(const type of ['focusin','focusout','pointerover','pointerout','scroll']) {
             window.addEventListener(type,record,true);
           }
+          // A restored page can already have this marker focused. In that
+          // case .focus() is a no-op and React never receives a fresh focusin.
+          // Model actual keyboard re-entry by clearing focus, then focusing
+          // the marker again (without synthetic focus event dispatch).
+          if (document.activeElement === marker) marker.blur();
           marker?.focus({preventScroll:true});
           return {present:!!marker,focused:document.activeElement===marker,
+            focusInObserved:window.__routeTooltipDebug.some(e=>e.type==='focusin' && e.peak==='2'),
             actual:scrollY};
         })()`);
-        assert.ok(focus.present && focus.focused,
-          `Mobile route marker cannot receive focus at ${locale}/${width}: ${JSON.stringify(focus)}`);
+        assert.ok(focus.present && focus.focused && focus.focusInObserved,
+          `Mobile route marker cannot receive focus/focusin at ${locale}/${width}: ${JSON.stringify(focus)}`);
         let tip;
         for (let attempt=0;attempt<12;attempt++) {
           tip=await evaluate(`(() => {

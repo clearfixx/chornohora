@@ -28,6 +28,8 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [store] = useState(() => new JourneyStore());
   const [menuOpen, setMenuOpen] = useState(false);
+  // Capture the keyboard origin BEFORE the background becomes inert.
+  const focusReturnRef = useRef<HTMLElement | null>(null);
   const {ready, navigateToStop, navigateToTop, navigateToElement,
     jumpToStop, jumpToTop, jumpToElement} = useJourneyProgress(trackRef, store);
   // A boolean selector prevents the entire preview tree from rendering at
@@ -45,9 +47,20 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
 
   useLayoutEffect(() => {
     document.body.classList.toggle('route-menu-open', menuOpen);
-    if (!menuOpen) return () => document.body.classList.remove('route-menu-open');
+    if (!menuOpen) {
+      // React clears the inert background in the same commit. Wait until the
+      // next frame so focus restoration is not rejected by the inert subtree.
+      const frame = requestAnimationFrame(() => {
+        const target = focusReturnRef.current;
+        focusReturnRef.current = null;
+        if (target?.isConnected) target.focus({preventScroll: true});
+      });
+      return () => {
+        cancelAnimationFrame(frame);
+        document.body.classList.remove('route-menu-open');
+      };
+    }
     const drawer = document.getElementById('route-drawer');
-    const prior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focusInitial = () => {
       // Do not steal focus back from a menu link if the user already tabbed.
       if (drawer?.contains(document.activeElement)) return;
@@ -99,7 +112,6 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
       document.removeEventListener('focusin', onFocusIn);
       cancelAnimationFrame(frame);
       drawer?.removeEventListener('transitionend', focusInitial);
-      if (prior?.isConnected) prior.focus({preventScroll: true});
     };
   }, [menuOpen]);
 
@@ -162,7 +174,15 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
     else setMenuOpen(false);
   }, [navigate]);
 
-  const toggleMenu = useCallback(() => setMenuOpen(value => !value), []);
+  const toggleMenu = useCallback(() => {
+    if (!menuOpen) {
+      const active = document.activeElement;
+      focusReturnRef.current = active instanceof HTMLElement
+        ? active
+        : document.querySelector<HTMLElement>('[data-react-journey] [data-route-menu-toggle]');
+    }
+    setMenuOpen(value => !value);
+  }, [menuOpen]);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   return <>

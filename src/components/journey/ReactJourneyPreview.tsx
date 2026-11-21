@@ -28,6 +28,7 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [store] = useState(() => new JourneyStore());
   const [menuOpen, setMenuOpen] = useState(false);
+  const [routeHash, setRouteHash] = useState('');
   const {ready, navigateToStop, navigateToTop, navigateToElement,
     jumpToStop, jumpToTop, jumpToElement} = useJourneyProgress(trackRef, store);
   // A boolean selector prevents the entire preview tree from rendering at
@@ -107,7 +108,11 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
   // remains animated by the existing +15% approved navigation policy.
   const restoreFromHash = useCallback(() => {
     const hash = window.location.hash.slice(1);
-    if (hash === 'start' || hash === '') jumpToTop();
+    setRouteHash(window.location.hash);
+    // A fragment-free entry can represent a browser-restored position.
+    // Do not replace that position with a forced jump to the Hero.
+    if (hash === '') return;
+    if (hash === 'start') jumpToTop();
     else if (hash === 'book') {
       const book = document.getElementById('book');
       if (book) jumpToElement(book);
@@ -137,6 +142,7 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
     const hash = action === 'goStart' ? 'start' : action === 'goBook' ? 'book' : stop;
     if (!hash) return;
     setMenuOpen(false);
+    setRouteHash('#' + hash);
     // pushState records an addressable destination without triggering native
     // anchor scrolling, which would fight the React scroll controller.
     if (window.location.hash !== '#' + hash) {
@@ -164,7 +170,7 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
     <div data-v22-source-scene="" data-react-journey="" inert={menuOpen}>
       <MemoStage
         trackRef={trackRef} store={store} locale={locale} menuOpen={menuOpen}
-        onAction={navigate} onToggleMenu={toggleMenu}
+        routeHash={routeHash} onAction={navigate} onToggleMenu={toggleMenu}
       />
     </div>
     <div data-v22-source-drawer="">

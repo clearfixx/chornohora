@@ -116,7 +116,7 @@ export function JourneyBookingForm() {
       <div className="fld"><label htmlFor="f-n">{t('bookingPeople')}</label><input id="f-n" max="12" min="1" name="people" required type="number" defaultValue={savedDraft?.people ?? "2"}/></div>
     </div>
     <div className="fld"><label htmlFor="f-msg">{t('bookingMessage')}</label><textarea id="f-msg" name="message" defaultValue={savedDraft?.message} maxLength={2000} placeholder={t('bookingMessagePlaceholder')}/></div>
-    <label className="chk"><input name="consent" required type="checkbox"/><span>{t('bookingConsent')}</span></label>
+    <label className="chk"><input name="consent" defaultChecked={Boolean(savedDraft)} required type="checkbox"/><span>{t('bookingConsent')}</span></label>
     <button className="cta" style={{width:'100%',justifyContent:'center',border:'0',cursor:'pointer',background:'#FFE14D'}} type="submit">{t('bookingPrepare')}</button>
     <p style={{margin:0,font:'400 14px/1.4 Onest,system-ui,sans-serif',color:'#4A3E80'}}>{t('bookingResponseUnknown')}</p>
     <p style={{margin:0,font:'400 13px/1.4 Onest,system-ui,sans-serif',color:'#4A3E80'}}>{t('bookingPreviewNotice')}</p>

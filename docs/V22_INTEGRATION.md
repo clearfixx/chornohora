@@ -1,23 +1,48 @@
-# Approved v22 integration — current state
+# React Journey integration candidate
 
-The approved source archive is already imported into `public/legacy/` (HTML, CSS, images, fonts and runtime assets). The old asset-copy instructions are historical, not an outstanding blocker.
+Status: **feature branch only** (`feat/react-journey-engine`). Do not merge into `main` without explicit approval and acceptance checks.
 
-## Architecture progression
+## Route ownership
 
-1. **Reference**: canonical same-origin iframe, unchanged for trustworthy comparisons.
-2. **Compatibility experiment**: `?preview=native`, source HTML inserted into a container and manually wired to ported v22 DOM controllers. This is temporary and carries acknowledged debt.
-3. **React experiment**: `?preview=react`, original static fallback converted to checked-in JSX. Navbar locale links and route/drawer click handling are React-controlled. A single observable journey engine is mounted. Visual parity and remaining interaction migration are still in progress.
+| URL | Renderer | Purpose |
+| --- | --- | --- |
+| `/uk`, `/en` | React JSX Journey + JourneyStore/Controller | Canonical integration candidate in this branch |
+| `/uk?preview=react`, `/en?preview=react` | Same React renderer | Backward-compatible diagnostics link |
+| `/uk?preview=legacy`, `/en?preview=legacy` | Frozen approved v22 iframe | Visual and behavioral reference / rollback option |
+| `/uk?preview=native`, `/en?preview=native` | Extracted DOM + legacy compatibility adapters | Migration-only comparison |
 
-The canonical landing is **not** production-ready until step 3 replaces the reference and all imperative compatibility adapters are removed from the shipping app.
+The original contents of `public/legacy/` remain unchanged. The canonical React page must not mount an iframe, `innerHTML`, `x-dc` or a legacy scroll controller. The two comparison paths are intentionally isolated from the canonical renderer.
 
-## Required engineering work
+Navbar UA/EN switches now use clean locale URLs with the current route hash (`#start`, `#book` or a peak ID). The compatibility query `?preview=react` continues to work for existing diagnostic URLs, but is no longer emitted by the React language switch.
 
-Finish the hiker, layer transitions, route progress, tooltips, booking UI and footer in real React components. Translate all copy via `next-intl`. Then verify Chromium original-vs-React screenshots and continuous scroll/touch/keyboard interactions.
+## Validation before sign-off
+
+Run on the integration branch:
 
 ```sh
-pnpm install --frozen-lockfile
-pnpm lint && pnpm typecheck && pnpm test:journey && pnpm test:jsx-source
-pnpm build && pnpm test:browser && pnpm test:browser-scroll
+pnpm lint
+pnpm typecheck
+pnpm test:journey
+pnpm test:jsx-source
+pnpm test:source
+pnpm test:v22-routes
+pnpm check:react-ownership
+pnpm test:react-ownership
+pnpm check:react-css
+pnpm check:react-assets
+pnpm build
+pnpm test:browser
+pnpm test:browser-scroll
+pnpm test:geometry
+pnpm test:petros-perf:gpu
 ```
 
-See `docs/REACT_MIGRATION_EXECUTION.md` for the complete debt ledger and acceptance gates.
+Manual comparison must use `/uk` versus `/uk?preview=legacy` (and equivalent English URLs), especially rapid forward/reverse scroll at Petros → booking → footer, responsive widths, focus, drawer, route tooltip, touch and reduced motion. This is essential even if automated tests pass.
+
+The booking form remains **draft-only**: preparing a request does not send a server-side reservation. Aurora caching was measured only diagnostically, and was not enabled in production.
+
+**Integration commit state is not a test pass.** The current branch needs a fresh full verification against its final HEAD. Only after manual acceptance should the release/merge be authorized; subsequent removal of compatibility artifacts should be a separate, scoped package.
+
+## Historical reference
+
+The earlier v22 integration stages remain described in `docs/REACT_MIGRATION_EXECUTION.md` and `docs/MIGRATION_QUALITY_GATE.md`. Those documents describe the previous preview-first state; this file records the controlled route integration candidate.

@@ -74,7 +74,7 @@ test('React has independent checked-in CSS with exact immutable legacy rule orde
     .replace(compositedOrb, originalOrb);
   assert.equal(restored, (original+'\n'+scene).replaceAll('/legacy/assets/', '/journey/assets/'),
     'React CSS must preserve frozen rule order and content except two approved transformations');
-  const reactBranch = page.split("if (preview === 'native')")[1]?.split('return <main')[0] ?? '';
+  const reactBranch = page.match(/^\\s*return <><link rel="stylesheet" href="\\/react-journey\\.css" \\/><ReactJourneyPreview[^;]*;/m)?.[0] ?? '';
   assert.match(reactBranch, /href="\/react-journey\.css"/);
   assert.doesNotMatch(reactBranch, /href="\/legacy\/styles\.css"|href="\/v22-react-scene\.css"|getV22SourceScene/);
   assert.doesNotMatch(standalone, /\/legacy\/assets\//);

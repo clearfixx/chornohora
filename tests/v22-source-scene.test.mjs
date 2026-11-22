@@ -68,12 +68,22 @@ test('React has independent checked-in CSS with exact immutable legacy rule orde
   assert.match(compositedOrb, /translate:-6vw -300px/);
   assert.doesNotMatch(compositedOrb, /left:|top:/,
     'Composited React orbit must not animate layout geometry');
-  // Reverse exactly the two explicitly approved React-only optimizations.
-  // Every other CSS byte must still match the immutable v22 sources.
-  const restored = standalone.replace(optimizedSelectors[0], originalTimeline)
+  // Reverse the two performance optimizations and the four intentional
+  // React-only logo aspect-ratio overrides. The frozen source is unchanged.
+  const logoRules = [
+    ['.brand-mark{width:38px;height:auto;', '.brand-mark{width:38px;height:38px;'],
+    ['.nav .brand-mark{width:76px!important;height:auto!important;', '.nav .brand-mark{width:76px!important;height:38px!important;'],
+    ['.footer-logo img{width:72px;height:auto;', '.footer-logo img{width:72px;height:38px;'],
+    ['.route-drawer-brand img{width:70px;height:auto;', '.route-drawer-brand img{width:70px;height:38px;'],
+  ];
+  let restored = standalone.replace(optimizedSelectors[0], originalTimeline)
     .replace(compositedOrb, originalOrb);
+  for (const [optimized, frozen] of logoRules) {
+    assert.ok(restored.includes(optimized), 'Missing React-only logo rule: ' + optimized);
+    restored = restored.replace(optimized, frozen);
+  }
   assert.equal(restored, (original+'\n'+scene).replaceAll('/legacy/assets/', '/journey/assets/'),
-    'React CSS must preserve frozen rule order and content except two approved transformations');
+    'React CSS must preserve frozen rule order and content except the six explicit React-only transformations');
   const reactBranch = page.split('\n').find(line => line.startsWith('    return <><link rel="stylesheet" href="/react-journey.css"'));
   assert.match(reactBranch, /href="\/react-journey\.css"/);
   assert.doesNotMatch(reactBranch, /href="\/legacy\/styles\.css"|href="\/v22-react-scene\.css"|getV22SourceScene/);

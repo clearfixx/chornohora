@@ -4,14 +4,14 @@ Interactive illustrated journey through four Carpathian locations. The approved 
 
 ## Migration status
 
-**Active branch:** `feat/react-journey-engine` (Draft PR #2 into `feat/nextjs-migration`).
+**Integration branch:** `feat/react-journey-engine` (proposed release into `main`).
 
-- `/uk` and `/en` without query parameters still render the **approved v22 reference** through the legacy route. Do not treat this route as the completed React version.
-- `/uk?preview=react` and `/en?preview=react` render the isolated React-owned scene, traveler, navigation, drawer, location tooltips, booking **draft** and footer.
+- `/uk` and `/en` render the **React-owned Journey** by default. The original approved v22 remains available under `?preview=legacy` as a frozen comparison and rollback reference.
+- `/uk?preview=react` and `/en?preview=react` are diagnostic aliases of the canonical React-owned scene, traveler, navigation, drawer, location tooltips, booking **draft** and footer.
 - `?preview=native` is a legacy compatibility/comparison mode, **not** a production target.
 - The v22 reference under `public/legacy` is frozen. Preserve visual geometry, approved timing, and scene assets unless a user-approved redesign explicitly overrides the relevant reference.
 - The React booking form is **demonstration only**: local validation/preview/copy; it does not transmit requests. Server submission is deferred until migration acceptance.
-- The canonical route switch, production deployment, and merging the Draft PR remain blocked on human visual/interaction acceptance, including repeat testing of rapid wheel/trackpad reversal around Petros ↔ booking/footer.
+- The user accepted the current appearance and browser interaction; deployment and merge remain subject to the final green CI at the proposed commit.
 
 ## Local development
 
@@ -23,7 +23,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open `http://localhost:3000/uk?preview=react` or `/en?preview=react` to inspect the migration without modifying the canonical v22 route.
+Open `http://localhost:3000/uk` or `/en` for the canonical React Journey. Use `?preview=legacy` to inspect the preserved reference.
 
 ## Quality gates
 
@@ -69,4 +69,4 @@ For opt-in scrolling diagnostics, open `/uk?preview=react&trace=1` and inspect `
 - [Journey controller](docs/JOURNEY_CONTROLLER.md) — scroll ownership, cancellation and diagnostics
 - [Migration reference](docs/MIGRATION.md) — preserved visual/interaction requirements
 
-**Do not merge into `main` or replace the canonical v22 route until all acceptance gates are completed.**
+**Release gate:** merge into `main` only after final CI is green; preserve `?preview=legacy` for comparison and rollback. Booking remains a local request-preview flow, not a server-side reservation.

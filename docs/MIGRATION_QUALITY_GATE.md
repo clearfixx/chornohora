@@ -1,9 +1,10 @@
-# Migration quality gate
+# Migration quality gate — historical record
 
-> **Integration candidate update (2026-11-22):** In `feat/react-journey-engine`, the canonical `/uk` and `/en` routes now render React Journey. `?preview=legacy` restores the immutable original iframe for reference; `?preview=native` retains the compatibility experiment; `?preview=react` is an accepted diagnostic alias. The older preview-first status notes below are historical checkpoints. **The integration changes have not yet passed a fresh complete lint/type/build/browser run and are not approved for merging into `main`.** The manual visual/trackpad acceptance and draft-only booking limitations remain. See `docs/V22_INTEGRATION.md` for the active route contract.\n\nLast verified: 2026-11-20. Migration development branch: `feat/react-journey-engine` (Draft PR #2 targets `feat/nextjs-migration`).
-The React extraction is under review in Draft PR #2 (`feat/react-journey-engine`).
+> **Completed 2026-11-22.** React Journey is the canonical renderer on `/uk` and `/en` in `main` after [PR #3](https://github.com/clearfixx/chornohora/pull/3), merge commit `2a0a880`. Full GitHub Actions runs [#817](https://github.com/clearfixx/chornohora/actions/runs/45048154643) and [#818](https://github.com/clearfixx/chornohora/actions/runs/45048156778) passed. The user accepted the current visual design. The v22 original is preserved at `?preview=legacy`; the native compatibility mode is `?preview=native`. The form remains **draft-only** (no backend submission). This file is archived migration history: statuses and release blockers **below** refer to earlier stages, not current release readiness. For current operation see [README](../README.md) and [V22 integration](V22_INTEGRATION.md).
 
-> **Release audit — 2026-11-22:** Canonical `/uk` and `/en` now render React Journey, and the user accepted the visual result. On Windows, lint/typecheck/build, locale and full browser scroll tests were reported successful at the pre-audit commit. A later GitHub Actions run failed at `check:react-css` because the committed generated stylesheet did not match its source. The stylesheet was regenerated in commit `c70eb73`; the final CI run on the new HEAD must still pass before merging. Booking remains a client-only draft/preview, not a live reservation submission. Earlier sections below are historical migration checkpoints, not the current route ownership.\n\n## Current facts
+## Archived pre-merge acceptance notes (historical)
+
+## Current facts
 
 - `pnpm-lock.yaml` is committed. CI installs with `pnpm install --frozen-lockfile`.
 - Approved v22 source assets are committed under `public/legacy` and must remain unchanged during migration.

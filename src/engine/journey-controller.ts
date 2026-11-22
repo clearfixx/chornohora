@@ -1,5 +1,5 @@
 import {getStopScrollTop, type JourneyStopId} from '../lib/journey.ts';
-import {easeInOutCubic, journeyDuration, wheelScrollWasInterrupted} from './journey-easing';
+import {easeInOutCubic, journeyDuration, journeyWheelDelta, wheelScrollWasInterrupted} from './journey-easing';
 import {JourneyStore} from './journey-store.ts';
 
 type JourneyTraceEntry = {t: number; event: string; y: number; target: number; dir: number; detail?: number};
@@ -148,8 +148,7 @@ export class JourneyController {
       this.cancelWheel();
       return;
     }
-    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? scroller.clientHeight : 1;
-    const delta = Math.max(-180, Math.min(180, event.deltaY * unit * 0.95));
+    const delta = journeyWheelDelta(event.deltaY, event.deltaMode, scroller.clientHeight);
     if (!delta) return;
     // Reversing wheel direction must discard pending momentum from the old
     // direction; otherwise two successive inputs can visibly fight each other.

@@ -116,9 +116,11 @@ test('the supplied logo retains its intrinsic aspect ratio at all breakpoints', 
 test('React locale links remain canonical and preserve the selected section hash', () => {
   const navbar = readFileSync('src/features/journey/components/JourneyNavbar.tsx', 'utf8');
   assert.match(navbar, /const localeDestination = bookingReached \? '#book' : sectionHash/);
-  assert.match(navbar, /hash: localeDestination/);
-  assert.match(navbar, /locale="uk"/);
-  assert.match(navbar, /locale="en"/);
+  // Cross-locale navigation intentionally uses ordinary document links.
+  // Next-intl's client router previously combined two hashes (#petros#book).
+  assert.match(navbar, /href=\{\x60\/uk\$\{localeDestination\}\x60\}/);
+  assert.match(navbar, /href=\{\x60\/en\$\{localeDestination\}\x60\}/);
+  assert.doesNotMatch(navbar, /<Link\b/);
   assert.doesNotMatch(navbar, /preview=react|preview: ["']react["']/);
   assert.match(navbar, /aria-current=\{locale === 'uk'/);
   assert.match(navbar, /aria-current=\{locale === 'en'/);

@@ -54,3 +54,11 @@ User-reported manual Windows touchpad acceptance revealed that the React wheel h
 The React wheel handler now uses a standalone `journeyWheelDelta` policy with a 1.5x distance gain and a ±270px per-event cap, preserving the scroll-easing model, direction reversal, external-scroll ownership and the existing click-navigation duration. This does **not** alter scene timestamps, CSS keyframes, traveler timing, the original v22 baseline or legacy/native comparison handlers. Unit tests exercise pixel, line, page and reverse input.
 
 **Required confirmation:** run `pnpm test:journey`, `pnpm typecheck`, `pnpm build`, and `pnpm test:petros-perf:gpu`, then manually test both short trackpad gestures at Hero → Hoverla and rapid reversals at Petros → booking/footer. A faster wheel multiplier alone is not a substitute for a device acceptance run.
+
+## Integration polish — 2026-11-22
+
+- Kept the user-approved wheel/trackpad sensitivity and all approved scene timings unchanged.
+- The user-supplied vector logo is rendered by `next/image` with intrinsic 243×81 proportions; desktop/mobile layout widths remain CSS-controlled while image height scales automatically in the navbar, drawer and footer. This addresses the Next.js warning about changing only one image dimension and avoids distorting the SVG.
+- Added regression assertions for canonical UA/EN locale hashes, drawer keyboard/focus handling and inert background, and responsive logo aspect ratio. These source assertions supplement but do not replace browser interaction and manual device checks.
+- Pending acceptance: run `pnpm test:jsx-source`, `pnpm test:v22-routes`, `pnpm check:react-assets`, `pnpm lint`, `pnpm typecheck`, `pnpm build` and `pnpm test:petros-perf:gpu` on the Windows host. Confirm responsive logo, UA/EN language switching at a scene and booking, Escape and focus restoration in the drawer, and touchpad scroll on the physical laptop.
+- Leave `main` and immutable original v22 assets alone until the user signs off.

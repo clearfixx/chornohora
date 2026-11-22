@@ -83,6 +83,18 @@ test('React components use Next Image with fixed dimensions and no plain images'
   }
 });
 
+test('React brand uses the supplied SVG in navbar, drawer and footer', () => {
+  for (const component of ['JourneyNavbar', 'JourneyDrawer', 'JourneyFooter']) {
+    const source = readFileSync('src/features/journey/components/' + component + '.tsx', 'utf8');
+    assert.match(source, /\/journey\/assets\/chornohora-mark\.svg/);
+    assert.doesNotMatch(source, /\/journey\/assets\/chornohora-mark\.png/);
+  }
+  const logo = readFileSync('public/journey/assets/chornohora-mark.svg', 'utf8');
+  assert.match(logo, /viewBox="6\.40 8\.70 243\.45 80\.70"/);
+  assert.match(logo, /fill="#fe8d4a"/);
+  assert.match(logo, /fill="#ffbf83"/);
+});
+
 test('the imported JSX monolith is split into cohesive scene and page components', () => {
   for (const path of structureFiles) assert.ok(readFileSync(path, 'utf8').includes('export function'), path);
   assert.ok(readFileSync(structureFiles[0], 'utf8').length < 6000,

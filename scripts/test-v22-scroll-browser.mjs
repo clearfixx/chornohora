@@ -487,7 +487,7 @@ const check = async (locale, width) => {
     assert.equal(value, true, `native interaction ${key} failed at ${locale}/${width}: ${JSON.stringify(interactions)}`);
   }
   console.log(`CDP native interactions ${locale}/${width}: ${JSON.stringify(interactions)}`);
-  await command('Page.navigate', {url: `http://127.0.0.1:${port}/${locale}`});
+  await command('Page.navigate', {url: `http://127.0.0.1:${port}/${locale}?preview=legacy`});
   let originalReady = false;
   for (let i = 0; i < 100; i++) {
     originalReady = await evaluate(`(() => {

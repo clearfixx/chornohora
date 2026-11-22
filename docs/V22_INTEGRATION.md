@@ -46,3 +46,11 @@ The booking form remains **draft-only**: preparing a request does not send a ser
 ## Historical reference
 
 The earlier v22 integration stages remain described in `docs/REACT_MIGRATION_EXECUTION.md` and `docs/MIGRATION_QUALITY_GATE.md`. Those documents describe the previous preview-first state; this file records the controlled route integration candidate.
+
+## Trackpad response adjustment — 2026-11-22
+
+User-reported manual Windows touchpad acceptance revealed that the React wheel handler was too conservative at the Hero → Hoverla threshold: it previously applied a 0.95 multiplier and a ±180px per-event cap. React is now the default route in this integration branch, so this was noticeable even though the approved scene timelines themselves were unchanged.
+
+The React wheel handler now uses a standalone `journeyWheelDelta` policy with a 1.5x distance gain and a ±270px per-event cap, preserving the scroll-easing model, direction reversal, external-scroll ownership and the existing click-navigation duration. This does **not** alter scene timestamps, CSS keyframes, traveler timing, the original v22 baseline or legacy/native comparison handlers. Unit tests exercise pixel, line, page and reverse input.
+
+**Required confirmation:** run `pnpm test:journey`, `pnpm typecheck`, `pnpm build`, and `pnpm test:petros-perf:gpu`, then manually test both short trackpad gestures at Hero → Hoverla and rapid reversals at Petros → booking/footer. A faster wheel multiplier alone is not a substitute for a device acceptance run.

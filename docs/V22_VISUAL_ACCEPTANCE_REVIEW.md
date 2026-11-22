@@ -1,4 +1,6 @@
-# v22 → native: visual acceptance review
+# v22 → native: historical visual acceptance review
+
+> **Archived comparison dated 2026-11-19.** The release decision below concerns the old *native compatibility* candidate, not the later React Journey. React became canonical in `main` on 2026-11-22 through PR #3, with visual acceptance by the user. The original v22 remains available under `?preview=legacy`.
 
 Review date: 2026-11-19. Source: Chromium comparison artifacts from workflow run [44480397153](https://github.com/clearfixx/chornohora/actions/runs/44480397153).
 

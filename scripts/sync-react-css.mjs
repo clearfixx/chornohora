@@ -61,10 +61,23 @@ const compositedOrbKeyframes = `@keyframes orb{
 if (!referenceCss.includes(legacyOrbKeyframes)) {
   throw new Error('Expected v22 orb keyframes changed; review the React-only optimization.');
 }
-const expected = referenceCss.replace(
+// React-only logo geometry: Next Image declares the intrinsic dimensions;
+// rendered dimensions are controlled by width and an automatic height.
+// Do not alter the frozen v22 stylesheet.
+const logoRules = [
+  ['.brand-mark{width:38px;height:38px;', '.brand-mark{width:38px;height:auto;'],
+  ['.nav .brand-mark{width:76px!important;height:38px!important;', '.nav .brand-mark{width:76px!important;height:auto!important;'],
+  ['.footer-logo img{width:72px;height:38px;', '.footer-logo img{width:72px;height:auto;'],
+  ['.route-drawer-brand img{width:70px;height:38px;', '.route-drawer-brand img{width:70px;height:auto;'],
+];
+let expected = referenceCss.replace(
   legacyTimelineSelector + '{animation-timeline:--cyc;',
   optimizedTimelineSelector + '{animation-timeline:--cyc;',
 ).replace(legacyOrbKeyframes, compositedOrbKeyframes);
+for (const [before, after] of logoRules) {
+  if (!expected.includes(before)) throw new Error('Expected v22 logo rule changed: ' + before);
+  expected = expected.replace(before, after);
+}
 const check = process.argv.includes('--check');
 let current = '';
 try {current = normalize(readFileSync(destination, 'utf8'));} catch (error) {

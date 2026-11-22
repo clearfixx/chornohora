@@ -2100,6 +2100,9 @@ try {
   await command('Emulation.setDeviceMetricsOverride', {
     width: 1440, height: 900, deviceScaleFactor: 1, mobile: false,
   });
+  // The previous check ends at a 390px touch viewport. Changing only the
+  // viewport width does not disable Chrome's touch-input emulation.
+  await command('Emulation.setTouchEmulationEnabled', {enabled: false});
   await command('Page.navigate', {url: 'http://127.0.0.1:' + port + '/uk#petros'});
   let deepLinkReady = false;
   for (let attempt = 0; attempt < 80; attempt++) {
@@ -2110,7 +2113,22 @@ try {
     await delay(150);
   }
   assert.ok(deepLinkReady, 'React deep link did not mount');
-  await delay(500);
+  // Hydration and fragment restoration may take longer than an arbitrary
+  // timeout under software rendering. Wait for the destination link to
+  // reflect actual journey progress before interacting with it.
+  let deepLinkSynchronized = false;
+  for (let attempt = 0; attempt < 80; attempt++) {
+    try {
+      deepLinkSynchronized = await evaluate(`(() => {
+        const en = document.querySelector('[data-react-journey] .nav-language a[href^="/en"]');
+        return !!en && new URL(en.href).hash === '#petros' &&
+          document.querySelector('[data-react-journey] .stop.is-active')?.dataset.peak === '4';
+      })()`);
+    } catch {}
+    if (deepLinkSynchronized) break;
+    await delay(150);
+  }
+  assert.ok(deepLinkSynchronized, 'React deep link did not synchronize its active summit and language target');
   const initial = await evaluate(`(() => {
     const styles = [...document.querySelectorAll('link[rel="stylesheet"]')]
       .map(link => new URL(link.href).pathname);

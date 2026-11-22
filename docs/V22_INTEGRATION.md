@@ -62,3 +62,11 @@ The React wheel handler now uses a standalone `journeyWheelDelta` policy with a 
 - Added regression assertions for canonical UA/EN locale hashes, drawer keyboard/focus handling and inert background, and responsive logo aspect ratio. These source assertions supplement but do not replace browser interaction and manual device checks.
 - Pending acceptance: run `pnpm test:jsx-source`, `pnpm test:v22-routes`, `pnpm check:react-assets`, `pnpm lint`, `pnpm typecheck`, `pnpm build` and `pnpm test:petros-perf:gpu` on the Windows host. Confirm responsive logo, UA/EN language switching at a scene and booking, Escape and focus restoration in the drawer, and touchpad scroll on the physical laptop.
 - Leave `main` and immutable original v22 assets alone until the user signs off.
+
+## Conditional CSS policy and browser navigation regression — 2026-11-22
+
+The canonical React and temporary native comparison share `/[locale]` but have incompatible, globally scoped stylesheets. Their stylesheet links remain conditional in the server page until comparison modes are removed or split into independent route boundaries. The `@next/next/no-css-tags` ESLint exception is documented **only** in this route file to preserve CSS isolation; it is not a general license to manually link new stylesheets. Blindly moving both stylesheets into a shared global import risks leaking legacy selectors into the React journey.
+
+The real-browser interaction suite now exercises a direct `/uk#petros` entry, checks that the EN navbar link preserves `#petros`, clicks it and verifies the resulting locale/fragment, then checks that React loads only `/react-journey.css` and `?preview=native` only `/legacy/styles.css`. Existing original iframe comparisons, scene checks, scroll behavior and responsive diagnostics remain.
+
+Acceptance on Windows: `pnpm lint`, `pnpm typecheck`, `pnpm test:jsx-source`, `pnpm build`, then `pnpm test:petros-perf:gpu`. The browser suite has to complete successfully before declaring navigation/CSS isolation accepted. No wheel or scene timing changes in this package.

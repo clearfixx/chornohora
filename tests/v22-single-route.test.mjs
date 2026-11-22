@@ -31,7 +31,8 @@ test('original and native mode use only the navbar language control', () => {
   assert.doesNotMatch(home, /<JourneyLocaleNav/);
   const navbar = readFileSync('src/features/journey/components/JourneyNavbar.tsx', 'utf8');
   assert.doesNotMatch(navbar, /query: \{preview: "react"\}/);
-  assert.match(navbar, /hash: localeDestination/);
+  assert.match(navbar, /href=\{\x60\/uk\$\{localeDestination\}\x60\}/);
+  assert.match(navbar, /href=\{\x60\/en\$\{localeDestination\}\x60\}/);
   assert.doesNotMatch(legacy, /<JourneyLocaleNav/);
 });
 test('preview mode never mounts both original runtime and port together', () => {

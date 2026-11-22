@@ -793,10 +793,27 @@ const check = async (locale, width) => {
       offset: getComputedStyle(document.querySelector('[data-react-journey] .hiker')).translate,
       route: getComputedStyle(document.querySelector('[data-react-journey] .route-ui-v6')).visibility,
       started: document.body.classList.contains('route-started'),
+      // Derive the expected stop from measured scroll progress instead of
+      // assuming a fixed stop after 36 wheel pulses. The wheel gain is
+      // intentionally tunable for physical touchpads.
+      journeyProgress: (() => {
+        const track = document.querySelector('[data-react-journey] .track');
+        const stage = track?.querySelector('.stage');
+        if (!track || !stage) return null;
+        const rect = track.getBoundingClientRect();
+        const travel = track.offsetHeight - stage.offsetHeight;
+        return travel > 0 ? Math.max(0, Math.min(1, (scrollY - (rect.top + scrollY)) / travel)) : null;
+      })(),
     }))()`);
     assert.ok(forward.scroll > 0, 'wheel did not scroll');
     assert.ok(forward.started && forward.route === 'visible', `wheel failed to reveal route: ${JSON.stringify(forward)}`);
-    assert.deepEqual(forward.progress, ['1'], `wheel not synchronized with progress: ${JSON.stringify(forward)}`);
+    assert.ok(forward.journeyProgress !== null && forward.journeyProgress >= 0.21,
+      `wheel failed to reach first route stop: ${JSON.stringify(forward)}`);
+    const expectedPeak = forward.journeyProgress >= 0.83 ? '4'
+      : forward.journeyProgress >= 0.63 ? '3'
+      : forward.journeyProgress >= 0.42 ? '2' : '1';
+    assert.deepEqual(forward.progress, [expectedPeak],
+      `wheel route marker disagrees with measured journey progress: ${JSON.stringify({forward,expectedPeak})}`);
     for (let i = 0; i < 38; i++) {
       await command('Input.dispatchMouseEvent', {
         type: 'mouseWheel', x: 600, y: 420, deltaY: -120, deltaX: 0,

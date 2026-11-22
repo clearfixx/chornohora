@@ -8,6 +8,7 @@ const clock = new Date('2026-11-22T22:30:00.000Z'); // Nov 23 in Kyiv
 const valid = () => ({
   name: 'Ірина', phone: '+380 67 123 45 67', email: 'user@example.com',
   date: '2026-11-23', people: 2, message: 'Доброго дня!', consent: true, locale: 'uk', website: '',
+  requestId: 'de31ed6c-4747-44bc-9341-142b09e2cbad',
 });
 const config = {RESEND_API_KEY: 'secret', BOOKING_FROM_EMAIL:'requests@example.com', BOOKING_TO_EMAIL:'guide@example.com'};
 
@@ -26,7 +27,7 @@ test('booking payload is normalized and validates Kyiv day, including date rollo
 test('server rejects missing consent, traps and invalid fields', () => {
   assert.deepEqual(validateBookingRequest({...valid(),consent:false}, clock),{ok:false,error:'consent'});
   assert.deepEqual(validateBookingRequest({...valid(),website:'spammer'}, clock),{ok:false,error:'spam'});
-  for(const patch of [{phone:'hello'}, {email:'broken'}, {people:13}, {people:'2'}, {locale:'xx'}, {name:'A'}, {message:'x'.repeat(2001)}]) {
+  for(const patch of [{phone:'hello'}, {email:'broken'}, {people:13}, {people:'2'}, {locale:'xx'}, {name:'A'}, {message:'x'.repeat(2001)}, {requestId:'not-a-uuid'}]) {
     assert.equal(validateBookingRequest({...valid(),...patch},clock).ok,false,JSON.stringify(patch).slice(0,40));
   }
 });
@@ -48,6 +49,7 @@ test('provider acceptance and errors are differentiated without logging PII', as
     calls++;
     assert.equal(url,'https://api.resend.com/emails');
     assert.equal(init.method,'POST');
+    assert.equal(init.headers['Idempotency-Key'], valid().requestId);
     const body=JSON.parse(init.body);
     assert.equal(body.to[0],'guide@example.com');
     assert.equal(body.reply_to,'user@example.com');

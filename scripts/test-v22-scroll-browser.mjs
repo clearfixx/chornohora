@@ -2191,6 +2191,25 @@ try {
     await delay(150);
   }
   assert.ok(switched, 'UA to EN click failed to preserve the Petros fragment');
+  // The journey-ready attribute is set while the controller mounts, BEFORE
+  // the new page's effect restores #petros. Do not race a booking scroll
+  // against that pending deep-link restoration.
+  let enRestored = false;
+  for (let attempt = 0; attempt < 80; attempt++) {
+    try {
+      enRestored = await evaluate(`(() => {
+        const en = document.querySelector('[data-react-journey] .nav-language a[href^="/en"]');
+        const active = document.querySelector('[data-react-journey] .stop.is-active')?.dataset.peak;
+        return !!en && new URL(en.href).hash === '#petros' && active === '4';
+      })()`);
+    } catch {}
+    if (enRestored) break;
+    await delay(150);
+  }
+  assert.ok(enRestored, 'EN deep-link restoration was not complete before booking test');
+  // Give the navigation effect a paint to finish after React has committed
+  // the deep-link UI. A later scroll must not be replaced by the old hash.
+  await evaluate("new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
   const enStyles = await evaluate("[...document.querySelectorAll('link[rel=\"stylesheet\"]')].map(link => new URL(link.href).pathname)");
   assert.ok(enStyles.includes('/react-journey.css') && !enStyles.includes('/legacy/styles.css'),
     'Language navigation leaked native stylesheet: ' + JSON.stringify(enStyles));
@@ -2208,6 +2227,17 @@ try {
     } catch {}
     if (bookingLinkReady) break;
     await delay(150);
+  }
+  if (!bookingLinkReady) {
+    const diagnostic = await evaluate(`(() => ({
+      url: location.href,
+      scrollY,
+      bookTop: document.getElementById('book')?.getBoundingClientRect().top,
+      ready: !!document.querySelector('[data-react-journey] .track[data-journey-ready]'),
+      active: document.querySelector('[data-react-journey] .stop.is-active')?.dataset.peak,
+      languageLinks: [...document.querySelectorAll('[data-react-journey] .nav-language a')].map(a => a.href)
+    }))()`);
+    console.error('BOOKING LINK NOT READY', JSON.stringify(diagnostic));
   }
   assert.ok(bookingLinkReady, 'Booking visibility did not update the navbar locale link');
   const beforeBookingSwitch = await evaluate(`(() => ({

@@ -69,4 +69,4 @@ For opt-in scrolling diagnostics, open `/uk?preview=react&trace=1` and inspect `
 - [Journey controller](docs/JOURNEY_CONTROLLER.md) — scroll ownership, cancellation and diagnostics
 - [Migration reference](docs/MIGRATION.md) — preserved visual/interaction requirements
 
-**Release state:** React Journey is in `main`; preserve `?preview=legacy` for comparison and rollback. Booking remains a local request-preview flow, not a server-side reservation.
+**Release state:** React Journey is in `main`; preserve `?preview=legacy` for comparison and rollback. Booking requests can now be sent to the organizer through a configured Resend email account; without server credentials the form remains a copyable draft. Provider acceptance is not a confirmed reservation. See [booking delivery](docs/BOOKING_DELIVERY.md).

@@ -206,17 +206,26 @@ test('lunar craters are present, and sunlight rays are retained for daytime', ()
   assert.match(css,/:has\(\.shooting-stars\.is-active\) \.orb \.moon-craters/);
 });
 
-test('React booking prepares a request without falsely reporting submission', () => {
+test('React booking prepares a draft before explicit server submission', () => {
   const form=readFileSync('src/features/journey/components/booking/JourneyBookingForm.tsx','utf8');
   const booking=readFileSync('src/features/journey/components/BookingSection.tsx','utf8');
-  for(const token of ['new FormData(form)','event.preventDefault()','form.reportValidity()','navigator.clipboard.writeText','setDraft(null)'])
-    assert.ok(form.includes(token),token);
-  assert.doesNotMatch(form,/fetch\(|window\.location|<form[^>]*action=/);
+  for(const token of [
+    'new FormData(form)', 'event.preventDefault()', 'form.reportValidity()',
+    'navigator.clipboard.writeText', 'setDraft(null)', 'const sendRequest = async () =>',
+    "fetch('/api/booking'", 'onClick={sendRequest}', "delivery === 'sent'",
+    'disabled={delivery === \'sending\'}',
+  ]) assert.ok(form.includes(token),token);
+  // Preparation must not issue a network request; delivery is a separate action.
+  const preparation=form.slice(form.indexOf('const onPrepare ='),form.indexOf('const summary ='));
+  assert.doesNotMatch(preparation,/fetch\(/);
+  assert.doesNotMatch(form,/window\.location|<form[^>]*action=/);
   assert.ok(booking.includes('<JourneyBookingForm />'));
   const ua=JSON.parse(readFileSync('messages/uk.json','utf8'));
   const en=JSON.parse(readFileSync('messages/en.json','utf8'));
-  for(const key of ['bookingPrepare','bookingPreviewNotice','bookingCopy','bookingNeedsBackend'])
-    assert.ok(ua.Journey[key] && en.Journey[key],key);
+  for(const key of [
+    'bookingPrepare','bookingPreviewNotice','bookingCopy','bookingSend',
+    'bookingSending','bookingSentTitle','bookingSendFailed','bookingUnavailable',
+  ]) assert.ok(ua.Journey[key] && en.Journey[key],key);
 });
 
 test('UK and EN dictionaries contain equivalent Journey keys', () => {

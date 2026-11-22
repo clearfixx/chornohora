@@ -1055,7 +1055,7 @@ const check = async (locale, width) => {
     })()`);
     assert.ok(past && !past.valid && past.min, `booking accepted past date: ${JSON.stringify(past)}`);
   }
-  // The English locale must expose its translated demo-only draft semantics.
+  // The English locale must explain that preparing an enquiry is not a confirmed booking.
   if (locale === 'en' && width === 1440) {
     const english = await evaluate(`(() => {
       const form = document.querySelector('[data-react-journey] .book form');
@@ -1068,11 +1068,11 @@ const check = async (locale, width) => {
     })()`);
     assert.equal(english.button, 'Prepare request');
     assert.equal(english.phoneLabel, 'Phone');
-    assert.ok(english.dateMin && english.warning.includes('demonstration'),
+    assert.ok(english.dateMin && english.warning.includes('Review your details before sending'),
       `English booking notice missing: ${JSON.stringify(english)}`);
   }
-  // Booking is now a real React-controlled *draft* workflow, not a fake
-  // success message. No backend request may occur or be implied.
+  // Preparing the React enquiry must not silently send it; the separate send
+  // action is responsible for delivery and reports provider failures honestly.
   if (locale === 'uk' && width === 1440) {
     const entered = await evaluate(`(() => {
       const form = document.querySelector('[data-react-journey] .book form');
@@ -1106,8 +1106,24 @@ const check = async (locale, width) => {
     assert.equal(await evaluate("document.activeElement === document.querySelector('.journey-booking-preview h3')"), true,
       'Booking preview heading should receive keyboard focus');
     assert.ok(prepared.text?.includes('+380000000000') && prepared.text.includes('3') &&
-      prepared.notice?.includes('не надіслані') && !prepared.stillForm,
+      prepared.notice?.includes('ще не надіслана') && !prepared.stillForm,
       `Booking should prepare a draft, never claim sent: ${JSON.stringify(prepared)}`);
+    // CI has no Resend credentials: the API must fail closed and keep a copyable draft.
+    await evaluate("document.querySelector('[data-react-journey] .journey-booking-actions .cta').click()");
+    await delay(250);
+    const deliveryFailedClosed = await evaluate(`(() => {
+      const preview = document.querySelector('[data-react-journey] .journey-booking-preview');
+      return {
+        status: preview?.querySelector('[role="status"]')?.textContent,
+        code: preview?.querySelector('[role="status"]')?.getAttribute('data-booking-error'),
+        title: preview?.querySelector('h3')?.textContent,
+        sendStillAvailable: !!preview?.querySelector('.journey-booking-actions .cta'),
+      };
+    })()`);
+    assert.ok(deliveryFailedClosed.status?.includes('не налаштоване') &&
+      deliveryFailedClosed.title === 'Заявка підготовлена' &&
+      deliveryFailedClosed.sendStillAvailable,
+      'Unconfigured booking API must never claim successful delivery: ' + JSON.stringify(deliveryFailedClosed));
     await evaluate("document.querySelector('[data-react-journey] .journey-booking-secondary').click()");
     await delay(130);
     const restored = await evaluate(`(() => {

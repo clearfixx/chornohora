@@ -137,7 +137,7 @@ export function JourneyBookingForm() {
       <p>{delivery === 'sent' ? t('bookingSentNotice') : t('bookingPreviewNotice')}</p>
       <label className="journey-booking-summary-label" htmlFor="journey-booking-summary">{t('bookingSummary')}</label>
       <textarea id="journey-booking-summary" readOnly value={summary} rows={7}/>
-      <p role="status" aria-live="polite">
+      <p role="status" aria-live="polite" data-booking-error={delivery === 'error' ? deliveryCode : undefined}>
         {delivery === 'sent' ? t('bookingSentStatus') :
           delivery === 'sending' ? t('bookingSending') :
           delivery === 'error' ? t(

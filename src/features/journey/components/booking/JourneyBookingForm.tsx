@@ -11,6 +11,7 @@ type RequestDraft = {
   date: string;
   people: string;
   message: string;
+  requestId: string;
 };
 
 export function JourneyBookingForm() {
@@ -60,6 +61,7 @@ export function JourneyBookingForm() {
     const nextDraft = {
       name: get('name'), phone: get('tel'), email: get('email'),
       date: get('date'), people: get('people'), message: get('message'),
+      requestId: crypto.randomUUID(),
     };
     if (!isPlausiblePhoneNumber(nextDraft.phone)) {
       const phoneInput = form.elements.namedItem('tel') as HTMLInputElement | null;

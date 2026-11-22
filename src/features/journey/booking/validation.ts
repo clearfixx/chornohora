@@ -34,6 +34,7 @@ export type BookingRequest = {
   message: string;
   consent: true;
   locale: 'uk' | 'en';
+  requestId: string;
 };
 
 type ValidationResult =
@@ -62,17 +63,19 @@ export function validateBookingRequest(input: unknown, now: Date = new Date()): 
   const message = (raw.message as string).trim();
   const people = raw.people;
   const locale = raw.locale;
+  const requestId = raw.requestId;
   if (name.length < 2 || name.length > 120 || /[\u0000-\u001F\u007F]/.test(name)) return {ok: false, error: 'invalid'};
   if (phone.length > 40 || !isPlausiblePhoneNumber(phone)) return {ok: false, error: 'invalid'};
   if (email.length > 254 || (email !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) return {ok: false, error: 'invalid'};
   if (message.length > 2000 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(message)) return {ok: false, error: 'invalid'};
   if (typeof people !== 'number' || !Number.isInteger(people) || people < 1 || people > 12) return {ok: false, error: 'invalid'};
   if (locale !== 'uk' && locale !== 'en') return {ok: false, error: 'invalid'};
+  if (typeof requestId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)) return {ok: false, error: 'invalid'};
   // Validate real calendar dates independently of the server's local timezone.
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return {ok: false, error: 'invalid'};
   const [year, month, day] = date.split('-').map(Number);
   const parsed = new Date(Date.UTC(year, month - 1, day));
   if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 ||
       parsed.getUTCDate() !== day || date < todayInKyiv(now)) return {ok: false, error: 'invalid'};
-  return {ok: true, data: {name, phone, email, date, people, message, consent: true, locale}};
+  return {ok: true, data: {name, phone, email, date, people, message, consent: true, locale, requestId}};
 }

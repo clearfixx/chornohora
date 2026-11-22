@@ -40,10 +40,21 @@ async function readLimitedBody(request: NextRequest): Promise<string | null> {
 }
 
 export async function POST(request: NextRequest) {
-  // No cross-site form submissions. The site has no authentication cookies.
+  // Validate browser fetch metadata and public Host, not request.url:
+  // Next.js can normalize its internal URL to a different hostname behind a proxy.
+  // A cross-site browser request cannot spoof Sec-Fetch-Site or Origin.
+  const site = request.headers.get('sec-fetch-site');
+  if (site && site !== 'same-origin' && site !== 'none') return result('forbidden', 403);
   const origin = request.headers.get('origin');
-  const targetOrigin = new URL(request.url).origin;
-  if (!origin || origin !== targetOrigin) return result('forbidden', 403);
+  const host = request.headers.get('host');
+  if (origin) {
+    let originHost: string;
+    try { originHost = new URL(origin).host; }
+    catch { return result('forbidden', 403); }
+    if (!host || originHost !== host) return result('forbidden', 403);
+  } else if (site !== 'same-origin') {
+    return result('forbidden', 403);
+  }
   if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) {
     return result('invalid', 415);
   }

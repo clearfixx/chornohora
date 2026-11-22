@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import {spawn, spawnSync} from 'node:child_process';
 import {once} from 'node:events';
-import {existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs';
+import {existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
@@ -29,12 +29,45 @@ if (!browser) throw new Error('Chrome/Chromium required; set CHORNOHORA_CHROME_B
 const port = 3188;
 const debugPort = 9338;
 const profile = mkdtempSync(join(tmpdir(), 'chornohora-cdp-'));
-const screenshots = join(process.cwd(), 'artifacts', 'v22-browser');
+// Browser tests run against Next's existing production output, never dev.
+// A git pull can update the app without rebuilding it, resulting in tests
+// that silently exercise stale JavaScript. Fail before starting Chromium.
+const root = process.cwd();
+const buildId = join(root, '.next', 'BUILD_ID');
+if (!existsSync(buildId)) {
+  throw new Error('Production build missing. Run pnpm build before browser tests.');
+}
+const buildTime = statSync(buildId).mtimeMs;
+const inputs = ['src', 'public', 'messages', 'next.config.ts', 'package.json', 'pnpm-lock.yaml'];
+const stale = [];
+const scan = (path) => {
+  if (!existsSync(path)) return;
+  const stats = statSync(path);
+  if (stats.isDirectory()) {
+    for (const entry of readdirSync(path, {withFileTypes: true})) {
+      if (entry.isSymbolicLink()) continue;
+      scan(join(path, entry.name));
+    }
+  } else if (stats.isFile() && stats.mtimeMs > buildTime + 1000) {
+    stale.push(path.slice(root.length + 1));
+  }
+};
+for (const input of inputs) scan(join(root, input));
+if (stale.length) {
+  throw new Error('Production build is older than application inputs (' +
+    stale.slice(0, 6).join(', ') + (stale.length > 6 ? ', ...' : '') +
+    '). Run pnpm build before browser tests.');
+}
+const screenshots = join(root, 'artifacts', 'v22-browser');
 mkdirSync(screenshots, {recursive: true});
 const geometrySamples = [];
 const framePacingSamples = [];
-const server = spawn(windows ? 'pnpm.cmd' : 'pnpm', ['start', '--port', String(port)], {
-  detached: true, stdio: 'ignore', ...(windows ? {shell: true} : {}),
+// Spawn Node directly instead of invoking pnpm.cmd via shell:true on Windows.
+// This avoids DEP0190 and makes the process tree simpler to terminate.
+const nextBin = join(root, 'node_modules', 'next', 'dist', 'bin', 'next');
+if (!existsSync(nextBin)) throw new Error('Next.js executable not found: run pnpm install.');
+const server = spawn(process.execPath, [nextBin, 'start', '--port', String(port)], {
+  detached: true, stdio: 'ignore',
 });
 const gpuOptIn = process.env.CHORNOHORA_BROWSER_GPU === '1';
 // Keep the existing deterministic software-rendered CI default. An explicit

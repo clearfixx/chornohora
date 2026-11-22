@@ -1,3 +1,9 @@
+/* eslint-disable @next/next/no-css-tags -- The shared locale route has three mutually exclusive renderers.
+ * These public stylesheets must load only for their selected preview mode.
+ * Bundling both global styles through a shared layout or import would leak
+ * v22-native styling into canonical React (and vice versa) on client navigation.
+ * Keep this narrow exception until preview modes have separate route boundaries.
+ */
 import {existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {getLocale, getTranslations} from 'next-intl/server';

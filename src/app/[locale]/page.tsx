@@ -18,8 +18,8 @@ export default async function HomePage({searchParams}: {searchParams: Promise<{p
   const t = await getTranslations('Migration');
   const hasV22Assets = existsSync(join(process.cwd(), 'public', 'legacy', 'index.html'));
   if (hasV22Assets) {
-    // Integration candidate: React owns canonical /uk and /en.
-    // Preserve isolated legacy and native comparison modes until sign-off.
+    // React owns canonical /uk and /en.
+    // Keep legacy and native comparison modes isolated for diagnostics.
     const {preview} = await searchParams;
     if (preview === 'legacy') {
       return <LegacyJourney locale={locale === 'en' ? 'en' : 'uk'} />;

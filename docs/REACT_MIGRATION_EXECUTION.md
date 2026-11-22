@@ -1,4 +1,6 @@
-# React ownership migration — execution and acceptance
+# React ownership migration — execution history
+
+> **Historical plan, completed 2026-11-22:** Canonical React Journey merged to `main` in PR #3. Items describing unfinished release gates, iframe as canonical, or active migration blockers represent earlier checkpoints. Booking remains draft-only and is a separate feature. Refer to [README](../README.md) for current status.
 
 Baseline: approved v22 in public/legacy. This source stays immutable until complete acceptance.
 

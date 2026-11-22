@@ -23,7 +23,7 @@ const hashToStop: Record<string, JourneyStopId> = {
   nesamovyte: 'nesamovyte', petros: 'petros',
 };
 
-/** Isolated experimental React preview; the approved canonical v22 is unchanged. */
+/** Canonical React Journey. The approved v22 remains isolated in preview=legacy. */
 export function ReactJourneyPreview({locale}: {locale: Locale}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [store] = useState(() => new JourneyStore());

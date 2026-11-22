@@ -4,14 +4,14 @@ Interactive illustrated journey through four Carpathian locations. The approved 
 
 ## Migration status
 
-**Integration branch:** `feat/react-journey-engine` (proposed release into `main`).
+**Current release:** React Journey merged to `main` on 2026-11-22 in [PR #3](https://github.com/clearfixx/chornohora/pull/3).
 
 - `/uk` and `/en` render the **React-owned Journey** by default. The original approved v22 remains available under `?preview=legacy` as a frozen comparison and rollback reference.
 - `/uk?preview=react` and `/en?preview=react` are diagnostic aliases of the canonical React-owned scene, traveler, navigation, drawer, location tooltips, booking **draft** and footer.
 - `?preview=native` is a legacy compatibility/comparison mode, **not** a production target.
 - The v22 reference under `public/legacy` is frozen. Preserve visual geometry, approved timing, and scene assets unless a user-approved redesign explicitly overrides the relevant reference.
 - The React booking form is **demonstration only**: local validation/preview/copy; it does not transmit requests. Server submission is deferred until migration acceptance.
-- The user accepted the current appearance and browser interaction; deployment and merge remain subject to the final green CI at the proposed commit.
+- The user accepted the current appearance and browser interaction. The migration was merged after green CI #817/#818.
 
 ## Local development
 
@@ -42,7 +42,7 @@ pnpm test:browser-scroll
 pnpm test:geometry
 ```
 
-The GitHub Actions migration workflow additionally exercises the immutable v22 source and visual-comparison checks. The later **CI runs #551, #555 and #557** passed their full jobs, including browser/scroll coverage. The #555 renderer report identifies **SwiftShader** (software rendering) rather than a physical GPU; a green software-CI benchmark is not evidence of smooth hardware-accelerated scrolling on the target device. Automated success is not equivalent to real-device acceptance; see the quality gate before changing canonical route ownership.
+The GitHub Actions quality workflow checks the canonical React route, the frozen v22 source, source/ownership contracts and browser scrolling. Exact pixel-level screenshot comparison is available as an opt-in diagnostic, not a mandatory merge gate. The later **CI runs #551, #555 and #557** passed their full jobs, including browser/scroll coverage. The #555 renderer report identifies **SwiftShader** (software rendering) rather than a physical GPU; a green software-CI benchmark is not evidence of smooth hardware-accelerated scrolling on the target device. Automated success is not equivalent to real-device acceptance; see the quality gate before changing canonical route ownership.
 
 ### Windows / hardware-allowed browser diagnostics
 
@@ -69,4 +69,4 @@ For opt-in scrolling diagnostics, open `/uk?preview=react&trace=1` and inspect `
 - [Journey controller](docs/JOURNEY_CONTROLLER.md) — scroll ownership, cancellation and diagnostics
 - [Migration reference](docs/MIGRATION.md) — preserved visual/interaction requirements
 
-**Release gate:** merge into `main` only after final CI is green; preserve `?preview=legacy` for comparison and rollback. Booking remains a local request-preview flow, not a server-side reservation.
+**Release state:** React Journey is in `main`; preserve `?preview=legacy` for comparison and rollback. Booking remains a local request-preview flow, not a server-side reservation.

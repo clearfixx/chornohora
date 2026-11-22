@@ -6,3 +6,7 @@ node_modules/
 *.tsbuildinfo
 playwright-report/
 test-results/
+
+# Generated browser diagnostics and extracted reference assets
+/artifacts/
+/public/derived-v22/

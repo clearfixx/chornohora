@@ -45,9 +45,9 @@ export function JourneyNavbar({locale, menuOpen, store}: {locale: 'uk' | 'en'; m
 <nav aria-label={t("navQuick")} className="navlinks nav-actions"><span className="nav-phone" aria-label={t("navPhone")}>+380 (44) 000-00-00</span><a className="nav-book-cta" href="#book" data-journey-action="goBook">{t("book")}</a></nav>
 
 <nav className="nav-language" aria-label={locale === 'uk' ? 'Мова' : 'Language'}>
-  <Link href={{pathname: "/", query: {preview: "react"}, hash: localeDestination}} locale="uk" aria-current={locale === 'uk' ? 'page' : undefined}>UA</Link>
+  <Link href={{pathname: "/", hash: localeDestination}} locale="uk" aria-current={locale === 'uk' ? 'page' : undefined}>UA</Link>
   <span aria-hidden="true"> / </span>
-  <Link href={{pathname: "/", query: {preview: "react"}, hash: localeDestination}} locale="en" aria-current={locale === 'en' ? 'page' : undefined}>EN</Link>
+  <Link href={{pathname: "/", hash: localeDestination}} locale="en" aria-current={locale === 'en' ? 'page' : undefined}>EN</Link>
 </nav><button type="button" aria-label={menuOpen ? t('navClose') : t('navOpen')} aria-expanded={menuOpen} aria-controls="route-drawer" className="nav-menu" data-route-menu-toggle=""><span></span><span></span><span></span></button></header>
   );
 }

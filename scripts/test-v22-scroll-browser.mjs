@@ -1068,7 +1068,7 @@ const check = async (locale, width) => {
     })()`);
     assert.equal(english.button, 'Prepare request');
     assert.equal(english.phoneLabel, 'Phone');
-    assert.ok(english.dateMin && english.warning.includes('not an instant reservation'),
+    assert.ok(english.dateMin && english.warning.includes('Review your details before sending'),
       `English booking notice missing: ${JSON.stringify(english)}`);
   }
   // Preparing the React enquiry must not silently send it; the separate send

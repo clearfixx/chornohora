@@ -16,7 +16,6 @@ const tooltipDescKeys = ['tooltipDesc1','tooltipDesc2','tooltipDesc3','tooltipDe
 const tooltipHeightKeys = ['tooltipHeight1','tooltipHeight2','tooltipHeight3','tooltipHeight4'] as const;
 const tooltipPlaceKeys = ['tooltipPlace1','tooltipPlace2','tooltipPlace3','tooltipPlace4'] as const;
 const tooltipFactKeys = ['tooltipFact1','tooltipFact2','tooltipFact3','tooltipFact4'] as const;
-const tooltipShortDescKeys = ['tooltipShortDesc1','tooltipShortDesc2','tooltipShortDesc3','tooltipShortDesc4'] as const;
 const anchors = ROUTE_STOPS.map(stop => stop.progress);
 const tooltipData = locationTooltips;
 const clamp = (n: number) => Math.min(1, Math.max(0, n));

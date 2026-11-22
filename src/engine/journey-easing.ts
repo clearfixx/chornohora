@@ -18,6 +18,18 @@ export function journeyDuration(distance: number, viewportHeight: number): numbe
   return Math.round(Math.min(4600, Math.max(2300, 1800 + screens * 780)) / 1.15);
 }
 
+/**
+ * Normalize hardware wheel/touchpad input into one predictable eased distance.
+ * A 1.5x gain makes short trackpad gestures advance the long v22 timeline
+ * without changing scene thresholds, animation keyframes or click navigation.
+ * Preserve fractional deltas for precision trackpads and bound extreme bursts.
+ */
+export function journeyWheelDelta(deltaY: number, deltaMode: number, viewportHeight: number): number {
+  if (!Number.isFinite(deltaY) || !Number.isFinite(viewportHeight) || viewportHeight <= 0) return 0;
+  const unit = deltaMode === 1 ? 16 : deltaMode === 2 ? viewportHeight : 1;
+  return Math.max(-270, Math.min(270, deltaY * unit * 1.5));
+}
+
 /** Detect an external scrollbar, focus or programmatic scroll during wheel easing. */
 export function wheelScrollWasInterrupted(actualTop: number, lastAppliedTop: number | null): boolean {
   return lastAppliedTop !== null && Number.isFinite(actualTop) &&

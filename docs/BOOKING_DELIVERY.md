@@ -15,7 +15,7 @@ Without all three settings the API returns HTTP 503 and the UI offers a copyable
 ## API contract
 
 JSON only, same-origin requests:
-`name` (2–120), `phone` (7–15 digits allowing separators), optional `email`, `date` (YYYY-MM-DD, not earlier than today in Europe/Kyiv), `people` (1–12), optional `message` (up to 2000), `locale` (`uk`/`en`), `consent: true`, optional hidden `website: ''`. Maximum JSON body size 8 KiB.
+`name` (2–120), `phone` (7–15 digits allowing separators), optional `email`, `date` (YYYY-MM-DD, not earlier than today in Europe/Kyiv), `people` (1–12), optional `message` (up to 2000), `locale` (`uk`/`en`), `consent: true`, optional hidden `website: ''`, and `requestId` (random UUID v4 generated at draft preparation). Maximum JSON body size 8 KiB. The client reuses the request ID across retry attempts and passes it to Resend as an `Idempotency-Key` to avoid duplicate provider submissions.
 
 - 200: email service accepted submission
 - 400 / 413 / 415: invalid request

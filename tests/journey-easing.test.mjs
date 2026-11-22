@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {easeInOutCubic, journeyDuration, wheelScrollWasInterrupted} from '../src/engine/journey-easing.ts';
+import {easeInOutCubic, journeyDuration, journeyWheelDelta, wheelScrollWasInterrupted} from '../src/engine/journey-easing.ts';
 
 test('navigation easing is smooth, monotonic and endpoint-exact', () => {
   assert.equal(easeInOutCubic(0), 0);
@@ -36,4 +36,16 @@ test('wheel easing yields to external jumps but tolerates pixel rounding', () =>
   assert.equal(wheelScrollWasInterrupted(981, 900), true);
   assert.equal(wheelScrollWasInterrupted(819, 900), true);
   assert.equal(wheelScrollWasInterrupted(Number.NaN, 900), false);
+});
+
+test('trackpad wheel gains distance without changing direction or overshooting huge deltas', () => {
+  assert.equal(journeyWheelDelta(20, 0, 900), 30);
+  assert.equal(journeyWheelDelta(-20, 0, 900), -30);
+  assert.equal(journeyWheelDelta(120, 0, 900), 180);
+  assert.equal(journeyWheelDelta(400, 0, 900), 270);
+  assert.equal(journeyWheelDelta(-400, 0, 900), -270);
+  assert.equal(journeyWheelDelta(10, 1, 900), 240);
+  assert.equal(journeyWheelDelta(1, 2, 900), 270);
+  assert.equal(journeyWheelDelta(0, 0, 900), 0);
+  assert.equal(journeyWheelDelta(Number.NaN, 0, 900), 0);
 });

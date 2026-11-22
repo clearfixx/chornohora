@@ -1,6 +1,6 @@
 # React Journey integration candidate
 
-Status: **feature branch only** (`feat/react-journey-engine`). Do not merge into `main` without explicit approval and acceptance checks.
+Status: **merged to `main` on 2026-11-22** via [PR #3](https://github.com/clearfixx/chornohora/pull/3), merge commit `2a0a880`. CI runs #817 and #818 passed. The user accepted the existing visual result. This document retains implementation checkpoints for historical reference; the React renderer is now canonical, while the legacy and native modes remain available for diagnostics.
 
 ## Route ownership
 

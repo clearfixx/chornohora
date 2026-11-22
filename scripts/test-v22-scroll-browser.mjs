@@ -2156,6 +2156,32 @@ try {
   const enStyles = await evaluate("[...document.querySelectorAll('link[rel=\"stylesheet\"]')].map(link => new URL(link.href).pathname)");
   assert.ok(enStyles.includes('/react-journey.css') && !enStyles.includes('/legacy/styles.css'),
     'Language navigation leaked native stylesheet: ' + JSON.stringify(enStyles));
+
+  // The navbar switches from the active summit hash to #book once the
+  // booking section is reached. Test the inverse EN → UA path as well.
+  await evaluate("document.getElementById('book').scrollIntoView({behavior:'instant',block:'start'})");
+  let bookingLinkReady = false;
+  for (let attempt = 0; attempt < 80; attempt++) {
+    try {
+      bookingLinkReady = await evaluate(`(() => {
+        const ua = document.querySelector('[data-react-journey] .nav-language a[href^="/uk"]');
+        return !!ua && new URL(ua.href).hash === '#book';
+      })()`);
+    } catch {}
+    if (bookingLinkReady) break;
+    await delay(150);
+  }
+  assert.ok(bookingLinkReady, 'Booking visibility did not update the navbar locale link');
+  await evaluate("document.querySelector('[data-react-journey] .nav-language a[href^=\"/uk\"]').click()");
+  let returnedToUk = false;
+  for (let attempt = 0; attempt < 80; attempt++) {
+    try {
+      returnedToUk = await evaluate("location.pathname === '/uk' && location.hash === '#book' && !!document.querySelector('[data-react-journey] .track[data-journey-ready]')");
+    } catch {}
+    if (returnedToUk) break;
+    await delay(150);
+  }
+  assert.ok(returnedToUk, 'EN to UA click failed to preserve the booking fragment');
   await command('Page.navigate', {url: 'http://127.0.0.1:' + port + '/uk?preview=native'});
   let nativeReady = false;
   for (let attempt = 0; attempt < 80; attempt++) {

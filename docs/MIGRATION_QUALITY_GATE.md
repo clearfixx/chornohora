@@ -1,6 +1,6 @@
 # Migration quality gate
 
-Last verified: 2026-11-20. Migration development branch: `feat/react-journey-engine` (Draft PR #2 targets `feat/nextjs-migration`).
+> **Integration candidate update (2026-11-22):** In `feat/react-journey-engine`, the canonical `/uk` and `/en` routes now render React Journey. `?preview=legacy` restores the immutable original iframe for reference; `?preview=native` retains the compatibility experiment; `?preview=react` is an accepted diagnostic alias. The older preview-first status notes below are historical checkpoints. **The integration changes have not yet passed a fresh complete lint/type/build/browser run and are not approved for merging into `main`.** The manual visual/trackpad acceptance and draft-only booking limitations remain. See `docs/V22_INTEGRATION.md` for the active route contract.\n\nLast verified: 2026-11-20. Migration development branch: `feat/react-journey-engine` (Draft PR #2 targets `feat/nextjs-migration`).
 The React extraction is under review in Draft PR #2 (`feat/react-journey-engine`).
 
 ## Current facts

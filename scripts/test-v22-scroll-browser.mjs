@@ -1902,7 +1902,12 @@ const checkReactResponsiveAndMotion = async () => {
         assert.ok(Math.abs(target.actual-target.wanted)<15,
           `Mobile route marker checkpoint not reached at ${locale}/${width}: ${JSON.stringify(target)}`);
         await delay(240);
+        // Establish keyboard position at the previous route marker, then let
+        // Chromium's real Tab handling advance focus to peak 2. Programmatic
+        // focus() alone can change activeElement without exercising the same
+        // browser input path as a user, especially in headless mobile emulation.
         const focus=await evaluate(`(() => {
+          const previous=document.querySelector('[data-react-journey] .route-ui-v6 .stop[data-peak="1"]');
           const marker=document.querySelector('[data-react-journey] .route-ui-v6 .stop[data-peak="2"]');
           window.__routeTooltipDebug=[];
           const record=event=>window.__routeTooltipDebug.push({
@@ -1913,24 +1918,30 @@ const checkReactResponsiveAndMotion = async () => {
           for(const type of ['focusin','focusout','pointerover','pointerout','scroll']) {
             window.addEventListener(type,record,true);
           }
-          // A restored page may already have the marker focused. Leave that
-          // state in a separate browser task so React can process blur before
-          // focus is re-entered; do not synthesize browser focus events.
-          if (document.activeElement === marker) marker.blur();
-          return {present:!!marker,afterBlur:document.activeElement?.tagName,
+          previous?.focus({preventScroll:true});
+          return {present:!!marker,previousFocused:document.activeElement===previous,
+            activeTag:document.activeElement?.tagName,
             actual:scrollY};
         })()`);
+        assert.ok(focus.present && focus.previousFocused,
+          `Cannot prepare mobile keyboard route focus at ${locale}/${width}: ${JSON.stringify(focus)}`);
         await delay(50);
+        await command('Input.dispatchKeyEvent',{
+          type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9,
+        });
+        await command('Input.dispatchKeyEvent',{
+          type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9,
+        });
+        await delay(80);
         const focusedMarker=await evaluate(`(() => {
           const marker=document.querySelector('[data-react-journey] .route-ui-v6 .stop[data-peak="2"]');
-          marker?.focus({preventScroll:true});
           return {focused:document.activeElement===marker,
             focusInObserved:(window.__routeTooltipDebug||[]).some(e=>e.type==='focusin' && e.peak==='2'),
-            events:(window.__routeTooltipDebug||[]).slice(-8),
+            events:(window.__routeTooltipDebug||[]).slice(-12),
             activeTag:document.activeElement?.tagName,activePeak:document.activeElement?.dataset?.peak};
         })()`);
-        assert.ok(focus.present && focusedMarker.focused,
-          `Mobile route marker cannot receive focus at ${locale}/${width}: ${JSON.stringify({focus,focusedMarker})}`);
+        assert.ok(focusedMarker.focused,
+          `Mobile Tab did not focus route marker at ${locale}/${width}: ${JSON.stringify({focus,focusedMarker})}`);
         let tip;
         for (let attempt=0;attempt<12;attempt++) {
           tip=await evaluate(`(() => {

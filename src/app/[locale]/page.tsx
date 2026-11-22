@@ -12,17 +12,17 @@ export default async function HomePage({searchParams}: {searchParams: Promise<{p
   const t = await getTranslations('Migration');
   const hasV22Assets = existsSync(join(process.cwd(), 'public', 'legacy', 'index.html'));
   if (hasV22Assets) {
-    // One canonical landing route per locale. The native port remains an
-    // explicit comparison mode until visual and interaction parity is proven.
+    // Integration candidate: React owns canonical /uk and /en.
+    // Preserve isolated legacy and native comparison modes until sign-off.
     const {preview} = await searchParams;
-    if (preview === 'react') {
-      return <><link rel="stylesheet" href="/react-journey.css" /><ReactJourneyPreview locale={locale === 'en' ? 'en' : 'uk'} /></>;
+    if (preview === 'legacy') {
+      return <LegacyJourney locale={locale === 'en' ? 'en' : 'uk'} />;
     }
     if (preview === 'native') {
       const {html, drawerHtml, inlineCss} = getV22SourceScene();
       return <><link rel="stylesheet" href="/legacy/styles.css" /><V22SourceInteraction html={html} drawerHtml={drawerHtml} inlineCss={inlineCss} locale={locale === "en" ? "en" : "uk"} /></>;
     }
-    return <LegacyJourney locale={locale === 'en' ? 'en' : 'uk'} />;
+    return <><link rel="stylesheet" href="/react-journey.css" /><ReactJourneyPreview locale={locale === 'en' ? 'en' : 'uk'} /></>;
   }
   return <main className="min-h-screen flex items-center justify-center p-8">
     <section className="max-w-xl space-y-6">

@@ -15,7 +15,7 @@ test('canonical route mounts React while legacy and native remain comparison-onl
   assert.match(home, /if \(preview === 'native'\)/);
   assert.match(home, /getV22SourceScene\(\)/);
   assert.match(home, /<V22SourceInteraction/);
-  const canonical = home.split('    return <><link rel="stylesheet" href="/react-journey.css"')[1] ? '/react-journey.css' + home.split('    return <><link rel="stylesheet" href="/react-journey.css"')[1].split(';')[0] : '';
+  const canonical = home.split('\n').find(line => line.startsWith('    return <><link rel="stylesheet" href="/react-journey.css"'));
   assert.match(canonical, /<ReactJourneyPreview/);
   assert.match(canonical, /\/react-journey\.css/);
   assert.doesNotMatch(canonical, /<LegacyJourney|<V22SourceInteraction|\/legacy\/styles\.css/);

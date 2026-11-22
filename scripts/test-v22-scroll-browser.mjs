@@ -2094,6 +2094,65 @@ try {
   await command('Page.enable');
   await command('Runtime.enable');
   for (const locale of ['uk', 'en']) for (const width of [1440, 390]) await check(locale, width);
+
+  // Verify the actual App Router language click and the isolation of the
+  // conditional, public stylesheet for the two coexisting renderers.
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1440, height: 900, deviceScaleFactor: 1, mobile: false,
+  });
+  await command('Page.navigate', {url: 'http://127.0.0.1:' + port + '/uk#petros'});
+  let deepLinkReady = false;
+  for (let attempt = 0; attempt < 80; attempt++) {
+    try {
+      deepLinkReady = await evaluate("!!document.querySelector('[data-react-journey] .track[data-journey-ready]')");
+    } catch {}
+    if (deepLinkReady) break;
+    await delay(150);
+  }
+  assert.ok(deepLinkReady, 'React deep link did not mount');
+  await delay(500);
+  const initial = await evaluate(`(() => {
+    const styles = [...document.querySelectorAll('link[rel="stylesheet"]')]
+      .map(link => new URL(link.href).pathname);
+    const en = document.querySelector('[data-react-journey] .nav-language a[href^="/en"]');
+    return {path: location.pathname, hash: location.hash,
+      enHref: en?.getAttribute('href'), styles};
+  })()`);
+  assert.equal(initial.path, '/uk');
+  assert.equal(initial.hash, '#petros');
+  assert.ok(initial.enHref && new URL(initial.enHref, 'http://localhost').hash === '#petros',
+    'React language link did not preserve current summit: ' + JSON.stringify(initial));
+  assert.ok(initial.styles.includes('/react-journey.css') &&
+    !initial.styles.includes('/legacy/styles.css'),
+    'React renderer loaded native stylesheet: ' + JSON.stringify(initial));
+  await evaluate("document.querySelector('[data-react-journey] .nav-language a[href^=\"/en\"]').click()");
+  let switched = false;
+  for (let attempt = 0; attempt < 80; attempt++) {
+    try {
+      switched = await evaluate("location.pathname === '/en' && location.hash === '#petros' && !!document.querySelector('[data-react-journey] .track[data-journey-ready]')");
+    } catch {}
+    if (switched) break;
+    await delay(150);
+  }
+  assert.ok(switched, 'UA to EN click failed to preserve the Petros fragment');
+  const enStyles = await evaluate("[...document.querySelectorAll('link[rel=\"stylesheet\"]')].map(link => new URL(link.href).pathname)");
+  assert.ok(enStyles.includes('/react-journey.css') && !enStyles.includes('/legacy/styles.css'),
+    'Language navigation leaked native stylesheet: ' + JSON.stringify(enStyles));
+  await command('Page.navigate', {url: 'http://127.0.0.1:' + port + '/uk?preview=native'});
+  let nativeReady = false;
+  for (let attempt = 0; attempt < 80; attempt++) {
+    try {
+      nativeReady = await evaluate("!!document.querySelector('[data-v22-source-scene] .track')");
+    } catch {}
+    if (nativeReady) break;
+    await delay(150);
+  }
+  assert.ok(nativeReady, 'Native comparison did not mount');
+  const nativeStyles = await evaluate("[...document.querySelectorAll('link[rel=\"stylesheet\"]')].map(link => new URL(link.href).pathname)");
+  assert.ok(nativeStyles.includes('/legacy/styles.css') && !nativeStyles.includes('/react-journey.css'),
+    'Native renderer loaded React stylesheet: ' + JSON.stringify(nativeStyles));
+  console.log('RENDERER CSS / LOCALE HASH:', JSON.stringify({initial, enStyles, nativeStyles}));
+
   await checkReactIntermediateJourney();
   await checkReactBookingFooterSeam();
   await checkReactScrollOwnershipStress();

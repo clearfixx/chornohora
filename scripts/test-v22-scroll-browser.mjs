@@ -2093,7 +2093,8 @@ try {
   });
   await command('Page.enable');
   await command('Runtime.enable');
-  for (const locale of ['uk', 'en']) for (const width of [1440, 390]) await check(locale, width);
+  const localeOnly = process.argv.includes('--locale-only');
+  if (!localeOnly) for (const locale of ['uk', 'en']) for (const width of [1440, 390]) await check(locale, width);
 
   // Verify the actual App Router language click and the isolation of the
   // conditional, public stylesheet for the two coexisting renderers.
@@ -2220,20 +2221,20 @@ try {
     'Native renderer loaded React stylesheet: ' + JSON.stringify(nativeStyles));
   console.log('RENDERER CSS / LOCALE HASH:', JSON.stringify({initial, enStyles, nativeStyles}));
 
-  await checkReactIntermediateJourney();
-  await checkReactBookingFooterSeam();
-  await checkReactScrollOwnershipStress();
-  // Renderer/FPS ablations are diagnostic, not release gates. Running them in
-  // every CI job needlessly delays feedback on real interaction regressions.
-  // Opt in explicitly on the target GPU device when measuring Petros.
-  if (process.env.CHORNOHORA_PERF_DIAGNOSTICS === '1') {
-    await checkReactFramePacing();
-    await checkReactPetrosPaintCosts();
+  if (!localeOnly) {
+    await checkReactIntermediateJourney();
+    await checkReactBookingFooterSeam();
+    await checkReactScrollOwnershipStress();
+    // Renderer/FPS ablations are diagnostic, not release gates.
+    if (process.env.CHORNOHORA_PERF_DIAGNOSTICS === '1') {
+      await checkReactFramePacing();
+      await checkReactPetrosPaintCosts();
+    }
+    await checkReactResponsiveAndMotion();
+    writeFileSync(join(screenshots, 'geometry.json'), JSON.stringify({samples: geometrySamples}, null, 2));
+    writeFileSync(join(screenshots, 'frame-pacing.json'), JSON.stringify({samples: framePacingSamples}, null, 2));
+    console.log('Saved geometry measurements:', geometrySamples.length);
   }
-  await checkReactResponsiveAndMotion();
-  writeFileSync(join(screenshots, 'geometry.json'), JSON.stringify({samples: geometrySamples}, null, 2));
-  writeFileSync(join(screenshots, 'frame-pacing.json'), JSON.stringify({samples: framePacingSamples}, null, 2));
-  console.log('Saved geometry measurements:', geometrySamples.length);
 } finally {
   ws?.close();
   const browserExit = chrome.exitCode === null ? once(chrome, 'exit') : Promise.resolve();

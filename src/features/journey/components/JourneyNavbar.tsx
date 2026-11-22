@@ -39,7 +39,7 @@ export function JourneyNavbar({locale, menuOpen, store}: {locale: 'uk' | 'en'; m
   return (
 <header className="nav">
 <a aria-label={t("navHome")} className="logo" href="#start" data-journey-action="goStart">
-<Image alt="" className="brand-mark" height="36" src="/journey/assets/chornohora-mark.svg" width="76"/>
+<Image alt="" className="brand-mark" height={81} src="/journey/assets/chornohora-mark.svg" width={243}/>
 <span className="brand-type"><b>{t("brand")}</b><small>{t("brandSmall")}</small></span>
 </a>
 <nav aria-label={t("navQuick")} className="navlinks nav-actions"><span className="nav-phone" aria-label={t("navPhone")}>+380 (44) 000-00-00</span><a className="nav-book-cta" href="#book" data-journey-action="goBook">{t("book")}</a></nav>

@@ -7,7 +7,7 @@
  * comparison mode intentionally keep working until human acceptance.
  */
 import {existsSync, readFileSync} from 'node:fs';
-import {dirname, extname, join, normalize, resolve, relative} from 'node:path';
+import {dirname, extname, isAbsolute, join, normalize, resolve, relative, sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -29,7 +29,10 @@ export function resolveLocalImport(from, specifier) {
     : specifier.startsWith('.') ? resolve(dirname(from), specifier) : null;
   if (!base) return null;
   const normalized = normalize(base);
-  if (!(normalized === root || normalized.startsWith(root + '/'))) {
+  // Compare relative paths using the host OS separator. On Windows, the
+  // previous root + '/' prefix rejected valid @/ imports (backslash paths).
+  const withinRoot = relative(root, normalized);
+  if (withinRoot === '..' || withinRoot.startsWith('..' + sep) || isAbsolute(withinRoot)) {
     throw Error('Source import escapes src/: ' + specifier + ' from ' + relative(project, from));
   }
   for (const suffix of ['', ...allowedSuffixes]) {

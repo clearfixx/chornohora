@@ -1115,6 +1115,7 @@ const check = async (locale, width) => {
       const preview = document.querySelector('[data-react-journey] .journey-booking-preview');
       return {
         status: preview?.querySelector('[role="status"]')?.textContent,
+        code: preview?.querySelector('[role="status"]')?.getAttribute('data-booking-error'),
         title: preview?.querySelector('h3')?.textContent,
         sendStillAvailable: !!preview?.querySelector('.journey-booking-actions .cta'),
       };

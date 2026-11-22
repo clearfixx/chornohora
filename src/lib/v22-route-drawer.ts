@@ -70,7 +70,8 @@ export function mountV22RouteDrawer(controller: V22ScrollController): () => void
     const toggle = target.closest('[data-route-menu-toggle]');
     if (toggle) {
       e.preventDefault();
-      isOpen() ? close() : open();
+      if (isOpen()) close();
+      else open();
       return;
     }
     const dismiss = target.closest('[data-route-menu-close]');

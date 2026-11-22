@@ -99,11 +99,32 @@ test('the supplied logo retains its intrinsic aspect ratio at all breakpoints', 
   const css = readFileSync('public/react-journey.css', 'utf8');
   for (const component of ['JourneyNavbar', 'JourneyDrawer', 'JourneyFooter']) {
     const source = readFileSync('src/features/journey/components/' + component + '.tsx', 'utf8');
-    assert.match(source, /chornohora-mark\.svg"[^>]*width=\{243\}[^>]*height=\{81\}|chornohora-mark\.svg"[^>]*height=\{81\}[^>]*width=\{243\}/,
-      component + ' should declare source SVG dimensions');
+    const logo = source.match(/<Image\b[^>]*chornohora-mark\.svg[^>]*\/>/);
+    assert.ok(logo, component + ' must render the supplied SVG');
+    assert.match(logo[0], /width=\{243\}/, component + ' must declare intrinsic width');
+    assert.match(logo[0], /height=\{81\}/, component + ' must declare intrinsic height');
   }
   for (const selector of ['.brand-mark', '.nav .brand-mark', '.footer-logo img', '.route-drawer-brand img']) {
-    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\test('the imported JSX monolith is split into cohesive scene and page components', () => {');
+    const rule = css.split(selector + '{')[1]?.split('}')[0];
+    assert.ok(rule, 'Missing logo selector ' + selector);
+    assert.match(rule, /height:auto(?:!important)?/, 'Logo height must stay automatic: ' + selector);
+  }
+  assert.doesNotMatch(css, /\.nav \.brand-mark\{[^}]*height:\d+px/,
+    'responsive navbar must not stretch the SVG');
+});
+
+test('React locale links remain canonical and preserve the selected section hash', () => {
+  const navbar = readFileSync('src/features/journey/components/JourneyNavbar.tsx', 'utf8');
+  assert.match(navbar, /const localeDestination = bookingReached \? '#book' : sectionHash/);
+  assert.match(navbar, /hash: localeDestination/);
+  assert.match(navbar, /locale="uk"/);
+  assert.match(navbar, /locale="en"/);
+  assert.doesNotMatch(navbar, /preview=react|preview: ["']react["']/);
+  assert.match(navbar, /aria-current=\{locale === 'uk'/);
+  assert.match(navbar, /aria-current=\{locale === 'en'/);
+});
+
+test('the imported JSX monolith is split into cohesive scene and page components', () => {');
     const match = css.match(new RegExp(escaped + '\\{[^}]+\\}'));
     assert.ok(match, 'Missing logo selector ' + selector);
     assert.match(match[0], /height:auto(?:!important)?/, 'Logo height should be automatic: ' + selector);

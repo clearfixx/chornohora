@@ -42,6 +42,7 @@ export async function deliverBookingRequest(
       headers: {
         authorization: 'Bearer ' + config.apiKey,
         'content-type': 'application/json',
+        'Idempotency-Key': data.requestId,
       },
       body: JSON.stringify({
         from: config.from,

@@ -124,6 +124,22 @@ test('React locale links remain canonical and preserve the selected section hash
   assert.match(navbar, /aria-current=\{locale === 'en'/);
 });
 
+test('drawer remains inert when closed and keyboard focus is contained while open', () => {
+  const drawer = readFileSync('src/features/journey/components/JourneyDrawer.tsx', 'utf8');
+  const preview = readFileSync('src/components/journey/ReactJourneyPreview.tsx', 'utf8');
+  const navbar = readFileSync('src/features/journey/components/JourneyNavbar.tsx', 'utf8');
+  assert.match(drawer, /aria-hidden=\{!open\} inert=\{!open\}/);
+  assert.match(drawer, /aria-modal=\{open \? true : undefined\}/);
+  assert.match(navbar, /aria-expanded=\{menuOpen\}/);
+  assert.match(navbar, /aria-controls="route-drawer"/);
+  assert.match(preview, /event\.key === 'Escape'/);
+  assert.match(preview, /event\.key === 'Tab'/);
+  assert.match(preview, /document\.addEventListener\('focusin', onFocusIn\)/);
+  assert.match(preview, /focusReturnRef\.current = document\.querySelector/);
+  assert.match(preview, /target\?\.isConnected\) target\.focus\(\{preventScroll: true\}\)/);
+  assert.match(preview, /inert=\{menuOpen\}/);
+});
+
 test('the imported JSX monolith is split into cohesive scene and page components', () => {');
     const match = css.match(new RegExp(escaped + '\\{[^}]+\\}'));
     assert.ok(match, 'Missing logo selector ' + selector);

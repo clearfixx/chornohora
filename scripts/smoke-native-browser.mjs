@@ -1,5 +1,5 @@
 /**
- * Browser-level smoke check for both canonical and native comparison modes.
+ * Browser-level smoke check for canonical React and isolated legacy/native comparison modes.
  * Runs against the production Next.js build with installed Chrome/Chromium.
  * No snapshots are accepted as visual parity evidence.
  */
@@ -46,7 +46,7 @@ async function dump(path) {
 try {
   await ready();
   for (const locale of ['uk', 'en']) {
-    const original = await dump(`/${locale}`);
+    const original = await dump(`/${locale}?preview=legacy`);
     assert.match(original, /legacy-journey__frame/, `missing original iframe in ${locale}`);
     assert.match(original, /legacy\/index\.html/, `original asset missing in ${locale}`);
     const native = await dump(`/${locale}?preview=native`);
@@ -54,15 +54,17 @@ try {
       assert.ok(native.includes(token), `native ${locale} missing ${token}`);
     }
     assert.ok(!native.includes('legacy-journey__frame'), 'native comparison must not mount iframe');
-    const react = await dump(`/${locale}?preview=react`);
+    const react = await dump(`/${locale}`);
     assert.ok(react.includes('class="track"') && react.includes('class="stage"'), 'React JSX stage missing');
     assert.ok(!react.includes('legacy-journey__frame'), 'React preview must not use iframe');
     assert.ok(react.includes('/react-journey.css'), 'React standalone stylesheet must be linked externally');
     assert.ok(!react.includes('href="/legacy/styles.css"') && !react.includes('href="/v22-react-scene.css"'),
       'React must not load frozen legacy CSS as a separate runtime dependency');
     assert.ok(!react.includes('<style>/* cyrillic-ext */'), 'React preview must not embed legacy CSS as inline style');
-    assert.ok((react.match(/preview=react/g) || []).length >= 2,
-      'language switch must retain the experimental React preview');
+    assert.ok(!react.includes('preview=react'),
+      'canonical React language links must not add preview query parameters');
+    assert.ok(react.includes('href="/uk') && react.includes('href="/en'),
+      'canonical React language links must target the locale routes');
 
     if(locale === 'en') {
       for(const value of ['A day on the ridge','The sun greets you first','Morning again','Reserve your place on the ridge']){
@@ -72,7 +74,7 @@ try {
     } else {
       assert.ok(react.includes('Сонце зустрічає вас першим'), 'Ukrainian scene copy missing');
     }
-    console.log(`Browser smoke OK: /${locale} and /${locale}?preview=native`);
+    console.log(`Browser smoke OK: /${locale} canonical React, legacy and native comparisons`);
   }
 } finally {
   // pnpm launches Next.js as a child process; terminate the entire group.

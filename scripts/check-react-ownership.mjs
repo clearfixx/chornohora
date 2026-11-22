@@ -61,12 +61,12 @@ export function scanReactImports(start = entry) {
     }
   }
   const page = readFileSync(join(root, 'app/[locale]/page.tsx'), 'utf8');
-  const reactBranch = page.split("if (preview === 'react')")[1]?.split("if (preview === 'native')")[0];
-  if (!reactBranch) issues.push('React preview branch missing from server page');
+  const reactBranch = page.split("if (preview === 'native')")[1]?.split('return <main')[0];
+  if (!reactBranch) issues.push('Canonical React branch missing from server page');
   else {
     if (!reactBranch.includes('ReactJourneyPreview')) issues.push('React route does not mount its React component');
     if (/LegacyJourney|V22SourceInteraction|getV22SourceScene|\/legacy\/styles\.css|<iframe\b/.test(reactBranch)) {
-      issues.push('React page branch imports legacy HTML, styles or iframe runtime');
+      issues.push('Canonical React branch imports legacy HTML, styles or iframe runtime');
     }
   }
   return {files:[...checked].map(file => relative(project,file).replaceAll('\\','/')).sort(), issues};

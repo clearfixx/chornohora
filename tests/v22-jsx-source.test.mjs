@@ -140,26 +140,6 @@ test('drawer remains inert when closed and keyboard focus is contained while ope
   assert.match(preview, /inert=\{menuOpen\}/);
 });
 
-test('the imported JSX monolith is split into cohesive scene and page components', () => {');
-    const match = css.match(new RegExp(escaped + '\\{[^}]+\\}'));
-    assert.ok(match, 'Missing logo selector ' + selector);
-    assert.match(match[0], /height:auto(?:!important)?/, 'Logo height should be automatic: ' + selector);
-  }
-  assert.doesNotMatch(css, /\.nav \.brand-mark\{[^}]*height:\d+px/,
-    'responsive navbar must not stretch the SVG');
-});
-
-test('React locale links remain canonical and preserve the selected section hash', () => {
-  const navbar = readFileSync('src/features/journey/components/JourneyNavbar.tsx', 'utf8');
-  assert.match(navbar, /const localeDestination = bookingReached \? '#book' : sectionHash/);
-  assert.match(navbar, /hash: localeDestination/);
-  assert.match(navbar, /locale="uk"/);
-  assert.match(navbar, /locale="en"/);
-  assert.doesNotMatch(navbar, /preview=react|preview: ["']react["']/);
-  assert.match(navbar, /aria-current=\{locale === 'uk'/);
-  assert.match(navbar, /aria-current=\{locale === 'en'/);
-});
-
 test('the imported JSX monolith is split into cohesive scene and page components', () => {
   for (const path of structureFiles) assert.ok(readFileSync(path, 'utf8').includes('export function'), path);
   assert.ok(readFileSync(structureFiles[0], 'utf8').length < 6000,

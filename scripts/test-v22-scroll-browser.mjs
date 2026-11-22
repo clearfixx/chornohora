@@ -863,18 +863,35 @@ const check = async (locale, width) => {
     const after = await evaluate('window.scrollY');
     assert.ok(after > reactGeometry.top + reactGeometry.travel + 60,
       `wheel stuck in Petros scene: ${JSON.stringify({start, after, boundary: reactGeometry.top + reactGeometry.travel, pageMax})}`);
-    // At the seam, a single wheel impulse must not suddenly accelerate:
-    // measure equal input from either side without changing scroll policy.
-    await evaluate(`window.scrollTo({top: ${reactGeometry.top + reactGeometry.travel - 260}, behavior: 'instant'})`);
-    await delay(150);
-    const beforeSeam = await evaluate('window.scrollY');
+    // At the seam, compare two isolated wheel impulses. A preceding burst
+    // can leave pending easing/momentum; measuring before scrollY settles
+    // compares different gesture states instead of different page regions.
+    // Do not relax the existing 35px seam-speed assertion.
+    const awaitScrollIdle = async (phase) => {
+      let previous = await evaluate('window.scrollY');
+      let stable = 0;
+      const samples = [previous];
+      for (let attempt = 0; attempt < 45; attempt++) {
+        await delay(100);
+        const current = await evaluate('window.scrollY');
+        samples.push(current);
+        stable = Math.abs(current - previous) < 0.5 ? stable + 1 : 0;
+        if (stable >= 4) return current;
+        previous = current;
+      }
+      throw new Error('Scroll did not settle before seam measurement (' + phase + '): ' + JSON.stringify(samples));
+    };
+    await awaitScrollIdle('after burst');
+    const seamCheckpoint = reactGeometry.top + reactGeometry.travel - 260;
+    await evaluate(`window.scrollTo({top: ${seamCheckpoint}, behavior: 'instant'})`);
+    const beforeSeam = await awaitScrollIdle('checkpoint');
+    assert.ok(Math.abs(beforeSeam - seamCheckpoint) < 3,
+      'Seam checkpoint did not stabilize: ' + JSON.stringify({beforeSeam, seamCheckpoint}));
     await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x: 600, y: 420, deltaY: 120, deltaX: 0});
-    await delay(550);
-    const onSeam = await evaluate('window.scrollY');
+    const onSeam = await awaitScrollIdle('first impulse');
     const firstStep = onSeam - beforeSeam;
     await command('Input.dispatchMouseEvent', {type: 'mouseWheel', x: 600, y: 420, deltaY: 120, deltaX: 0});
-    await delay(550);
-    const afterSeam = await evaluate('window.scrollY');
+    const afterSeam = await awaitScrollIdle('second impulse');
     const secondStep = afterSeam - onSeam;
     assert.ok(firstStep > 50 && secondStep > 50, 'wheel stalled at transition to booking');
     assert.ok(Math.abs(firstStep - secondStep) < 35,

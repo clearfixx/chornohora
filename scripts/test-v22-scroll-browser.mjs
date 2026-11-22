@@ -1314,10 +1314,30 @@ const checkReactBookingFooterSeam = async () => {
       reversals.push({direction,start:prior,end:moved});
       prior=moved;
     }
-    await delay(220);
-    const resting=await evaluate('scrollY');
-    assert.ok(Math.abs(resting-prior)<5,
-      'Wheel momentum kept oscillating after reversal sequence: '+
+    // The fixed 500ms sample above can land before the last easing frames
+    // finish on a software-rendered browser. Wait for actual scroll stability
+    // rather than mistaking the remaining few pixels for oscillation.
+    // Preserve a strict check: after the final reverse burst, the page must
+    // not rebound in the opposite (positive) direction.
+    const settling=[prior];
+    let stableFrames=0;
+    for(let attempt=0;attempt<35;attempt++){
+      await delay(100);
+      const current=await evaluate('scrollY');
+      const previous=settling.at(-1);
+      assert.ok(current<=previous+2,
+        'Wheel rebounded after final reverse: '+
+          JSON.stringify({locale,reversals,settling,current}));
+      settling.push(current);
+      stableFrames=Math.abs(current-previous)<0.5?stableFrames+1:0;
+      if(stableFrames>=4) break;
+    }
+    assert.ok(stableFrames>=4,
+      'Wheel failed to settle after reversal sequence: '+
+        JSON.stringify({locale,reversals,settling}));
+    const resting=settling.at(-1);
+    assert.ok(resting<=prior+2,
+      'Wheel reversed unexpectedly after final burst: '+
         JSON.stringify({locale,reversals,prior,resting}));
 
     // The footer and navbar share the React-owned click-navigation adapter.

@@ -30,7 +30,7 @@ test('local aliases and relatives resolve only within src', () => {
   assert.ok(resolveLocalImport(from,'./ReactJourneyMotion')?.endsWith('ReactJourneyMotion.tsx'));
   assert.equal(resolveLocalImport(from,'react'),null);
   assert.throws(() => resolveLocalImport(from,'../../../../outside-file'), /escapes src/);
-  assert.throws(() => resolveLocalImport(from,'../../other-project/file'), /escapes src/);
+  assert.throws(() => resolveLocalImport(from,'../../../other-project/file'), /escapes src/);
 });
 
 

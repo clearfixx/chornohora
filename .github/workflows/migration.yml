@@ -1,0 +1,65 @@
+name: Next.js migration checks
+on:
+  pull_request:
+    branches: [main, feat/nextjs-migration]
+  push:
+    branches: [feat/nextjs-migration, feat/react-journey-engine]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test:journey
+      - run: pnpm test:source
+      - run: pnpm check:react-css
+      - run: pnpm check:react-assets
+      - run: pnpm check:react-ownership
+      - run: pnpm test:react-ownership
+      - run: pnpm test:jsx-source
+      - run: pnpm test:v22-scroll
+      - run: pnpm test:v22-drawer
+      - run: pnpm test:v22-scene
+      - run: pnpm test:v22-navigation
+      - run: pnpm test:v22-ui
+      - run: pnpm test:v22-ui-fixes
+      - run: pnpm test:v22-booking
+      - run: pnpm test:v22-dom
+      - run: pnpm test:v22-routes
+      - run: pnpm inventory:v22
+      - run: pnpm extract:v22-svg
+      - name: Audit approved v22 resources when present
+        run: |
+          if test -f public/legacy/index.html; then
+            pnpm audit:v22
+          else
+            echo "::warning::Approved v22 source files are not committed; visual parity remains blocked."
+          fi
+      - run: pnpm test:v22-ghost
+      - run: pnpm build
+      - run: pnpm test:browser
+      - run: pnpm test:browser-scroll
+      - run: pnpm test:geometry
+      - name: Compare v22 and native screenshots pixel by pixel
+        run: |
+          python3 -m venv /tmp/chornohora-visual-venv
+          /tmp/chornohora-visual-venv/bin/pip install Pillow==11.3.0
+          /tmp/chornohora-visual-venv/bin/python scripts/compare-v22-pixels.py
+      - name: Upload v22 original/native comparison screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v22-browser-comparison
+          path: artifacts/v22-browser/*
+          if-no-files-found: warn
+          retention-days: 14

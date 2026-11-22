@@ -1,12 +1,72 @@
 # Чорногора — Чотири неба
 
-Illustrated mountain journey landing page. Migrating the approved v22 prototype to Next.js, TypeScript, Motion, and UA/EN localization with `next-intl`.
+Interactive illustrated journey through four Carpathian locations. The approved **v22** remains an immutable visual and behavioral reference while the landing is migrated to **Next.js 16 / React 19 / TypeScript** with `next-intl` (UA/EN), Motion and pnpm.
 
-## Development policy
+## Migration status
 
-- Keep `main` stable; implement migration in feature branches and review by pull request.
-- The approved v22 HTML is the visual and interaction reference; do not redesign it during migration.
-- Preserve seamless scenery, walker/tree occlusion, progress synchronization, and the approved right-side 3D menu.
-- Production Vercel deployment follows completed migration, browser regression tests, and a successful build.
+**Integration branch:** `feat/react-journey-engine` (proposed release into `main`).
 
-**Status:** migration in progress; not deployed. See the migration branch for initial app setup.
+- `/uk` and `/en` render the **React-owned Journey** by default. The original approved v22 remains available under `?preview=legacy` as a frozen comparison and rollback reference.
+- `/uk?preview=react` and `/en?preview=react` are diagnostic aliases of the canonical React-owned scene, traveler, navigation, drawer, location tooltips, booking **draft** and footer.
+- `?preview=native` is a legacy compatibility/comparison mode, **not** a production target.
+- The v22 reference under `public/legacy` is frozen. Preserve visual geometry, approved timing, and scene assets unless a user-approved redesign explicitly overrides the relevant reference.
+- The React booking form is **demonstration only**: local validation/preview/copy; it does not transmit requests. Server submission is deferred until migration acceptance.
+- The user accepted the current appearance and browser interaction; deployment and merge remain subject to the final green CI at the proposed commit.
+
+## Local development
+
+Prerequisites: Node.js 22, pnpm 11.9.0, Chromium for browser tests.
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+Open `http://localhost:3000/uk` or `/en` for the canonical React Journey. Use `?preview=legacy` to inspect the preserved reference.
+
+## Quality gates
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:journey
+pnpm check:react-css
+pnpm check:react-assets
+pnpm check:react-ownership
+pnpm test:react-ownership
+pnpm test:jsx-source
+pnpm build
+pnpm test:browser
+pnpm test:browser-scroll
+pnpm test:geometry
+```
+
+The GitHub Actions migration workflow additionally exercises the immutable v22 source and visual-comparison checks. The later **CI runs #551, #555 and #557** passed their full jobs, including browser/scroll coverage. The #555 renderer report identifies **SwiftShader** (software rendering) rather than a physical GPU; a green software-CI benchmark is not evidence of smooth hardware-accelerated scrolling on the target device. Automated success is not equivalent to real-device acceptance; see the quality gate before changing canonical route ownership.
+
+### Windows / hardware-allowed browser diagnostics
+
+The Chromium scroll suite supports Chrome or Edge on Windows (standard install locations) and an explicit `CHORNOHORA_CHROME_BIN` executable path. In PowerShell:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm build
+$env:CHORNOHORA_BROWSER_GPU = "1"
+$env:CHORNOHORA_PERF_DIAGNOSTICS = "1"
+# Optional if Chrome/Edge is installed outside standard locations:
+# $env:CHORNOHORA_CHROME_BIN = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+pnpm test:browser-scroll
+```
+
+The default suite tests navigation, responsive layout, and scroll regressions without running time-consuming paint ablations. Setting `CHORNOHORA_PERF_DIAGNOSTICS=1` additionally captures FPS metrics, responsive aurora comparisons, and `artifacts/v22-browser/petros-paint-ablation.json` (including WebGL renderer). **GPU allowed does not guarantee hardware acceleration**: check the reported renderer and treat SwiftShader as software fallback. Never use a green automated run alone to approve a canonical route switch.
+
+For opt-in scrolling diagnostics, open `/uk?preview=react&trace=1` and inspect `window.__journeyTrace?.()` in browser DevTools; no production telemetry is sent.
+
+## Documentation
+
+- [Migration quality gate](docs/MIGRATION_QUALITY_GATE.md) — current acceptance checklist and constraints
+- [React execution plan](docs/REACT_MIGRATION_EXECUTION.md) — implementation, debt ledger and parity checkpoints
+- [Journey controller](docs/JOURNEY_CONTROLLER.md) — scroll ownership, cancellation and diagnostics
+- [Migration reference](docs/MIGRATION.md) — preserved visual/interaction requirements
+
+**Release gate:** merge into `main` only after final CI is green; preserve `?preview=legacy` for comparison and rollback. Booking remains a local request-preview flow, not a server-side reservation.

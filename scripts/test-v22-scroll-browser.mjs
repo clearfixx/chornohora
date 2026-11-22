@@ -2172,6 +2172,13 @@ try {
     await delay(150);
   }
   assert.ok(bookingLinkReady, 'Booking visibility did not update the navbar locale link');
+  const beforeBookingSwitch = await evaluate(`(() => ({
+    url: location.href,
+    bookTop: document.getElementById('book')?.getBoundingClientRect().top,
+    link: document.querySelector('[data-react-journey] .nav-language a[href^="/uk"]')?.href,
+    ready: !!document.querySelector('[data-react-journey] .track[data-journey-ready]'),
+    active: document.querySelector('[data-react-journey] .stop.is-active')?.dataset.peak,
+  }))()`);
   await evaluate("document.querySelector('[data-react-journey] .nav-language a[href^=\"/uk\"]').click()");
   let returnedToUk = false;
   for (let attempt = 0; attempt < 80; attempt++) {
@@ -2180,6 +2187,22 @@ try {
     } catch {}
     if (returnedToUk) break;
     await delay(150);
+  }
+  if (!returnedToUk) {
+    const afterBookingSwitch = await evaluate(`(() => ({
+      url: location.href,
+      path: location.pathname,
+      hash: location.hash,
+      ready: !!document.querySelector('[data-react-journey] .track[data-journey-ready]'),
+      reactMounted: !!document.querySelector('[data-react-journey]'),
+      nativeMounted: !!document.querySelector('[data-v22-source-scene] .track'),
+      title: document.title,
+      navLinks: [...document.querySelectorAll('[data-react-journey] .nav-language a')].map(el => el.href),
+      bookTop: document.getElementById('book')?.getBoundingClientRect().top,
+      styles: [...document.querySelectorAll('link[rel="stylesheet"]')].map(el => new URL(el.href).pathname),
+      body: document.body?.innerText?.slice(0, 250),
+    }))()`);
+    console.error('BOOKING LOCALE SWITCH FAILURE', JSON.stringify({beforeBookingSwitch, afterBookingSwitch}));
   }
   assert.ok(returnedToUk, 'EN to UA click failed to preserve the booking fragment');
   await command('Page.navigate', {url: 'http://127.0.0.1:' + port + '/uk?preview=native'});

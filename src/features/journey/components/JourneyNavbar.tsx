@@ -2,7 +2,6 @@ import {useEffect, useState, useSyncExternalStore} from 'react';
 import type {JourneyStore} from '@/engine/journey-store';
 import {useTranslations} from 'next-intl';
 import Image from 'next/image';
-import {Link} from '@/i18n/navigation';
 
 export function JourneyNavbar({locale, menuOpen, store}: {locale: 'uk' | 'en'; menuOpen: boolean; store: JourneyStore}) {
   const t = useTranslations('Journey');
@@ -36,6 +35,10 @@ export function JourneyNavbar({locale, menuOpen, store}: {locale: 'uk' | 'en'; m
     () => '#start',
   );
   const localeDestination = bookingReached ? '#book' : sectionHash;
+  // Use a real document navigation for locale changes. Next.js client routing
+  // may append the destination fragment to the existing journey fragment
+  // (e.g. #petros#book) instead of replacing it on a cross-locale transition.
+  // A canonical URL also lets the destination scene restore its own hash.
   return (
 <header className="nav">
 <a aria-label={t("navHome")} className="logo" href="#start" data-journey-action="goStart">
@@ -45,9 +48,9 @@ export function JourneyNavbar({locale, menuOpen, store}: {locale: 'uk' | 'en'; m
 <nav aria-label={t("navQuick")} className="navlinks nav-actions"><span className="nav-phone" aria-label={t("navPhone")}>+380 (44) 000-00-00</span><a className="nav-book-cta" href="#book" data-journey-action="goBook">{t("book")}</a></nav>
 
 <nav className="nav-language" aria-label={locale === 'uk' ? 'Мова' : 'Language'}>
-  <Link href={{pathname: "/", hash: localeDestination}} locale="uk" aria-current={locale === 'uk' ? 'page' : undefined}>UA</Link>
+  <a href={`/uk${localeDestination}`} aria-current={locale === 'uk' ? 'page' : undefined}>UA</a>
   <span aria-hidden="true"> / </span>
-  <Link href={{pathname: "/", hash: localeDestination}} locale="en" aria-current={locale === 'en' ? 'page' : undefined}>EN</Link>
+  <a href={`/en${localeDestination}`} aria-current={locale === 'en' ? 'page' : undefined}>EN</a>
 </nav><button type="button" aria-label={menuOpen ? t('navClose') : t('navOpen')} aria-expanded={menuOpen} aria-controls="route-drawer" className="nav-menu" data-route-menu-toggle=""><span></span><span></span><span></span></button></header>
   );
 }

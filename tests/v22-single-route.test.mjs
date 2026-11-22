@@ -9,11 +9,16 @@ test('each locale has one landing route, not parallel source pages', () => {
   assert.equal(existsSync('src/app/[locale]/source-interactive/page.tsx'), false);
   assert.match(home, /preview === 'native'/);
 });
-test('default canonical landing preserves the approved original', () => {
+test('canonical route mounts React while legacy and native remain comparison-only', () => {
+  assert.match(home, /if \(preview === 'legacy'\)/);
   assert.match(home, /return <LegacyJourney locale=/);
   assert.match(home, /if \(preview === 'native'\)/);
   assert.match(home, /getV22SourceScene\(\)/);
   assert.match(home, /<V22SourceInteraction/);
+  const canonical = home.split("if (preview === 'native')")[1]?.split('return <main')[0] ?? '';
+  assert.match(canonical, /<ReactJourneyPreview/);
+  assert.match(canonical, /\/react-journey\.css/);
+  assert.doesNotMatch(canonical, /<LegacyJourney|<V22SourceInteraction|\/legacy\/styles\.css/);
 });
 test('original and native mode use only the navbar language control', () => {
   const nav = readFileSync('src/lib/v22-language-nav.ts', 'utf8');
@@ -24,6 +29,9 @@ test('original and native mode use only the navbar language control', () => {
   assert.match(legacy, /mountV22LanguageNav/);
   assert.match(native, /mountV22LanguageNav/);
   assert.doesNotMatch(home, /<JourneyLocaleNav/);
+  const navbar = readFileSync('src/features/journey/components/JourneyNavbar.tsx', 'utf8');
+  assert.doesNotMatch(navbar, /query: \{preview: "react"\}/);
+  assert.match(navbar, /hash: localeDestination/);
   assert.doesNotMatch(legacy, /<JourneyLocaleNav/);
 });
 test('preview mode never mounts both original runtime and port together', () => {

@@ -2,7 +2,7 @@
 
 import {useEffect, useRef, useState, type FormEvent} from 'react';
 import {isPlausiblePhoneNumber, isValidFutureOrTodayDate, localISODate} from '@/features/journey/booking/validation';
-import {useTranslations} from 'next-intl';
+import {useLocale, useTranslations} from 'next-intl';
 
 type RequestDraft = {
   name: string;
@@ -15,12 +15,17 @@ type RequestDraft = {
 
 export function JourneyBookingForm() {
   const t = useTranslations('Journey');
+  const locale = useLocale();
   const formRef = useRef<HTMLFormElement>(null);
   const previewTitleRef = useRef<HTMLHeadingElement>(null);
   const returnFocusToForm = useRef(false);
   const [draft, setDraft] = useState<RequestDraft | null>(null);
   const [savedDraft, setSavedDraft] = useState<RequestDraft | null>(null);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [delivery, setDelivery] = useState<'ready' | 'sending' | 'sent' | 'error'>('ready');
+  const [deliveryCode, setDeliveryCode] = useState('');
+  const submitting = useRef(false);
+  const [honeypot, setHoneypot] = useState('');
   useEffect(() => {
     // Set a browser-local minimum after hydration; no server/client date
     // mismatch, nor a state update just to configure a native input.
@@ -40,6 +45,9 @@ export function JourneyBookingForm() {
     returnFocusToForm.current = true;
     if (fresh) setSavedDraft(null);
     setCopyState('idle');
+    setDelivery('ready');
+    setDeliveryCode('');
+    submitting.current = false;
     setDraft(null);
   };
 
@@ -68,6 +76,8 @@ export function JourneyBookingForm() {
     setSavedDraft(nextDraft);
     setDraft(nextDraft);
     setCopyState('idle');
+    setDelivery('ready');
+    setDeliveryCode('');
   };
   const summary = draft ? [
     t('bookingSummary'),
@@ -89,23 +99,66 @@ export function JourneyBookingForm() {
     }
   };
 
+  const sendRequest = async () => {
+    if (!draft || submitting.current || delivery === 'sent') return;
+    submitting.current = true;
+    setDelivery('sending');
+    setDeliveryCode('');
+    try {
+      const response = await fetch('/api/booking', {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        cache: 'no-store',
+        body: JSON.stringify({
+          ...draft, people: Number(draft.people), consent: true,
+          locale: locale === 'en' ? 'en' : 'uk', website: honeypot,
+        }),
+      });
+      if (!response.ok) {
+        const error: {code?: string} = await response.json().catch(() => ({}));
+        setDeliveryCode(error.code ?? 'delivery_failed');
+        setDelivery('error');
+        return;
+      }
+      setDelivery('sent');
+    } catch {
+      setDeliveryCode('delivery_failed');
+      setDelivery('error');
+    } finally {
+      submitting.current = false;
+    }
+  };
+
   if (draft) return (
     <div className="journey-booking-preview" aria-live="polite">
-      <h3 tabIndex={-1} ref={previewTitleRef}>{t('bookingPreviewTitle')}</h3>
-      <p>{t('bookingPreviewNotice')}</p>
+      <h3 tabIndex={-1} ref={previewTitleRef}>{delivery === 'sent' ? t('bookingSentTitle') : t('bookingPreviewTitle')}</h3>
+      <p>{delivery === 'sent' ? t('bookingSentNotice') : t('bookingPreviewNotice')}</p>
       <label className="journey-booking-summary-label" htmlFor="journey-booking-summary">{t('bookingSummary')}</label>
       <textarea id="journey-booking-summary" readOnly value={summary} rows={7}/>
-      <p role="status">{copyState === 'copied' ? t('bookingCopied') :
-        copyState === 'error' ? t('bookingCopyFail') : t('bookingNeedsBackend')}</p>
+      <p role="status" aria-live="polite">
+        {delivery === 'sent' ? t('bookingSentStatus') :
+          delivery === 'sending' ? t('bookingSending') :
+          delivery === 'error' ? t(
+            deliveryCode === 'rate_limited' ? 'bookingRateLimited' :
+            deliveryCode === 'unavailable' ? 'bookingUnavailable' :
+            deliveryCode === 'invalid' || deliveryCode === 'consent' ? 'bookingInvalid' :
+            'bookingSendFailed'
+          ) : copyState === 'copied' ? t('bookingCopied') :
+          copyState === 'error' ? t('bookingCopyFail') : t('bookingReadyToSend')}
+      </p>
       <div className="journey-booking-actions">
-        <button type="button" className="cta" onClick={copySummary}>{t('bookingCopy')}</button>
-        <button type="button" className="journey-booking-secondary" onClick={() => returnToForm(false)}>{t('bookingEdit')}</button>
-        <button type="button" className="journey-booking-secondary" onClick={() => returnToForm(true)}>{t('bookingReset')}</button>
+        {delivery !== 'sent' && <>
+          <button type="button" className="cta" disabled={delivery === 'sending'} onClick={sendRequest}>{delivery === 'sending' ? t('bookingSending') : t('bookingSend')}</button>
+          <button type="button" className="journey-booking-secondary" disabled={delivery === 'sending'} onClick={() => returnToForm(false)}>{t('bookingEdit')}</button>
+        </>}
+        <button type="button" className="journey-booking-secondary" onClick={copySummary}>{t('bookingCopy')}</button>
+        <button type="button" className="journey-booking-secondary" disabled={delivery === 'sending'} onClick={() => returnToForm(true)}>{t('bookingReset')}</button>
       </div>
     </div>
   );
 
   return <form ref={formRef} onSubmit={onPrepare} style={{display:'flex',flexDirection:'column',gap:'18px'}}>
+    <div aria-hidden="true" style={{position:'absolute',left:'-9999px'}}><label htmlFor="booking-website">Website</label><input id="booking-website" name="website" autoComplete="off" tabIndex={-1} value={honeypot} onChange={event => setHoneypot(event.currentTarget.value)}/></div>
     <div className="fld"><label htmlFor="f-name">{t('bookingName')}</label><input autoComplete="name" id="f-name" name="name" defaultValue={savedDraft?.name} placeholder={t('bookingNamePlaceholder')} required type="text" maxLength={120}/></div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(200px,100%),1fr))',gap:'18px'}}>
       <div className="fld"><label htmlFor="f-tel">{t('bookingPhone')}</label><input autoComplete="tel" id="f-tel" name="tel" defaultValue={savedDraft?.phone} placeholder="+380" onInput={event => event.currentTarget.setCustomValidity('')} required type="tel" inputMode="tel" maxLength={40}/></div>

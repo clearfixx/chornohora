@@ -1,6 +1,6 @@
 /** A standalone, static selection of the approved Journey mountain geometry.
  * Paths were reused from MountainAndCloudLayers, without the scroll engine.
- * The imported mockup's forest and generic mountain polygons are not included. */
+ * Only ridges from the established site artwork are rendered here. */
 export function NotFoundLandscape() {
   return <div className="nf-landscape" aria-hidden="true">
     <svg className="nf-ridge nf-ridge-back" viewBox="0 0 4200 560" preserveAspectRatio="xMidYMax slice">

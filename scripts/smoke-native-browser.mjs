@@ -47,7 +47,9 @@ async function dump(path) {
 try {
   await ready();
   for (const locale of ['uk', 'en']) {
-    const missing = await fetch(`http://127.0.0.1:${port}/${locale}/nonexistent-trail-404`);
+    const missing = await fetch(`http://127.0.0.1:${port}/${locale}/nonexistent-trail-404`, {
+      headers: {connection: 'close'},
+    });
     assert.equal(missing.status, 404, 'Unknown localized trail must return HTTP 404');
     const errorPage = await missing.text();
     assert.match(errorPage, /nf-scene/, 'Branded error scene must render');

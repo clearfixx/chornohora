@@ -64,7 +64,7 @@ export function scanReactImports(start = entry) {
     }
   }
   const page = readFileSync(join(root, 'app/[locale]/page.tsx'), 'utf8');
-  const reactBranch = page.split('\n').find(line => line.startsWith('    return <><link rel="stylesheet" href="/react-journey.css"'));
+  const reactBranch = page.split('\n').find(line => line.trimStart().startsWith('return <><link rel="stylesheet" href="/react-journey.css"'));
   if (!reactBranch) issues.push('Canonical React branch missing from server page');
   else {
     if (!reactBranch.includes('ReactJourneyPreview')) issues.push('React route does not mount its React component');

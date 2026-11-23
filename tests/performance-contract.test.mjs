@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
 
 const script='scripts/test-performance.mjs';
@@ -59,4 +61,21 @@ test('comparator rejects duplicate reports and invalid GPU mode pairing',()=>{
     'identical WebGL renderer','sample.quality?.valid===false']){
     assert.ok(source.includes(token),token);
   }
+});
+
+test('comparison rejects duplicated baselines and wrong mode flags at runtime',()=>{
+  const dir=mkdtempSync(join(tmpdir(),'chornohora-perf-contract-'));
+  try{
+    const a=join(dir,'a.json'),b=join(dir,'b.json');
+    const base={cacheMode:'cold',browser:{product:'Chrome/1'},samples:[],errors:[]};
+    writeFileSync(a,JSON.stringify({...base,gpuAllowed:true}));
+    writeFileSync(b,JSON.stringify({...base,gpuAllowed:true}));
+    let run=spawnSync(process.execPath,[compare,a,b],{encoding:'utf8'});
+    assert.notEqual(run.status,0);
+    assert.match(run.stderr,/Comparison inputs are identical/);
+    writeFileSync(b,JSON.stringify({...base,gpuAllowed:false}));
+    run=spawnSync(process.execPath,[compare,a,b],{encoding:'utf8'});
+    assert.notEqual(run.status,0);
+    assert.match(run.stderr,/Invalid mode pair/);
+  }finally{rmSync(dir,{recursive:true,force:true});}
 });

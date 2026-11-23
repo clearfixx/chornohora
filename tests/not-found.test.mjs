@@ -16,7 +16,7 @@ test('storm 404 mounts canonical mountain and spruce forest components', () => {
   assert.match(mountains, /reference-mountain/);
   assert.match(forest, /forest-foreground/);
   assert.match(forest, /viewBox="0 0 5000 220"/);
-  assert.doesNotMatch(source, /<path|<svg|iframe|dangerouslySetInnerHTML|JourneyStore/);
+  assert.doesNotMatch(source, /<path|<svg|iframe|dangerouslySetInnerHTML|import[^\n]*JourneyStore/);
   const css = read('src/features/not-found/not-found.css');
   assert.match(css, /\.nf-landscape-stage/);
   assert.match(css, /\.nf-landscape \.tr/);

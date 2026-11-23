@@ -62,8 +62,8 @@
 .nf-landscape .tr path {fill:#0a0521!important}
 .nf-landscape .forest-foreground {bottom:88px!important;opacity:1}
 .nf-landscape .fx {display:none}
-.nf-landscape::after {content:"";position:absolute;inset:auto 0 0;height:12%;
- background:linear-gradient(180deg,transparent,#101b2b 95%)}
+.nf-landscape::after {content:"";position:absolute;inset:auto 0 0;height:15%;z-index:30;
+ background:linear-gradient(180deg,transparent 0%,rgba(10,5,33,.85) 65%,#0a0521 100%)}
 .nf-nav {position:relative;z-index:30;width:100%;min-height:78px;padding:12px clamp(18px,4.3vw,64px);
  display:flex;align-items:center;justify-content:space-between;gap:22px;
  background:linear-gradient(180deg,rgba(10,16,26,.75),rgba(10,16,26,0))}

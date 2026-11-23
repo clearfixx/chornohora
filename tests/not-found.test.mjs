@@ -16,8 +16,8 @@ test('storm 404 is React-owned and reuses frozen Journey mountain paths',()=>{
 test('404 navigation links are real destinations and isolated from journey controller',()=>{
   const source=read('src/features/not-found/NotFoundNavigation.tsx');
   assert.match(source,/href=\{home \+ '#book'\}/);
-  assert.match(source,/href="\/uk"/);
-  assert.match(source,/href="\/en"/);
+  assert.ok(source.includes('href={ukHome}'));
+  assert.ok(source.includes('href={enHome}'));
   assert.match(source,/onClick=\{\(\) => setOpen\(false\)\}/);
   assert.match(source,/event.key === 'Escape'/);
   assert.match(source,/event.key !== 'Tab'/);

@@ -53,18 +53,6 @@ try {
     assert.match(errorPage, /nf-scene/, 'Branded error scene must render');
     assert.ok(errorPage.includes(locale === 'en' ? "You've lost the trail" : 'Ви збилися зі стежки'),
       '404 scene must use the active locale');
-    // Four lightweight screenshots for human visual acceptance, not pixel gates.
-    mkdirSync('artifacts/404-preview', {recursive: true});
-    for (const [width, height] of [[1440, 900], [390, 844]]) {
-      const file = `artifacts/404-preview/404-${locale}-${width}.png`;
-      const shot = spawnSync(browser, [
-        '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-        '--hide-scrollbars', `--window-size=${width},${height}`,
-        '--virtual-time-budget=2500', `--screenshot=${file}`,
-        `http://127.0.0.1:${port}/${locale}/nonexistent-trail-404`,
-      ], {encoding: 'utf8', timeout: 30000});
-      if (shot.status !== 0) console.warn('404 screenshot unavailable:', file, shot.stderr?.slice(-200));
-    }
     const original = await dump(`/${locale}?preview=legacy`);
     assert.match(original, /legacy-journey__frame/, `missing original iframe in ${locale}`);
     assert.match(original, /legacy\/index\.html/, `original asset missing in ${locale}`);
@@ -94,6 +82,22 @@ try {
       assert.ok(react.includes('Сонце зустрічає вас першим'), 'Ukrainian scene copy missing');
     }
     console.log(`Browser smoke OK: /${locale} canonical React, legacy and native comparisons`);
+  }
+  // Screenshot subprocesses run only after both locales pass functional smoke;
+  // they must not compete with checks and their transient browser sessions.
+  for (const locale of ['uk', 'en']) {
+    // Four lightweight screenshots for human visual acceptance, not pixel gates.
+    mkdirSync('artifacts/404-preview', {recursive: true});
+    for (const [width, height] of [[1440, 900], [390, 844]]) {
+      const file = `artifacts/404-preview/404-${locale}-${width}.png`;
+      const shot = spawnSync(browser, [
+        '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
+        '--hide-scrollbars', `--window-size=${width},${height}`,
+        '--virtual-time-budget=2500', `--screenshot=${file}`,
+        `http://127.0.0.1:${port}/${locale}/nonexistent-trail-404`,
+      ], {encoding: 'utf8', timeout: 30000});
+      if (shot.status !== 0) console.warn('404 screenshot unavailable:', file, shot.stderr?.slice(-200));
+    }
   }
 } finally {
   // pnpm launches Next.js as a child process; terminate the entire group.

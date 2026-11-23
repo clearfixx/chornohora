@@ -4,13 +4,23 @@ import {readFileSync} from 'node:fs';
 
 const read = path => readFileSync(path,'utf8');
 
-test('storm 404 is React-owned and reuses frozen Journey mountain paths',()=>{
+test('storm 404 mounts canonical mountain and spruce forest components', () => {
   const source = read('src/features/not-found/NotFoundLandscape.tsx');
-  const original = read('src/features/journey/components/scenes/MountainAndCloudLayers.tsx');
-  const paths = [...source.matchAll(/<path[^>]*\sd="([^"]+)"/g)].map(match=>match[1]);
-  assert.ok(paths.length>=5,'Expected original multi-layer ridges and light facets');
-  for(const path of paths) assert.ok(original.includes('d="'+path+'"'), 'Non-canonical ridge path: '+path.slice(0,40));
-  assert.doesNotMatch(source,/forest|Forest|iframe|dangerouslySetInnerHTML/);
+  const mountains = read('src/features/journey/components/scenes/MountainAndCloudLayers.tsx');
+  const forest = read('src/features/journey/components/scenes/ForestLayers.tsx');
+  assert.match(source, /import \{MountainAndCloudLayers\}/);
+  assert.match(source, /import \{ForestBackLayer, ForestForegroundLayer\}/);
+  for (const name of ['MountainAndCloudLayers', 'ForestBackLayer', 'ForestForegroundLayer']) {
+    assert.match(source, new RegExp('<' + name + '\\s*\\/?>'));
+  }
+  assert.match(mountains, /reference-mountain/);
+  assert.match(forest, /forest-foreground/);
+  assert.match(forest, /viewBox="0 0 5000 220"/);
+  assert.doesNotMatch(source, /<path|<svg|iframe|dangerouslySetInnerHTML|JourneyStore/);
+  const css = read('src/features/not-found/not-found.css');
+  assert.match(css, /\.nf-landscape-stage/);
+  assert.match(css, /\.nf-landscape \.tr/);
+  assert.match(css, /\.nf-landscape \.l2/);
 });
 
 test('404 navigation links are real destinations and isolated from journey controller',()=>{

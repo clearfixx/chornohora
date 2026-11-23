@@ -68,6 +68,7 @@ const nextBin = join(root, 'node_modules', 'next', 'dist', 'bin', 'next');
 if (!existsSync(nextBin)) throw new Error('Next.js executable not found: run pnpm install.');
 const server = spawn(process.execPath, [nextBin, 'start', '--port', String(port)], {
   detached: true, stdio: 'ignore',
+  env: {...process.env, CHORNOHORA_ENABLE_DIAGNOSTICS: '1'},
 });
 const gpuOptIn = process.env.CHORNOHORA_BROWSER_GPU === '1';
 // Keep the existing deterministic software-rendered CI default. An explicit

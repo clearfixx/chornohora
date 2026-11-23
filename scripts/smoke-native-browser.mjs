@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict';
 import {spawn, spawnSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
+import {mkdirSync} from 'node:fs';
 
 const candidates = ['google-chrome', 'chromium', 'chromium-browser'];
 const browser = candidates.find(bin => spawnSync('which', [bin], {stdio: 'ignore'}).status === 0);
@@ -46,6 +47,20 @@ async function dump(path) {
 try {
   await ready();
   for (const locale of ['uk', 'en']) {
+    try {
+      const missing = await fetch(`http://127.0.0.1:${port}/${locale}/nonexistent-trail-404`, {
+        headers: {connection: 'close'},
+      });
+      assert.equal(missing.status, 404, 'Unknown localized trail must return HTTP 404');
+      const errorPage = await missing.text();
+      assert.match(errorPage, /nf-scene/, 'Branded error scene must render');
+      assert.ok(errorPage.includes(locale === 'en' ? "You've lost the trail" : 'Ви збилися зі стежки'),
+        '404 scene must use the active locale');
+      } catch (error) {
+      throw new Error('404 HTTP check failed for ' + locale + ': ' + String(error) + '\\nServer: ' + serverOutput.slice(-4000));
+    }
+  }
+  for (const locale of ['uk', 'en']) {
     const original = await dump(`/${locale}?preview=legacy`);
     assert.match(original, /legacy-journey__frame/, `missing original iframe in ${locale}`);
     assert.match(original, /legacy\/index\.html/, `original asset missing in ${locale}`);
@@ -75,6 +90,22 @@ try {
       assert.ok(react.includes('Сонце зустрічає вас першим'), 'Ukrainian scene copy missing');
     }
     console.log(`Browser smoke OK: /${locale} canonical React, legacy and native comparisons`);
+  }
+  // Screenshot subprocesses run only after both locales pass functional smoke;
+  // they must not compete with checks and their transient browser sessions.
+  for (const locale of ['uk', 'en']) {
+    // Four lightweight screenshots for human visual acceptance, not pixel gates.
+    mkdirSync('artifacts/404-preview', {recursive: true});
+    for (const [width, height] of [[1440, 900], [390, 844]]) {
+      const file = `artifacts/404-preview/404-${locale}-${width}.png`;
+      const shot = spawnSync(browser, [
+        '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
+        '--hide-scrollbars', `--window-size=${width},${height}`,
+        '--virtual-time-budget=2500', `--screenshot=${file}`,
+        `http://127.0.0.1:${port}/${locale}/nonexistent-trail-404`,
+      ], {encoding: 'utf8', timeout: 30000});
+      if (shot.status !== 0) console.warn('404 screenshot unavailable:', file, shot.stderr?.slice(-200));
+    }
   }
 } finally {
   // pnpm launches Next.js as a child process; terminate the entire group.

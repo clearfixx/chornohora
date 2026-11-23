@@ -22,6 +22,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test:journey
       - run: pnpm test:source
+      - run: pnpm test:404
       - run: pnpm test:seo
       - run: pnpm check:react-css
       - run: pnpm check:react-assets
@@ -56,5 +57,13 @@ jobs:
         with:
           name: journey-browser-diagnostics
           path: artifacts/v22-browser/*
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload 404 design review screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 404-visual-review
+          path: artifacts/404-preview/*.png
           if-no-files-found: warn
           retention-days: 14

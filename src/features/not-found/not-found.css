@@ -1,0 +1,198 @@
+/* Storm 404: isolated design, no JourneyStore, no legacy runtime. */
+.nf-scene {
+  --nf-ink: #101620;
+  position: relative; isolation: isolate; min-height: 100dvh; width: 100%;
+  overflow: clip; color: #fff; font-family: Onest, system-ui, sans-serif;
+  background: linear-gradient(180deg,#141b27 0%,#26364a 36%,#3f566d 68%,#587187 100%);
+}
+.nf-weather,.nf-landscape,.nf-rain-overlay {position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.nf-weather {z-index:-1}
+.nf-landscape {z-index:1}
+/* Rain perspective: behind mountains (back), over scenery (mid/front), under controls. */
+.nf-rain-overlay {z-index:5}
+.nf-halo {position:absolute;top:13%;left:50%;width:min(36vw,440px);height:230px;transform:translateX(-50%);border-radius:50%;background:#b0cae3;filter:blur(65px);opacity:.12}
+.nf-cloud {position:absolute;left:-65%;width:260%;pointer-events:none;filter:blur(17px);will-change:transform}
+.nf-cloud-back {top:4%;height:220px;opacity:.74;background:
+  radial-gradient(ellipse 20% 35% at 10% 55%,#101827 97%,transparent 100%),
+  radial-gradient(ellipse 17% 45% at 38% 48%,#111a27 97%,transparent 100%),
+  radial-gradient(ellipse 22% 40% at 70% 55%,#131d2b 97%,transparent 100%),
+  radial-gradient(ellipse 20% 50% at 95% 50%,#141e2c 97%,transparent 100%)}
+.nf-cloud-front {top:12%;height:260px;opacity:.7;filter:blur(28px);background:
+  radial-gradient(ellipse 20% 38% at 12% 52%,#4b6078 95%,transparent 100%),
+  radial-gradient(ellipse 25% 40% at 47% 55%,#425871 95%,transparent 100%),
+  radial-gradient(ellipse 20% 45% at 82% 52%,#455c74 95%,transparent 100%)}
+.nf-lightning {position:absolute;inset:0 0 auto;width:100%;height:min(48vh,380px);opacity:0;filter:drop-shadow(0 0 10px #d5e7f6)}
+/* Perspective rain adapted from the supplied 404-html.zip SVG pattern.
+   Three independent tile sizes, streak lengths and velocities: distant /
+   middle / foreground. Translation exactly equals each tile's dimensions
+   so no frame-jump is visible in the loop. */
+.nf-rain {
+ position:absolute;inset:-600px -240px;pointer-events:none;
+ background-repeat:repeat;will-change:transform;
+}
+.nf-rain-back {opacity:0.34;background-size:100px 250px;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22250%22%20viewBox%3D%220%200%20100%20250%22%3E%3Cpath%20d%3D%22M70%2010%20L58%2040%20M20%2060%20L8%2090%20M90%20110%20L78%20140%20M45%20140%20L33%20170%20M10%20190%20L-2%20220%20M62%20210%20L50%20240%22%20fill%3D%22none%22%20stroke%3D%22%23cfe0f0%22%20stroke-width%3D%221%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E");}
+.nf-rain-mid {opacity:0.38;background-size:140px 350px;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22140%22%20height%3D%22350%22%20viewBox%3D%220%200%20140%20350%22%3E%3Cpath%20d%3D%22M100%2020%20L80%2072%20M30%2090%20L10%20142%20M120%20170%20L100%20222%20M60%20230%20L40%20282%20M130%20290%20L112%20336%22%20fill%3D%22none%22%20stroke%3D%22%23dceaf7%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E");}
+.nf-rain-front {opacity:0.37;background-size:200px 500px;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22500%22%20viewBox%3D%220%200%20200%20500%22%3E%3Cpath%20d%3D%22M150%2030%20L118%20112%20M40%20150%20L8%20232%20M170%20300%20L138%20382%20M90%20390%20L60%20466%22%20fill%3D%22none%22%20stroke%3D%22%23e8f2fb%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E");filter:blur(.4px);}
+.nf-wind {position:absolute;top:53%;left:0;width:42%;height:5px;opacity:0;border-radius:50%;
+ background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);filter:blur(4px)}
+.nf-wind-two {top:72%;width:62%}
+.nf-flash {position:absolute;inset:0;background:#e4eef8;opacity:0}
+/* Render the precise beginning of the Journey landscape.
+   The hero starts at x=0 and clips its 4200px ridges/5000px tree line to
+   viewport width: centering or shrinking those source canvases changes the
+   skyline and tree rhythm. Freeze that same origin at the start of 404. */
+.nf-landscape-stage {
+ position:absolute;
+ left:0;
+ bottom:0;
+ width:4200px;
+ height:800px;
+ transform:none;
+ transform-origin:0 100%;
+}
+.nf-landscape .ly {position:absolute;left:0;bottom:0;pointer-events:none}
+.nf-landscape .reference-mountain svg,
+.nf-landscape .tr svg {display:block}
+.nf-landscape .l1 {bottom:0;opacity:1}
+.nf-landscape .l2 {bottom:0;opacity:1}
+.nf-landscape .l3 {bottom:0;opacity:1}
+.nf-landscape .l1 path {fill:#52677b!important}
+.nf-landscape .l2 path:first-child {fill:#354b60!important}
+.nf-landscape .l2 path + path {fill:#8fa7bb!important;fill-opacity:.34!important}
+.nf-landscape .l3 path:first-child {fill:#17293a!important}
+.nf-landscape .l3 path + path {fill:#6d879c!important;fill-opacity:.2!important}
+/* Preserve the original 88px forest offset and exact left-to-right trees. */
+.nf-landscape .tr {left:0;bottom:88px!important;transform:none;opacity:.96}
+.nf-landscape .tr path {fill:#0b1825!important}
+.nf-landscape .forest-foreground {bottom:88px!important;opacity:1}
+.nf-landscape .fx {display:none}
+.nf-landscape::after {content:"";position:absolute;inset:auto 0 0;height:15%;z-index:30;
+ background:linear-gradient(180deg,transparent 0%,rgba(10,20,32,.85) 65%,#0a1420 100%)}
+.nf-nav {position:relative;z-index:30;width:100%;min-height:78px;padding:12px clamp(18px,4.3vw,64px);
+ display:flex;align-items:center;justify-content:space-between;gap:22px;
+ background:linear-gradient(180deg,rgba(10,16,26,.75),rgba(10,16,26,0))}
+.nf-brand {display:inline-flex;align-items:center;gap:10px;text-decoration:none;flex:none}
+.nf-brand img {display:block;width:58px;height:auto}
+.nf-brand span {display:flex;flex-direction:column;gap:4px}
+.nf-brand b {font:800 clamp(15px,1.6vw,21px)/1.1 Montserrat,Onest,system-ui,sans-serif;letter-spacing:.03em}
+.nf-brand small {font:700 9px/1.1 Onest,system-ui,sans-serif;letter-spacing:.38em;color:#ffbf83}
+.nf-navlinks {display:flex;align-items:center;justify-content:center;gap:clamp(12px,2.2vw,32px);margin-left:auto}
+.nf-navlinks a {font:500 14px/1.2 Onest,system-ui,sans-serif;text-decoration:none;white-space:nowrap}
+.nf-navlinks a:hover,.nf-navlinks a:focus-visible {color:#ffe14d}
+.nf-navlinks .nf-nav-book {color:#ffe14d}
+.nf-navtools {display:flex;align-items:center;gap:24px;flex:none}
+.nf-language {display:flex;align-items:center;gap:8px;font:700 14px/1 Onest,system-ui,sans-serif}
+.nf-language a {text-decoration:none;padding:10px 3px}
+.nf-language a[aria-current="page"] {color:#ffbf83}
+.nf-menu-trigger {display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+ width:48px;height:48px;flex:none;border-radius:50%;background:rgba(14,22,34,.65);
+ border:1px solid rgba(255,255,255,.3);color:#fff;cursor:pointer}
+.nf-menu-trigger span {display:block;width:20px;height:2px;background:currentColor;transition:transform .2s ease,opacity .2s ease}
+.nf-menu-trigger[aria-expanded="true"] span:first-child {transform:translateY(7px) rotate(45deg)}
+.nf-menu-trigger[aria-expanded="true"] span:nth-child(2) {opacity:0}
+.nf-menu-trigger[aria-expanded="true"] span:last-child {transform:translateY(-7px) rotate(-45deg)}
+.nf-content {position:relative;z-index:10;min-height:calc(100dvh - 78px);padding:clamp(26px,4vh,48px) 18px max(160px,19vh);
+ display:flex;align-items:flex-start;justify-content:center;text-align:center}
+.nf-content-inner {width:min(100%,980px)}
+.nf-eyebrow {display:flex;align-items:center;justify-content:center;gap:24px;margin:0;
+ color:#e6edf5;font:500 13px/1.4 Onest,system-ui,sans-serif;letter-spacing:.17em;text-transform:uppercase}
+.nf-eyebrow span {display:block;width:clamp(22px,3vw,46px);height:1px;background:rgba(255,255,255,.7)}
+.nf-404 {display:flex;align-items:center;justify-content:center;margin:10px 0 0;
+ font:800 clamp(118px,20.5vw,300px)/.9 Montserrat,Onest,system-ui,sans-serif;
+ letter-spacing:-.03em;color:#e0edf9;
+ text-shadow:0 3px 30px rgba(0,0,0,.4)}
+.nf-zero {display:inline-block;width:.62em;height:.62em;border:.045em solid #c9d8e8;border-radius:50%;margin:0 .08em;box-sizing:border-box;flex:none}
+.nf-heading {margin:16px 0 0;font:800 clamp(26px,3.2vw,40px)/1.14 Montserrat,Onest,system-ui,sans-serif;
+ text-shadow:0 2px 16px rgba(0,0,0,.45)}
+.nf-description {margin:15px auto 0;max-width:680px;font:400 clamp(15px,1.55vw,20px)/1.5 Onest,system-ui,sans-serif;
+ text-shadow:0 1px 12px rgba(0,0,0,.55)}
+.nf-actions {display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:16px;margin-top:28px}
+.nf-button {display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:56px;
+ padding:0 30px;border-radius:999px;text-decoration:none;
+ font:700 17px/1.2 Onest,system-ui,sans-serif;transition:background-color .2s ease,transform .2s ease}
+.nf-button:hover {transform:translateY(-2px)}
+.nf-button-primary {background:#ffe14d;color:#140b3a}
+.nf-button-primary:hover {background:#ffef8a}
+.nf-button-secondary {background:rgba(15,24,37,.35);color:#fff;border:1px solid rgba(255,255,255,.65)}
+.nf-button-secondary:hover {background:rgba(255,255,255,.15)}
+.nf-scene a:focus-visible,.nf-scene button:focus-visible {outline:3px solid #ffe14d;outline-offset:4px}
+.nf-drawer-layer {position:fixed;inset:0;z-index:90;visibility:hidden;pointer-events:none}
+.nf-drawer-layer.is-open {visibility:visible;pointer-events:auto}
+.nf-drawer-scrim {position:absolute;inset:0;width:100%;height:100%;border:0;background:rgba(6,8,20,.7);
+ opacity:0;transition:opacity .28s ease;cursor:pointer}
+.nf-drawer-layer.is-open .nf-drawer-scrim {opacity:1}
+.nf-drawer {position:absolute;top:0;right:0;bottom:0;width:min(440px,100vw);overflow-y:auto;
+ display:flex;flex-direction:column;padding:24px clamp(22px,3vw,36px);
+ background:#130e32;color:#fff;box-shadow:-18px 0 65px rgba(0,0,0,.3);
+ transform:translateX(105%);transition:transform .28s ease}
+.nf-drawer-layer.is-open .nf-drawer {transform:translateX(0)}
+.nf-drawer-head {display:flex;align-items:center;justify-content:space-between;gap:14px}
+.nf-drawer-heading {font:800 17px/1.2 Montserrat,Onest,system-ui,sans-serif}
+.nf-drawer-heading small {display:block;margin-top:5px;color:#ffbf83;font:700 10px/1 Onest,system-ui,sans-serif;letter-spacing:.28em}
+.nf-drawer-close {width:48px;height:48px;display:grid;place-items:center;flex:none;cursor:pointer;
+ border:1px solid rgba(255,255,255,.2);border-radius:50%;background:transparent;color:#fff}
+.nf-drawer-links {display:flex;flex-direction:column;margin-top:42px}
+.nf-drawer-links>a {display:grid;grid-template-columns:1fr auto;gap:7px;padding:17px 0;
+ border-bottom:1px solid rgba(255,255,255,.12);text-decoration:none}
+.nf-drawer-links a small {grid-column:1/-1;font:600 11px/1 Onest,system-ui,sans-serif;color:#ffbf83;letter-spacing:.14em}
+.nf-drawer-links a span {font:700 22px/1.3 Montserrat,Onest,system-ui,sans-serif}
+.nf-drawer-links a b {font-size:21px;align-self:center}
+.nf-drawer-links a:hover {color:#ffe14d}
+.nf-drawer-links .nf-drawer-book {margin-top:20px;display:flex;justify-content:space-between;background:#ffe14d;color:#140b3a;border:0;border-radius:14px;padding:18px 20px;font-weight:700}
+@media (prefers-reduced-motion:no-preference) {
+  .nf-cloud-back {animation:nf-cloud 46s linear infinite}
+  .nf-cloud-front {animation:nf-cloud 31s linear infinite reverse}
+  .nf-rain-back {animation:nf-rain-back .9s linear infinite}
+  .nf-rain-mid {animation:nf-rain-mid .7s linear infinite}
+  .nf-rain-front {animation:nf-rain-front .55s linear infinite}
+  .nf-lightning {animation:nf-lightning 13s linear infinite}
+  .nf-flash {animation:nf-flash 13s linear infinite}
+  .nf-wind-one {animation:nf-gust 6s linear infinite}
+  .nf-wind-two {animation:nf-gust 8s linear -3s infinite}
+}
+@keyframes nf-cloud {to {transform:translateX(-12%)}}
+@keyframes nf-rain-back {to {transform:translate(-100px,250px)}}
+@keyframes nf-rain-mid {to {transform:translate(-140px,350px)}}
+@keyframes nf-rain-front {to {transform:translate(-200px,500px)}}
+@keyframes nf-lightning {0%,68%,70.2%,100%{opacity:0}68.5%{opacity:.8}69%{opacity:.08}69.6%{opacity:.65}}
+@keyframes nf-flash {0%,68%,70.2%,100%{opacity:0}68.5%{opacity:.14}69%{opacity:.02}69.6%{opacity:.08}}
+@keyframes nf-gust {0%{transform:translateX(115vw);opacity:0}15%,65%{opacity:.32}100%{transform:translateX(-65vw);opacity:0}}
+@media (max-width:1100px) {
+ .nf-navlinks {display:none}
+ .nf-navtools {margin-left:auto}
+ .nf-landscape-stage {transform:translateX(-160px) scale(.85);bottom:0}
+}
+@media (max-width:700px) {
+ .nf-nav {padding:12px 18px;min-height:70px}
+ .nf-brand img {width:44px}
+ .nf-brand b {font-size:15px}
+ .nf-brand small {font-size:8px;letter-spacing:.25em}
+ .nf-navtools {gap:12px}
+ .nf-language {gap:3px;font-size:12px}
+ .nf-menu-trigger {width:44px;height:44px}
+ .nf-content {min-height:calc(100dvh - 70px);padding:clamp(48px,10vh,100px) 20px 210px}
+ .nf-eyebrow {font-size:12px;gap:14px}
+ .nf-404 {font-size:clamp(110px,27vw,200px);margin-top:22px}
+ .nf-heading {font-size:clamp(25px,7vw,33px);margin-top:18px}
+ .nf-description {font-size:clamp(16px,4vw,18px);max-width:370px}
+ .nf-actions {flex-direction:column;width:min(100%,350px);margin:26px auto 0;gap:12px}
+ .nf-button {width:100%;min-height:54px}
+ .nf-landscape-stage {transform:translateX(-140px) scale(.7);bottom:0}
+ .nf-cloud {filter:blur(13px)}
+}
+@media (max-height:620px) and (min-width:701px) {
+ .nf-content {padding-top:16px;padding-bottom:140px}
+ .nf-404 {font-size:clamp(110px,24vh,210px)}
+ .nf-heading {margin-top:8px}
+}
+@media (max-height:600px) and (max-width:700px) {
+ .nf-content {padding-top:22px;padding-bottom:155px}
+ .nf-404 {font-size:clamp(95px,25vw,135px)}
+ .nf-heading {margin-top:10px}
+ .nf-landscape-stage {transform:translateX(-105px) scale(.6)}
+}
+@media (prefers-reduced-motion:reduce) {
+ .nf-scene *, .nf-scene *::before, .nf-scene *::after {animation:none!important;transition:none!important;scroll-behavior:auto!important}
+ .nf-lightning,.nf-flash,.nf-wind {display:none}
+ .nf-rain {opacity:.1}
+}

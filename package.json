@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test:journey": "node --experimental-strip-types --test tests/journey.test.mjs tests/journey-engine.test.mjs tests/journey-easing.test.mjs tests/journey-booking-validation.test.mjs tests/booking-delivery.test.mjs",
     "test:source": "node --test tests/source.test.mjs",
+    "test:404": "node --test tests/not-found.test.mjs",
     "test:seo": "node --experimental-strip-types --test tests/site-seo.test.mjs",
     "audit:v22": "node scripts/audit-v22.mjs",
     "inventory:v22": "node scripts/inventory-v22.mjs",

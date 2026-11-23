@@ -34,3 +34,12 @@ test('navigation/paint metrics include visual dismissal and resource inventory',
   assert.ok(readFileSync(audit,'utf8').includes('assets.json'));
   assert.ok(readFileSync(compare,'utf8').includes('comparison.json'));
 });
+
+
+test('comparison surfaces missing observations and input mismatches',()=>{
+  const source=readFileSync(compare,'utf8');
+  for(const token of ['fcpObservations','lcpObservations','firstReadyFrameObservations',
+    'loaderHiddenFrameObservations','unmatched sample counts','PERFORMANCE WARNING']){
+    assert.ok(source.includes(token),token);
+  }
+});

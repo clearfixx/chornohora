@@ -4,6 +4,8 @@ export function publicSiteOrigin(value: string | undefined = process.env.SITE_UR
   try {
     const url = new URL(value.trim());
     if (url.protocol !== 'https:' || !url.hostname || url.username || url.password ||
+        url.hostname === 'localhost' || url.hostname.endsWith('.localhost') ||
+        /^127\\./.test(url.hostname) || url.hostname === '0.0.0.0' ||
         url.pathname !== '/' || url.search || url.hash) return null;
     return url.origin;
   } catch {

@@ -1069,7 +1069,7 @@ const check = async (locale, width) => {
     })()`);
     assert.equal(english.button, 'Prepare request');
     assert.equal(english.phoneLabel, 'Phone');
-    assert.ok(english.dateMin && english.warning.includes('Review your details before sending'),
+    assert.ok(english.dateMin && english.warning.includes('Review your details in this demo'),
       `English booking notice missing: ${JSON.stringify(english)}`);
   }
   // Preparing the React enquiry must not silently send it; the separate send
@@ -1088,7 +1088,6 @@ const check = async (locale, width) => {
       })();
       form.querySelector('[name="people"]').value = '3';
       form.querySelector('[name="message"]').value = 'Перевірка чернетки';
-      form.querySelector('[name="consent"]').checked = true;
       form.requestSubmit();
       return true;
     })()`);
@@ -1109,22 +1108,17 @@ const check = async (locale, width) => {
     assert.ok(prepared.text?.includes('+380000000000') && prepared.text.includes('3') &&
       prepared.notice?.includes('ще не надіслана') && !prepared.stillForm,
       `Booking should prepare a draft, never claim sent: ${JSON.stringify(prepared)}`);
-    // CI has no Resend credentials: the API must fail closed and keep a copyable draft.
-    await evaluate("document.querySelector('[data-react-journey] .journey-booking-actions .cta').click()");
-    await delay(250);
-    const deliveryFailedClosed = await evaluate(`(() => {
+    // This is a demonstration; the primary action only copies the prepared text.
+    const demoActions = await evaluate(`(() => {
       const preview = document.querySelector('[data-react-journey] .journey-booking-preview');
       return {
-        status: preview?.querySelector('[role="status"]')?.textContent,
-        code: preview?.querySelector('[role="status"]')?.getAttribute('data-booking-error'),
-        title: preview?.querySelector('h3')?.textContent,
-        sendStillAvailable: !!preview?.querySelector('.journey-booking-actions .cta'),
+        notice: preview?.querySelector('[role="status"]')?.textContent,
+        actions: [...preview.querySelectorAll('button')].map(button => button.textContent),
       };
     })()`);
-    assert.ok(deliveryFailedClosed.status?.includes('не налаштоване') &&
-      deliveryFailedClosed.title === 'Заявка підготовлена' &&
-      deliveryFailedClosed.sendStillAvailable,
-      'Unconfigured booking API must never claim successful delivery: ' + JSON.stringify(deliveryFailedClosed));
+    assert.ok(demoActions.notice?.includes('не надіслана') &&
+      !demoActions.actions.some(label => label?.includes('Надіслати')),
+      'Demo UI must never offer real submission: ' + JSON.stringify(demoActions));
     await evaluate("document.querySelector('[data-react-journey] .journey-booking-secondary').click()");
     await delay(130);
     const restored = await evaluate(`(() => {
@@ -1132,7 +1126,7 @@ const check = async (locale, width) => {
       return {name: form?.querySelector('[name="name"]')?.value,
         phone: form?.querySelector('[name="tel"]')?.value,
         date: form?.querySelector('[name="date"]')?.value,
-        consent: form?.querySelector('[name="consent"]')?.checked};
+        demoOnly: !form?.querySelector('[name="consent"]')};
     })()`);
     assert.equal(restored.name,'Тестова мандрівниця');
     assert.equal(restored.phone,'+380000000000');

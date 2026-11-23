@@ -20,6 +20,7 @@ export function NotFoundScene({locale, copy}: {locale: Locale; copy: ErrorCopy})
         <path d="M1130 70 1098 150 1126 158 1086 250 1100 254 M1108 152 1148 190" fill="none" stroke="#eaf3ff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
       <div className="nf-rain nf-rain-back"/>
+      <div className="nf-rain nf-rain-mid"/>
       <div className="nf-wind nf-wind-one"/>
       <div className="nf-wind nf-wind-two"/>
       <div className="nf-rain nf-rain-front"/>

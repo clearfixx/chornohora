@@ -10,7 +10,7 @@ Interactive illustrated journey through four Carpathian locations. The approved 
 - `/uk?preview=react` and `/en?preview=react` are diagnostic aliases of the canonical React-owned scene, traveler, navigation, drawer, location tooltips, booking **draft** and footer.
 - `?preview=native` is a legacy compatibility/comparison mode, **not** a production target.
 - The v22 reference under `public/legacy` is frozen. Preserve visual geometry, approved timing, and scene assets unless a user-approved redesign explicitly overrides the relevant reference.
-- The React booking form is **demonstration only**: local validation/preview/copy; it does not transmit requests. Server submission is deferred until migration acceptance.
+- The React booking form supports reviewed server-side email enquiries when Resend is configured. Without provider credentials it remains a copyable draft; no booking or availability is confirmed.
 - The user accepted the current appearance and browser interaction. The migration was merged after green CI #817/#818.
 
 ## Local development
@@ -61,6 +61,10 @@ pnpm test:browser-scroll
 The default suite tests navigation, responsive layout, and scroll regressions without running time-consuming paint ablations. Setting `CHORNOHORA_PERF_DIAGNOSTICS=1` additionally captures FPS metrics, responsive aurora comparisons, and `artifacts/v22-browser/petros-paint-ablation.json` (including WebGL renderer). **GPU allowed does not guarantee hardware acceleration**: check the reported renderer and treat SwiftShader as software fallback. Never use a green automated run alone to approve a canonical route switch.
 
 For opt-in scrolling diagnostics, open `/uk?preview=react&trace=1` and inspect `window.__journeyTrace?.()` in browser DevTools; no production telemetry is sent.
+
+## Release and SEO
+
+Localized metadata, an OG image, robots.txt, sitemap.xml, favicon, and 404 are included. Search indexing is **disabled until a verified HTTPS `SITE_URL` is configured**. See [release SEO](docs/RELEASE_SEO.md).
 
 ## Documentation
 

@@ -57,10 +57,10 @@ const stats=items=>{
     over34ms:values.filter(v=>v>34).length,over50ms:values.filter(v=>v>50).length};
 };
 // Install timing observers before any route script executes.
-const earlyObserver="(function(){var d=window.__journeyPerf={loaderReadyMs:null,lcpMs:null,cls:0};"+
+const earlyObserver="(function(){var d=window.__journeyPerf={loaderReadyMs:null,firstReadyFrameMs:null,loaderHiddenFrameMs:null,lcpMs:null,cls:0};"+
   "try{new PerformanceObserver(function(l){l.getEntries().forEach(function(e){d.lcpMs=e.startTime})}).observe({type:'largest-contentful-paint',buffered:true})}catch(e){}"+
   "try{new PerformanceObserver(function(l){l.getEntries().forEach(function(e){if(!e.hadRecentInput)d.cls+=e.value})}).observe({type:'layout-shift',buffered:true})}catch(e){}"+
-  "var o=new MutationObserver(function(){var e=document.querySelector('[data-journey-loader]');if(e&&e.dataset.journeyLoader==='complete'&&d.loaderReadyMs===null){d.loaderReadyMs=performance.now();o.disconnect()}});"+
+  "var o=new MutationObserver(function(){var e=document.querySelector('[data-journey-loader]');if(e&&e.dataset.journeyLoader==='complete'&&d.loaderReadyMs===null){d.loaderReadyMs=performance.now();o.disconnect();requestAnimationFrame(function(now){d.firstReadyFrameMs=now;function check(t){var c=getComputedStyle(e);if(c.visibility==='hidden'&&Number(c.opacity)<0.01){d.loaderHiddenFrameMs=t;return}if(t-d.loaderReadyMs<5000)requestAnimationFrame(check)}requestAnimationFrame(check)})}});"+
   "o.observe(document,{childList:true,subtree:true,attributes:true,attributeFilter:['data-journey-loader']})})();";
 
 async function sample(locale,width,iteration){

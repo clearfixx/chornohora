@@ -4,6 +4,7 @@
  * v22-native styling into canonical React (and vice versa) on client navigation.
  * Keep this narrow exception until preview modes have separate route boundaries.
  */
+import type {Metadata} from 'next';
 import {existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {getLocale, getTranslations} from 'next-intl/server';
@@ -13,7 +14,21 @@ import {V22SourceInteraction} from '@/components/journey/V22SourceInteraction';
 import {ReactJourneyPreview} from '@/components/journey/ReactJourneyPreview';
 import {getV22SourceScene} from '@/lib/v22-source-scene';
 
-export default async function HomePage({searchParams}: {searchParams: Promise<{preview?: string}>}) {
+type HomeSearchParams = {preview?: string};
+
+export async function generateMetadata({
+  searchParams,
+}: {searchParams: Promise<HomeSearchParams>}): Promise<Metadata> {
+  const {preview} = await searchParams;
+  // Comparison renderers and diagnostic aliases must not compete with
+  // canonical /uk and /en URLs in search results.
+  if (preview === 'legacy' || preview === 'native' || preview === 'react') {
+    return {robots: {index: false, follow: false}};
+  }
+  return {};
+}
+
+export default async function HomePage({searchParams}: {searchParams: Promise<HomeSearchParams>}) {
   const locale = await getLocale();
   const t = await getTranslations('Migration');
   const hasV22Assets = existsSync(join(process.cwd(), 'public', 'legacy', 'index.html'));

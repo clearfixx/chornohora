@@ -87,6 +87,13 @@ async function sample(locale,width,iteration){
     "fcpMs:paint.find(e=>e.name==='first-contentful-paint')?.startTime??null,"+
     "ttfbMs:n?.responseStart??null,domContentLoadedMs:n?.domContentLoadedEventEnd??null,"+
     "resourceCount:p.getEntriesByType('resource').length,"+
+    "resourceSummary:(()=>{const entries=p.getEntriesByType('resource');"+
+    "const byType={};for(const e of entries){const kind=e.initiatorType||'other';"+
+    "const row=byType[kind]||(byType[kind]={count:0,transferBytes:0,decodedBytes:0});"+
+    "row.count++;row.transferBytes+=e.transferSize||0;row.decodedBytes+=e.decodedBodySize||0;}"+
+    "return {byType,largest:entries.map(e=>({path:new URL(e.name).pathname,kind:e.initiatorType||'other',"+
+    "transferBytes:e.transferSize||0,decodedBytes:e.decodedBodySize||0,durationMs:Math.round(e.duration)}))"+
+    ".sort((a,b)=>b.transferBytes-a.transferBytes).slice(0,12)}})(),"+
     "geometry:track&&stage?{top:track.getBoundingClientRect().top+scrollY,travel:track.offsetHeight-stage.offsetHeight}:null,"+
     "webgl:{available:!!gl,renderer:gl?String(gl.getParameter(ext?.UNMASKED_RENDERER_WEBGL||gl.RENDERER)):null,vendor:gl?String(gl.getParameter(ext?.UNMASKED_VENDOR_WEBGL||gl.VENDOR)):null}}})()");
   assert.ok(initial.geometry?.travel>500,'Journey geometry missing');

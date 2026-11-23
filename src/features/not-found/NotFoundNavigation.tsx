@@ -27,6 +27,8 @@ export function NotFoundNavigation({locale, labels}: NavProps) {
   const drawerRef = useRef<HTMLElement>(null);
   const wasOpen = useRef(false);
   const home = '/' + locale;
+  const ukHome = '/uk';
+  const enHome = '/en';
   useEffect(() => {
     if (!open) {
       if (wasOpen.current) toggleRef.current?.focus({preventScroll: true});
@@ -77,9 +79,9 @@ export function NotFoundNavigation({locale, labels}: NavProps) {
       </nav>
       <div className="nf-navtools">
         <nav className="nf-language" aria-label={labels.language}>
-          <a href="/uk" aria-current={locale === 'uk' ? 'page' : undefined}>UA</a>
+          <a href={ukHome} aria-current={locale === 'uk' ? 'page' : undefined}>UA</a>
           <span aria-hidden="true">/</span>
-          <a href="/en" aria-current={locale === 'en' ? 'page' : undefined}>EN</a>
+          <a href={enHome} aria-current={locale === 'en' ? 'page' : undefined}>EN</a>
         </nav>
         <button ref={toggleRef} className="nf-menu-trigger" type="button" aria-label={open ? labels.close : labels.menu} aria-controls="nf-route-drawer" aria-expanded={open} onClick={() => setOpen(v => !v)}>
           <span/><span/><span/>

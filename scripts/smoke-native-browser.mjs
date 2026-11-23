@@ -6,13 +6,34 @@
 import assert from 'node:assert/strict';
 import {spawn, spawnSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
-import {mkdirSync} from 'node:fs';
+import {existsSync, mkdirSync} from 'node:fs';
+import {join} from 'node:path';
 
-const candidates = ['google-chrome', 'chromium', 'chromium-browser'];
-const browser = candidates.find(bin => spawnSync('which', [bin], {stdio: 'ignore'}).status === 0);
-if (!browser) throw new Error('Chrome/Chromium is required for browser smoke checks');
+// Keep browser discovery consistent with the cross-platform scroll suite.
+const windows = process.platform === 'win32';
+const explicitChrome = process.env.CHORNOHORA_CHROME_BIN;
+const windowsBrowsers = windows ? [
+  join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Google/Chrome/Application/chrome.exe'),
+  join(process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)', 'Google/Chrome/Application/chrome.exe'),
+  join(process.env.LOCALAPPDATA || '', 'Google/Chrome/Application/chrome.exe'),
+  join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Microsoft/Edge/Application/msedge.exe'),
+].filter(existsSync) : [];
+const browser = explicitChrome
+  ? (existsSync(explicitChrome) ? explicitChrome : null)
+  : windows ? windowsBrowsers[0] : ['google-chrome', 'chromium', 'chromium-browser']
+    .find(bin => spawnSync('which', [bin], {stdio: 'ignore'}).status === 0);
+if (!browser) {
+  throw new Error('Chrome/Chromium or Edge required; set CHORNOHORA_CHROME_BIN to its executable path');
+}
 const port = 3187;
-const server = spawn('pnpm', ['start', '--port', String(port)], {stdio: 'pipe', detached: true, env: {...process.env, PORT: String(port), CHORNOHORA_ENABLE_DIAGNOSTICS: '1'}});
+// Start the actual Next.js binary without a platform-specific pnpm shell.
+const nextBin = join(process.cwd(), 'node_modules', 'next', 'dist', 'bin', 'next');
+if (!existsSync(nextBin)) throw new Error('Next.js executable missing; run pnpm install');
+const server = spawn(process.execPath, [nextBin, 'start', '--port', String(port)], {
+  stdio: 'pipe',
+  detached: !windows,
+  env: {...process.env, PORT: String(port), CHORNOHORA_ENABLE_DIAGNOSTICS: '1'},
+});
 let serverOutput = '';
 server.stdout.on('data', data => {serverOutput += String(data);});
 server.stderr.on('data', data => {serverOutput += String(data);});
@@ -108,9 +129,13 @@ try {
     }
   }
 } finally {
-  // pnpm launches Next.js as a child process; terminate the entire group.
+  // Stop the production server without leaving a child listening on port 3187.
   if (server.pid) {
-    try { process.kill(-server.pid, 'SIGTERM'); } catch { server.kill('SIGTERM'); }
+    if (windows) {
+      spawnSync('taskkill', ['/PID', String(server.pid), '/T', '/F'], {stdio: 'ignore'});
+    } else {
+      try { process.kill(-server.pid, 'SIGTERM'); } catch { server.kill('SIGTERM'); }
+    }
   }
   server.stdout.destroy();
   server.stderr.destroy();

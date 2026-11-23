@@ -1131,7 +1131,7 @@ const check = async (locale, width) => {
     assert.equal(restored.name,'Тестова мандрівниця');
     assert.equal(restored.phone,'+380000000000');
     assert.ok(restored.date >= new Date().toISOString().slice(0,10), 'Future draft date lost');
-    assert.equal(restored.consent,true, 'Editing draft should preserve consent within same session');
+    assert.equal(restored.demoOnly,true, 'A demonstration draft does not collect consent for network submission');
   }
   console.log(`Captured React JSX parity checkpoints: ${locale}/${width}`);
 };

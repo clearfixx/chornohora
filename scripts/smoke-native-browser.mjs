@@ -12,7 +12,7 @@ const candidates = ['google-chrome', 'chromium', 'chromium-browser'];
 const browser = candidates.find(bin => spawnSync('which', [bin], {stdio: 'ignore'}).status === 0);
 if (!browser) throw new Error('Chrome/Chromium is required for browser smoke checks');
 const port = 3187;
-const server = spawn('pnpm', ['start', '--port', String(port)], {stdio: 'pipe', detached: true, env: {...process.env, PORT: String(port)}});
+const server = spawn('pnpm', ['start', '--port', String(port)], {stdio: 'pipe', detached: true, env: {...process.env, PORT: String(port), CHORNOHORA_ENABLE_DIAGNOSTICS: '1'}});
 let serverOutput = '';
 server.stdout.on('data', data => {serverOutput += String(data);});
 server.stderr.on('data', data => {serverOutput += String(data);});

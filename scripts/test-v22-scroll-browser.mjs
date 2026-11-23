@@ -1106,7 +1106,7 @@ const check = async (locale, width) => {
     assert.equal(await evaluate("document.activeElement === document.querySelector('.journey-booking-preview h3')"), true,
       'Booking preview heading should receive keyboard focus');
     assert.ok(prepared.text?.includes('+380000000000') && prepared.text.includes('3') &&
-      prepared.notice?.includes('ще не надіслана') && !prepared.stillForm,
+      prepared.notice?.includes('демонстраційна форма') && !prepared.stillForm,
       `Booking should prepare a draft, never claim sent: ${JSON.stringify(prepared)}`);
     // This is a demonstration; the primary action only copies the prepared text.
     const demoActions = await evaluate(`(() => {
@@ -1116,7 +1116,7 @@ const check = async (locale, width) => {
         actions: [...preview.querySelectorAll('button')].map(button => button.textContent),
       };
     })()`);
-    assert.ok(demoActions.notice?.includes('не надіслана') &&
+    assert.ok(demoActions.notice?.includes('не надіслано') &&
       !demoActions.actions.some(label => label?.includes('Надіслати')),
       'Demo UI must never offer real submission: ' + JSON.stringify(demoActions));
     await evaluate("document.querySelector('[data-react-journey] .journey-booking-secondary').click()");

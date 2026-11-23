@@ -7,8 +7,7 @@
 import type {Metadata} from 'next';
 import {existsSync} from 'node:fs';
 import {join} from 'node:path';
-import {getLocale, getTranslations} from 'next-intl/server';
-import {Link} from '@/i18n/navigation';
+import {getLocale} from 'next-intl/server';
 import {LegacyJourney} from '@/components/journey/LegacyJourney';
 import {V22SourceInteraction} from '@/components/journey/V22SourceInteraction';
 import {ReactJourneyPreview} from '@/components/journey/ReactJourneyPreview';
@@ -30,30 +29,21 @@ export async function generateMetadata({
 
 export default async function HomePage({searchParams}: {searchParams: Promise<HomeSearchParams>}) {
   const locale = await getLocale();
-  const t = await getTranslations('Migration');
+  // The canonical React route must always render, even without v22 assets.
+  // Diagnostics require an explicit server-side opt-in in a production build.
+  const {preview} = await searchParams;
+  const diagnosticsEnabled =
+    process.env.NODE_ENV !== 'production' || process.env.CHORNOHORA_ENABLE_DIAGNOSTICS === '1';
   const hasV22Assets = existsSync(join(process.cwd(), 'public', 'legacy', 'index.html'));
-  if (hasV22Assets) {
-    // React owns canonical /uk and /en.
-    // Keep legacy and native comparison modes isolated for diagnostics.
-    const {preview} = await searchParams;
+  if (diagnosticsEnabled && hasV22Assets) {
     if (preview === 'legacy') {
       return <LegacyJourney locale={locale === 'en' ? 'en' : 'uk'} />;
     }
     if (preview === 'native') {
       const {html, drawerHtml, inlineCss} = getV22SourceScene();
-      return <><link rel="stylesheet" href="/legacy/styles.css" /><V22SourceInteraction html={html} drawerHtml={drawerHtml} inlineCss={inlineCss} locale={locale === "en" ? "en" : "uk"} /></>;
+      return <><link rel="stylesheet" href="/legacy/styles.css" /><V22SourceInteraction html={html} drawerHtml={drawerHtml} inlineCss={inlineCss} locale={locale === 'en' ? 'en' : 'uk'} /></>;
     }
-    return <><link rel="stylesheet" href="/react-journey.css" /><ReactJourneyPreview locale={locale === 'en' ? 'en' : 'uk'} /></>;
   }
-  return <main className="min-h-screen flex items-center justify-center p-8">
-    <section className="max-w-xl space-y-6">
-      <p className="text-orange-300 text-sm uppercase tracking-[.2em]">Chornohora · Next.js</p>
-      <h1 className="text-4xl font-semibold">{t('title')}</h1>
-      <p className="text-lg text-slate-300">{t('notice')}</p>
-      <nav className="flex gap-4 text-orange-200" aria-label={t('language')}>
-        <Link href="/" locale="uk">Українська</Link>
-        <Link href="/" locale="en">English</Link>
-      </nav>
-    </section>
-  </main>;
+  // Do not let preview query parameters change canonical production ownership.
+  return <><link rel="stylesheet" href="/react-journey.css" /><ReactJourneyPreview locale={locale === 'en' ? 'en' : 'uk'} /></>;
 }

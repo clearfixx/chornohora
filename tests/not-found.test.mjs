@@ -60,10 +60,33 @@ test('404 scenery preserves the hero starting crop and its forest placement', ()
   assert.doesNotMatch(source, /\.nf-ridge/);
 });
 
-test('404 rain uses discreet small streaks and slower seamless tiling', () => {
-  const source = read('src/features/not-found/not-found.css');
-  assert.match(source, /stroke-width='.8'/);
-  assert.match(source, /@keyframes nf-rain \{to \{transform:translateY\(190px\)\}\}/);
-  assert.match(source, /animation:nf-rain 2\.7s linear infinite/);
-  assert.doesNotMatch(source, /mask-image: repeating-linear-gradient/);
+test('404 rain follows original three-layer perspective, including loop speeds', () => {
+  const css = read('src/features/not-found/not-found.css');
+  const scene = read('src/features/not-found/NotFoundScene.tsx');
+  for (const layer of ['back', 'mid', 'front']) {
+    assert.ok(scene.includes('nf-rain nf-rain-' + layer));
+    assert.ok(css.includes('.nf-rain-' + layer));
+  }
+  for (const [depth, width, height, speed, stroke] of [
+    ['back', 100, 250, '.9s', 'stroke-width%3D%221%22'],
+    ['mid', 140, 350, '.7s', 'stroke-width%3D%221.5%22'],
+    ['front', 200, 500, '.55s', 'stroke-width%3D%222.2%22'],
+  ]) {
+    assert.ok(css.includes('background-size:' + width + 'px ' + height + 'px'), depth);
+    assert.ok(css.includes('animation:nf-rain-' + depth + ' ' + speed), depth);
+    assert.ok(css.includes(stroke), 'SVG stroke for ' + depth);
+    assert.ok(css.includes('@keyframes nf-rain-' + depth), depth);
+  }
+  assert.match(css, /prefers-reduced-motion:reduce/);
+  assert.doesNotMatch(css, /mask-image: repeating-linear-gradient/);
+});
+
+test('404 mountains and forest use cold storm colors, not purple', () => {
+  const css = read('src/features/not-found/not-found.css');
+  for (const color of ['#52677b', '#354b60', '#17293a', '#0b1825']) {
+    assert.ok(css.includes(color), 'missing storm tone ' + color);
+  }
+  for (const purple of ['#6b5188', '#42345f', '#251947', '#0a0521']) {
+    assert.ok(!css.includes(purple), 'outdated purple tone ' + purple);
+  }
 });

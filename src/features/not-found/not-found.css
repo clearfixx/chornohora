@@ -20,51 +20,47 @@
   radial-gradient(ellipse 25% 40% at 47% 55%,#425871 95%,transparent 100%),
   radial-gradient(ellipse 20% 45% at 82% 52%,#455c74 95%,transparent 100%)}
 .nf-lightning {position:absolute;inset:0 0 auto;width:100%;height:min(48vh,380px);opacity:0;filter:drop-shadow(0 0 10px #d5e7f6)}
-.nf-rain {position:absolute;inset:-200px -150px;opacity:.28;pointer-events:none;
- background-repeat:repeat;background-size:180px 310px;background-image:
- linear-gradient(109deg,transparent 47%,rgba(229,240,252,.6) 48%,rgba(229,240,252,.6) 49%,transparent 50%);
- mask-image: repeating-linear-gradient(180deg,transparent 0 14px,#000 16px 53px,transparent 55px 115px);
+/* Sparse, hairline-size droplets instead of diagonal tile-wide strokes.
+   The SVG pattern draws discrete 10-16px marks in an unanimated tile. */
+.nf-rain {
+ position:absolute;inset:-190px -30px;pointer-events:none;opacity:.24;
+ background-repeat:repeat;background-size:170px 190px;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='190' viewBox='0 0 170 190'%3E%3Cg fill='none' stroke='%23d9e6f5' stroke-width='.8' stroke-linecap='round' opacity='.65'%3E%3Cpath d='M23 14l-4 13 M112 47l-3 11 M68 101l-4 14 M153 135l-3 12 M12 168l-3 9'/%3E%3C/g%3E%3C/svg%3E");
 }
-.nf-rain-front {opacity:.45;background-size:135px 360px;filter:blur(.25px)}
+.nf-rain-back {opacity:.16;filter:blur(.45px)}
+.nf-rain-front {opacity:.27;background-size:195px 220px}
 .nf-wind {position:absolute;top:53%;left:0;width:42%;height:5px;opacity:0;border-radius:50%;
  background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);filter:blur(4px)}
 .nf-wind-two {top:72%;width:62%}
 .nf-flash {position:absolute;inset:0;background:#e4eef8;opacity:0}
-/* The same 4200px mountains and 5000px spruce forest as the canonical journey.
-   Scale the original artwork as one scene so its contours and proportions stay
-   untouched. The 404 has its own layout and never starts the scroll engine. */
+/* Render the precise beginning of the Journey landscape.
+   The hero starts at x=0 and clips its 4200px ridges/5000px tree line to
+   viewport width: centering or shrinking those source canvases changes the
+   skyline and tree rhythm. Freeze that same origin at the start of 404. */
 .nf-landscape-stage {
-  position:absolute;
-  width:4200px;
-  height:800px;
-  bottom:-38px;
-  left:50%;
-  transform:translateX(-50%) scale(.54);
-  transform-origin:50% 100%;
+ position:absolute;
+ left:0;
+ bottom:0;
+ width:4200px;
+ height:800px;
+ transform:none;
+ transform-origin:0 100%;
 }
-.nf-landscape .ly {
-  position:absolute;
-  left:0;
-  pointer-events:none;
-}
+.nf-landscape .ly {position:absolute;left:0;bottom:0;pointer-events:none}
 .nf-landscape .reference-mountain svg,
 .nf-landscape .tr svg {display:block}
-.nf-landscape .l1 {bottom:105px;opacity:.78}
-.nf-landscape .l2 {bottom:20px}
-.nf-landscape .l3 {bottom:0}
-.nf-landscape .l1 path {fill:#4b627b!important}
-.nf-landscape .l2 path:first-child {fill:#30455f!important}
-.nf-landscape .l2 path + path {fill:#a9bed3!important;fill-opacity:.3!important}
-.nf-landscape .l3 path:first-child {fill:#101c31!important}
-.nf-landscape .l3 path + path {fill:#8da4ba!important;fill-opacity:.18!important}
-.nf-landscape .tr {
-  left:50%;
-  transform:translateX(-50%);
-  bottom:12px!important;
-  opacity:.95;
-}
-.nf-landscape .tr path {fill:#0a1424!important}
-.nf-landscape .forest-foreground {bottom:-2px!important;opacity:.98}
+.nf-landscape .l1 {bottom:0;opacity:1}
+.nf-landscape .l2 {bottom:0;opacity:1}
+.nf-landscape .l3 {bottom:0;opacity:1}
+.nf-landscape .l1 path {fill:#6b5188!important}
+.nf-landscape .l2 path:first-child {fill:#42345f!important}
+.nf-landscape .l2 path + path {fill:#9687b3!important;fill-opacity:.48!important}
+.nf-landscape .l3 path:first-child {fill:#251947!important}
+.nf-landscape .l3 path + path {fill:#695785!important;fill-opacity:.3!important}
+/* Preserve the original 88px forest offset and exact left-to-right trees. */
+.nf-landscape .tr {left:0;bottom:88px!important;transform:none;opacity:.96}
+.nf-landscape .tr path {fill:#0a0521!important}
+.nf-landscape .forest-foreground {bottom:88px!important;opacity:1}
 .nf-landscape .fx {display:none}
 .nf-landscape::after {content:"";position:absolute;inset:auto 0 0;height:12%;
  background:linear-gradient(180deg,transparent,#101b2b 95%)}
@@ -142,22 +138,22 @@
 @media (prefers-reduced-motion:no-preference) {
   .nf-cloud-back {animation:nf-cloud 46s linear infinite}
   .nf-cloud-front {animation:nf-cloud 31s linear infinite reverse}
-  .nf-rain-back {animation:nf-rain .95s linear infinite}
-  .nf-rain-front {animation:nf-rain .72s linear infinite}
+  .nf-rain-back {animation:nf-rain 2.7s linear infinite}
+  .nf-rain-front {animation:nf-rain 2.1s linear infinite}
   .nf-lightning {animation:nf-lightning 13s linear infinite}
   .nf-flash {animation:nf-flash 13s linear infinite}
   .nf-wind-one {animation:nf-gust 6s linear infinite}
   .nf-wind-two {animation:nf-gust 8s linear -3s infinite}
 }
 @keyframes nf-cloud {to {transform:translateX(-12%)}}
-@keyframes nf-rain {to {transform:translate(-32px,110px)}}
+@keyframes nf-rain {to {transform:translate(-43px,190px)}}
 @keyframes nf-lightning {0%,68%,70.2%,100%{opacity:0}68.5%{opacity:.8}69%{opacity:.08}69.6%{opacity:.65}}
 @keyframes nf-flash {0%,68%,70.2%,100%{opacity:0}68.5%{opacity:.14}69%{opacity:.02}69.6%{opacity:.08}}
 @keyframes nf-gust {0%{transform:translateX(115vw);opacity:0}15%,65%{opacity:.32}100%{transform:translateX(-65vw);opacity:0}}
 @media (max-width:1100px) {
  .nf-navlinks {display:none}
  .nf-navtools {margin-left:auto}
- .nf-landscape-stage {transform:translateX(-50%) scale(.4);bottom:-24px}
+ .nf-landscape-stage {transform:translateX(-160px) scale(.85);bottom:0}
 }
 @media (max-width:700px) {
  .nf-nav {padding:12px 18px;min-height:70px}
@@ -174,8 +170,7 @@
  .nf-description {font-size:clamp(16px,4vw,18px);max-width:370px}
  .nf-actions {flex-direction:column;width:min(100%,350px);margin:26px auto 0;gap:12px}
  .nf-button {width:100%;min-height:54px}
- .nf-landscape-stage {transform:translateX(-50%) scale(.3);bottom:-16px}
- .nf-landscape .tr {bottom:10px!important}
+ .nf-landscape-stage {transform:translateX(-140px) scale(.7);bottom:0}
  .nf-cloud {filter:blur(13px)}
 }
 @media (max-height:620px) and (min-width:701px) {
@@ -187,7 +182,7 @@
  .nf-content {padding-top:22px;padding-bottom:155px}
  .nf-404 {font-size:clamp(95px,25vw,135px)}
  .nf-heading {margin-top:10px}
- .nf-landscape-stage {transform:translateX(-50%) scale(.25)}
+ .nf-landscape-stage {transform:translateX(-105px) scale(.6)}
 }
 @media (prefers-reduced-motion:reduce) {
  .nf-scene *, .nf-scene *::before, .nf-scene *::after {animation:none!important;transition:none!important;scroll-behavior:auto!important}

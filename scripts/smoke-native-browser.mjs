@@ -47,14 +47,20 @@ async function dump(path) {
 try {
   await ready();
   for (const locale of ['uk', 'en']) {
-    const missing = await fetch(`http://127.0.0.1:${port}/${locale}/nonexistent-trail-404`, {
-      headers: {connection: 'close'},
-    });
-    assert.equal(missing.status, 404, 'Unknown localized trail must return HTTP 404');
-    const errorPage = await missing.text();
-    assert.match(errorPage, /nf-scene/, 'Branded error scene must render');
-    assert.ok(errorPage.includes(locale === 'en' ? "You've lost the trail" : 'Ви збилися зі стежки'),
-      '404 scene must use the active locale');
+    try {
+      const missing = await fetch(`http://127.0.0.1:${port}/${locale}/nonexistent-trail-404`, {
+        headers: {connection: 'close'},
+      });
+      assert.equal(missing.status, 404, 'Unknown localized trail must return HTTP 404');
+      const errorPage = await missing.text();
+      assert.match(errorPage, /nf-scene/, 'Branded error scene must render');
+      assert.ok(errorPage.includes(locale === 'en' ? "You've lost the trail" : 'Ви збилися зі стежки'),
+        '404 scene must use the active locale');
+      } catch (error) {
+      throw new Error('404 HTTP check failed for ' + locale + ': ' + String(error) + '\\nServer: ' + serverOutput.slice(-4000));
+    }
+  }
+  for (const locale of ['uk', 'en']) {
     const original = await dump(`/${locale}?preview=legacy`);
     assert.match(original, /legacy-journey__frame/, `missing original iframe in ${locale}`);
     assert.match(original, /legacy\/index\.html/, `original asset missing in ${locale}`);

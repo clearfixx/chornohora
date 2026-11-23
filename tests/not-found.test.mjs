@@ -90,3 +90,23 @@ test('404 mountains and forest use cold storm colors, not purple', () => {
     assert.ok(!css.includes(purple), 'outdated purple tone ' + purple);
   }
 });
+
+test('rain depth is correct: back behind scenery, mid/front in front and below UI', () => {
+  const scene = read('src/features/not-found/NotFoundScene.tsx');
+  const css = read('src/features/not-found/not-found.css');
+  const rainBack = scene.indexOf('nf-rain nf-rain-back');
+  const landscape = scene.indexOf('<NotFoundLandscape/>');
+  const overlay = scene.indexOf('className="nf-rain-overlay"');
+  const mid = scene.indexOf('nf-rain nf-rain-mid');
+  const front = scene.indexOf('nf-rain nf-rain-front');
+  const nav = scene.indexOf('<NotFoundNavigation ');
+  const content = scene.indexOf('<main className="nf-content"');
+  assert.ok(rainBack >= 0 && rainBack < landscape);
+  assert.ok(landscape < overlay && overlay < mid && mid < front && front < nav && nav < content);
+  assert.match(css, /\.nf-weather \{z-index:-1\}/);
+  assert.match(css, /\.nf-landscape \{z-index:1\}/);
+  assert.match(css, /\.nf-rain-overlay \{z-index:5\}/);
+  assert.match(css, /\.nf-content \{[^}]*z-index:10;/);
+  assert.match(css, /\.nf-nav \{[^}]*z-index:30;/);
+  assert.match(css, /\.nf-weather,\.nf-landscape,\.nf-rain-overlay \{[^}]*pointer-events:none/);
+});

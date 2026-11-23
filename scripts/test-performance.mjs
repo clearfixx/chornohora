@@ -66,7 +66,9 @@ const earlyObserver="(function(){var d=window.__journeyPerf={loaderReadyMs:null,
 async function sample(locale,width,iteration){
   await cdp('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<700});
   await cdp('Emulation.setTouchEmulationEnabled',{enabled:width<700,maxTouchPoints:1});
-  await cdp('Page.navigate',{url:'http://127.0.0.1:'+port+'/'+locale});
+  await cdp('Page.navigate',{url:'about:blank'});
+  await delay(110);
+  await cdp('Page.navigate',{url:'http://127.0.0.1:'+port+'/'+locale+'?perf_run='+iteration+'_'+width});
   let initialized=false;
   for(let n=0;n<100;n++){
     try {
@@ -76,11 +78,12 @@ async function sample(locale,width,iteration){
     await delay(100);
   }
   assert.ok(initialized,'Journey was not ready');
+  await delay(600);
   const initial=await evaluate("(() => {"+
     "const p=performance, n=p.getEntriesByType('navigation')[0],paint=p.getEntriesByType('paint');"+
     "const d=window.__journeyPerf||{}, track=document.querySelector('[data-react-journey] .track'),stage=track?.querySelector('.stage');"+
     "const gl=document.createElement('canvas').getContext('webgl');const ext=gl?.getExtension('WEBGL_debug_renderer_info');"+
-    "return {loaderReadyMs:d.loaderReadyMs,lcpMs:d.lcpMs,cls:d.cls,"+
+    "return {loaderReadyMs:d.loaderReadyMs,firstReadyFrameMs:d.firstReadyFrameMs,loaderHiddenFrameMs:d.loaderHiddenFrameMs,lcpMs:d.lcpMs,cls:d.cls,"+
     "fcpMs:paint.find(e=>e.name==='first-contentful-paint')?.startTime??null,"+
     "ttfbMs:n?.responseStart??null,domContentLoadedMs:n?.domContentLoadedEventEnd??null,"+
     "resourceCount:p.getEntriesByType('resource').length,"+
@@ -113,7 +116,7 @@ async function sample(locale,width,iteration){
   const entry={locale,width,iteration,initial,scenes};
   report.samples.push(entry);save();
   console.log('PERFORMANCE SAMPLE '+JSON.stringify({locale,width,iteration,loaderReadyMs:initial.loaderReadyMs,
-    fcpMs:initial.fcpMs,lcpMs:initial.lcpMs,renderer:initial.webgl.renderer,
+    fcpMs:initial.fcpMs,lcpMs:initial.lcpMs,firstReadyFrameMs:initial.firstReadyFrameMs,loaderHiddenFrameMs:initial.loaderHiddenFrameMs,renderer:initial.webgl.renderer,
     scenes:scenes.map(s=>({point:s.point,p95Ms:s.p95Ms,fps:s.approximateFps,directionMatched:s.directionMatched}))}));
 }
 try{

@@ -69,8 +69,10 @@ async function sample(locale,width,iteration){
   await cdp('Page.navigate',{url:'http://127.0.0.1:'+port+'/'+locale});
   let initialized=false;
   for(let n=0;n<100;n++){
-    initialized=await evaluate("!!document.querySelector('[data-react-journey] .track[data-journey-ready]') && document.querySelector('[data-journey-loader]')?.dataset.journeyLoader==='complete'");
-    if(initialized)break;
+    try {
+      initialized=await evaluate("!!document.querySelector('[data-react-journey] .track[data-journey-ready]') && document.querySelector('[data-journey-loader]')?.dataset.journeyLoader==='complete'");
+      if(initialized)break;
+    } catch { /* Navigation can destroy the previous JS context briefly. */ }
     await delay(100);
   }
   assert.ok(initialized,'Journey was not ready');

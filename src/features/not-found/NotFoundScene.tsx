@@ -20,13 +20,17 @@ export function NotFoundScene({locale, copy}: {locale: Locale; copy: ErrorCopy})
         <path d="M1130 70 1098 150 1126 158 1086 250 1100 254 M1108 152 1148 190" fill="none" stroke="#eaf3ff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
       <div className="nf-rain nf-rain-back"/>
-      <div className="nf-rain nf-rain-mid"/>
       <div className="nf-wind nf-wind-one"/>
       <div className="nf-wind nf-wind-two"/>
-      <div className="nf-rain nf-rain-front"/>
       <div className="nf-flash"/>
     </div>
     <NotFoundLandscape/>
+    {/* Mid- and foreground rain must pass in front of the mountains and forest.
+        This overlay stays below the content and navigation and never captures clicks. */}
+    <div className="nf-rain-overlay" aria-hidden="true">
+      <div className="nf-rain nf-rain-mid"/>
+      <div className="nf-rain nf-rain-front"/>
+    </div>
     <NotFoundNavigation locale={locale} labels={{
       brand: copy.brand, brandSmall: copy.brandSmall, home: copy.home,
       menu: copy.menu, close: copy.close, language: copy.language,

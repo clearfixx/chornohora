@@ -5,6 +5,7 @@ import {useJourneyProgress} from '@/hooks/useJourneyProgress';
 import {JourneyStore} from '@/engine/journey-store';
 import {JourneyStage} from '@/features/journey/components/JourneyStage';
 import {JourneyDrawer} from '@/features/journey/components/JourneyDrawer';
+import {JourneyLoader} from '@/features/journey/components/JourneyLoader';
 import type {JourneyStopId} from '@/lib/journey';
 
 type Locale = 'uk' | 'en';
@@ -188,6 +189,7 @@ export function ReactJourneyPreview({locale}: {locale: Locale}) {
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   return <>
+    <JourneyLoader ready={ready} locale={locale}/>
     <div data-v22-source-scene="" data-react-journey="" inert={menuOpen}>
       <MemoStage
         trackRef={trackRef} store={store} locale={locale} menuOpen={menuOpen}

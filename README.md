@@ -10,7 +10,7 @@ Interactive illustrated journey through four Carpathian locations. The approved 
 - `/uk?preview=react` and `/en?preview=react` are diagnostic aliases of the canonical React-owned scene, traveler, navigation, drawer, location tooltips, booking **draft** and footer.
 - `?preview=native` is a legacy compatibility/comparison mode, **not** a production target.
 - The v22 reference under `public/legacy` is frozen. Preserve visual geometry, approved timing, and scene assets unless a user-approved redesign explicitly overrides the relevant reference.
-- The React booking form supports reviewed server-side email enquiries when Resend is configured. Without provider credentials it remains a copyable draft; no booking or availability is confirmed.
+- The React booking form is a **demo-only** local draft: validation, preview and copy work, but no request is transmitted. The booking API always returns HTTP 503.
 - The user accepted the current appearance and browser interaction. The migration was merged after green CI #817/#818.
 
 ## Local development
@@ -73,4 +73,4 @@ Localized metadata, an OG image, robots.txt, sitemap.xml, favicon, and 404 are i
 - [Journey controller](docs/JOURNEY_CONTROLLER.md) — scroll ownership, cancellation and diagnostics
 - [Migration reference](docs/MIGRATION.md) — preserved visual/interaction requirements
 
-**Release state:** React Journey is in `main`; preserve `?preview=legacy` for comparison and rollback. Booking requests can now be sent to the organizer through a configured Resend email account; without server credentials the form remains a copyable draft. Provider acceptance is not a confirmed reservation. See [booking delivery](docs/BOOKING_DELIVERY.md).
+**Release state:** React Journey is in `main`. Legacy/native diagnostic modes are disabled on normal production deployments. The application shows a short branded splash while the Journey Controller initializes. Booking is demo-only and cannot send requests. See [booking demo](docs/BOOKING_DELIVERY.md).

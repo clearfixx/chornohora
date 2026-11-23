@@ -23,6 +23,7 @@ jobs:
       - run: pnpm test:journey
       - run: pnpm test:source
       - run: pnpm test:404
+      - run: pnpm test:loader
       - run: pnpm test:seo
       - run: pnpm test:release
       - run: pnpm check:react-css

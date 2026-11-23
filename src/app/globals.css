@@ -336,3 +336,36 @@ body:has([data-v22-source-scene]:not([data-react-journey])).route-menu-open .rou
   93%  {left:65%;top:145px;scale:1.05}
   98%,100% {left:62%;top:520px;scale:1.1}
 }
+
+/* Canonical Journey readiness veil. Does not affect other renderers or 404.
+   SSR displays it immediately; React removes it only when the controller mounts. */
+.journey-loader {
+  position:fixed;inset:0;z-index:10000;display:grid;place-items:center;
+  overflow:hidden;background:#140b3a;color:#fff6e8;
+  opacity:1;visibility:visible;pointer-events:auto;
+  transition:opacity .42s ease,visibility 0s linear .42s;
+}
+.journey-loader--ready {opacity:0;visibility:hidden;pointer-events:none}
+.journey-loader__center {
+  display:flex;flex-direction:column;align-items:center;gap:24px;
+  width:min(82vw,360px);text-align:center;
+}
+.journey-loader__logo {display:block;width:clamp(180px,62vw,243px);height:auto}
+.journey-loader__track {
+  position:relative;overflow:hidden;width:min(200px,62vw);height:2px;
+  background:rgba(255,246,232,.17);border-radius:2px;
+}
+.journey-loader__trace {
+  position:absolute;inset:0 auto 0 0;width:35%;
+  background:#ffbf83;transform:translateX(-110%);
+  animation:journey-loader-trace 1.15s ease-in-out infinite alternate;
+}
+.journey-loader__caption {
+  margin:0;font:500 12px/1.5 Onest,system-ui,sans-serif;
+  letter-spacing:.18em;text-transform:uppercase;color:#d9c5f5;
+}
+@keyframes journey-loader-trace {to{transform:translateX(390%)}}
+@media(prefers-reduced-motion:reduce) {
+  .journey-loader {transition:none}
+  .journey-loader__trace {animation:none;transform:translateX(90%)}
+}

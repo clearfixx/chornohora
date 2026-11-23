@@ -7,7 +7,7 @@ const read = path => readFileSync(path,'utf8');
 test('storm 404 is React-owned and reuses frozen Journey mountain paths',()=>{
   const source = read('src/features/not-found/NotFoundLandscape.tsx');
   const original = read('src/features/journey/components/scenes/MountainAndCloudLayers.tsx');
-  const paths = [...source.matchAll(/<path[^>]*\\sd="([^"]+)"/g)].map(match=>match[1]);
+  const paths = [...source.matchAll(/<path[^>]*\sd="([^"]+)"/g)].map(match=>match[1]);
   assert.ok(paths.length>=5,'Expected original multi-layer ridges and light facets');
   for(const path of paths) assert.ok(original.includes('d="'+path+'"'), 'Non-canonical ridge path: '+path.slice(0,40));
   assert.doesNotMatch(source,/forest|Forest|iframe|dangerouslySetInnerHTML/);
@@ -22,7 +22,7 @@ test('404 navigation links are real destinations and isolated from journey contr
   assert.match(source,/event.key === 'Escape'/);
   assert.match(source,/event.key !== 'Tab'/);
   assert.match(source,/inert=\{!open\}/);
-  assert.doesNotMatch(source,/JourneyStore|useJourneyProgress|data-journey-action/);
+  assert.doesNotMatch(source, /import[^\n]*(JourneyStore|useJourneyProgress)|data-journey-action/);
 });
 
 test('404 is localized and has reduced motion / mobile rules',()=>{

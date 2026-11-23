@@ -43,8 +43,30 @@ const summarize=report=>{
   }]));
 };
 const software=load(softwarePath),gpu=load(gpuPath);
+if(softwarePath===gpuPath||JSON.stringify(software)===JSON.stringify(gpu))
+  throw Error('Comparison inputs are identical: supply distinct software and GPU reports');
+if(software.gpuAllowed!==false||gpu.gpuAllowed!==true)
+  throw Error('Invalid mode pair: software.gpuAllowed must be false and gpu.gpuAllowed must be true');
+if(software.cacheMode!==gpu.cacheMode)
+  throw Error('Cannot compare different cache modes: '+software.cacheMode+' vs '+gpu.cacheMode);
+if(software.cacheMode===undefined||gpu.cacheMode===undefined)
+  throw Error('Old report without explicit cacheMode; rerun with updated benchmark');
+if(software.browser?.product!==gpu.browser?.product)
+  throw Error('Cannot compare different browser versions');
+const softwareRenderer=[...new Set(software.samples.map(x=>x.initial?.webgl?.renderer).filter(Boolean))];
+const gpuRenderer=[...new Set(gpu.samples.map(x=>x.initial?.webgl?.renderer).filter(Boolean))];
 const softwareGroups=summarize(software),gpuGroups=summarize(gpu);
 const warnings=[];
+if(softwareRenderer.some(r=>gpuRenderer.includes(r)))
+  warnings.push('Both modes report an identical WebGL renderer; this does not establish different GPU compositing paths');
+for(const [label,report] of [['software',software],['GPU',gpu]]){
+  for(const sample of report.samples){
+    if(sample.quality?.valid===false)
+      warnings.push(label+' '+sample.locale+'/'+sample.width+' iteration '+sample.iteration+': invalid sample quality');
+    if(sample.quality?.issues?.length)
+      warnings.push(label+' '+sample.locale+'/'+sample.width+' iteration '+sample.iteration+': '+sample.quality.issues.join('; '));
+  }
+}
 for(const key of new Set([...Object.keys(softwareGroups),...Object.keys(gpuGroups)])){
   const a=softwareGroups[key],b=gpuGroups[key];
   if(!a||!b){warnings.push(key+': missing '+(!a?'software':'GPU')+' group');continue;}
@@ -57,14 +79,15 @@ for(const key of new Set([...Object.keys(softwareGroups),...Object.keys(gpuGroup
   }
 }
 if((software.errors||[]).length||(gpu.errors||[]).length)warnings.push('One or both input reports contain sample errors');
-const summary={schema:2,inputs:{software:softwarePath,gpu:gpuPath},
+const summary={schema:3,cacheMode:software.cacheMode,inputs:{software:softwarePath,gpu:gpuPath},
   renderer:{
-    software:[...new Set(software.samples.map(s=>s.initial?.webgl?.renderer).filter(Boolean))],
-    gpu:[...new Set(gpu.samples.map(s=>s.initial?.webgl?.renderer).filter(Boolean))],
+    software:softwareRenderer,
+    gpu:gpuRenderer,
   },
+  gpuComparisonVerified:false,
   software:softwareGroups,gpu:gpuGroups,warnings,
   errors:{software:software.errors||[],gpu:gpu.errors||[]},
-  caution:'rAF-derived FPS are not physical display FPS. Medians of repeats; compare identical devices and versions only.'};
+  caution:'Headless WebGL renderer does not confirm browser compositor acceleration. rAF FPS are not physical display FPS. Compare matched devices/versions and cache modes only.'};
 mkdirSync(join('artifacts','performance'),{recursive:true});
 writeFileSync(join('artifacts','performance','comparison.json'),JSON.stringify(summary,null,2)+'\n');
 for(const key of [...new Set([...Object.keys(summary.software),...Object.keys(summary.gpu)])]){

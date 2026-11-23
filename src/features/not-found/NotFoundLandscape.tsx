@@ -1,18 +1,20 @@
-/** A standalone, static selection of the approved Journey mountain geometry.
- * Paths were reused from MountainAndCloudLayers, without the scroll engine.
- * Only ridges from the established site artwork are rendered here. */
+import {MountainAndCloudLayers} from '@/features/journey/components/scenes/MountainAndCloudLayers';
+import {ForestBackLayer, ForestForegroundLayer} from '@/features/journey/components/scenes/ForestLayers';
+
+/**
+ * Reuse the actual approved Chornohora scene components, including their
+ * original mountain and spruce-tree SVG paths. The standalone 404 wrapper
+ * only positions and recolors them; it does not mount JourneyStore, the
+ * walking traveler, or the scroll controller.
+ */
 export function NotFoundLandscape() {
-  return <div className="nf-landscape" aria-hidden="true">
-    <svg className="nf-ridge nf-ridge-back" viewBox="0 0 4200 560" preserveAspectRatio="xMidYMax slice">
-      <path fill="#4b627b" d="M0,560 L0,178 L189,260 L388,162 L579,251 L768,174 L946,258 L1182,183 L1393,262 L1527,194 L1678,257 L1845,175 L1974,260 L2171,183 L2407,264 L2633,187 L2836,254 L2954,167 L3211,255 L3343,167 L3505,259 L3702,162 L3833,265 L4066,184 L4180,251 L4200,250 L4200,560 Z"/>
-    </svg>
-    <svg className="nf-ridge nf-ridge-mid" viewBox="0 0 4200 800" preserveAspectRatio="xMidYMax slice">
-      <path fill="#30455f" d="M0,800 L0,160 L153,615 L302,256 L547,629 L762,277 L884,607 L1023,312 L1213,610 L1410,174 L1609,651 L1822,259 L1956,643 L2135,419 L2262,641 L2447,380 L2604,653 L2739,300 L2865,619 L3027,296 L3192,624 L3329,382 L3509,603 L3741,307 L3866,608 L4060,373 L4200,600 L4200,800 Z"/>
-      <path fill="#a9bed3" fillOpacity=".3" d="M302,256L153,615L284,741ZM762,277L547,629L736,752ZM1023,312L884,607L1006,710ZM1410,174L1213,610L1386,763ZM1822,259L1609,651L1796,788ZM2135,419L1956,643L2114,721ZM2447,380L2262,641L2425,732ZM2739,300L2604,653L2723,777ZM3027,296L2865,619L3008,732ZM3329,382L3192,624L3313,709ZM3741,307L3509,603L3713,707ZM4060,373L3866,608L4037,690Z"/>
-    </svg>
-    <svg className="nf-ridge nf-ridge-front" viewBox="0 0 4200 440" preserveAspectRatio="xMidYMax slice">
-      <path fill="#101c31" d="M0,440 L0,207 L161,313 L243,213 L413,306 L558,193 L744,307 L913,226 L1083,318 L1232,206 L1326,302 L1437,190 L1542,316 L1684,207 L1832,318 L1986,215 L2141,319 L2298,219 L2477,318 L2617,206 L2711,309 L2817,209 L2989,303 L3170,187 L3350,313 L3528,217 L3639,302 L3760,236 L3910,311 L4020,215 L4187,316 L4200,300 L4200,440 Z"/>
-      <path fill="#8da4ba" fillOpacity=".18" d="M243,213L161,313L233,348ZM558,193L413,306L541,346ZM913,226L744,307L893,335ZM1232,206L1083,318L1214,357ZM1437,190L1326,302L1424,341ZM1684,207L1542,316L1667,354ZM1986,215L1832,318L1968,354ZM2298,219L2141,319L2279,354ZM2617,206L2477,318L2600,357ZM2817,209L2711,309L2804,344ZM3170,187L2989,303L3148,344ZM3528,217L3350,313L3507,347ZM3760,236L3639,302L3745,325ZM4020,215L3910,311L4007,345Z"/>
-    </svg>
-  </div>;
+  return (
+    <div className="nf-landscape" aria-hidden="true">
+      <div className="nf-landscape-stage">
+        <MountainAndCloudLayers />
+        <ForestBackLayer />
+        <ForestForegroundLayer />
+      </div>
+    </div>
+  );
 }

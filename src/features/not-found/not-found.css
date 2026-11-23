@@ -5,9 +5,11 @@
   overflow: clip; color: #fff; font-family: Onest, system-ui, sans-serif;
   background: linear-gradient(180deg,#141b27 0%,#26364a 36%,#3f566d 68%,#587187 100%);
 }
-.nf-weather,.nf-landscape {position: absolute; inset: 0; pointer-events: none; overflow: hidden}
-.nf-weather {z-index: -1}
-.nf-landscape {z-index: 1}
+.nf-weather,.nf-landscape,.nf-rain-overlay {position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.nf-weather {z-index:-1}
+.nf-landscape {z-index:1}
+/* Rain perspective: behind mountains (back), over scenery (mid/front), under controls. */
+.nf-rain-overlay {z-index:5}
 .nf-halo {position:absolute;top:13%;left:50%;width:min(36vw,440px);height:230px;transform:translateX(-50%);border-radius:50%;background:#b0cae3;filter:blur(65px);opacity:.12}
 .nf-cloud {position:absolute;left:-65%;width:260%;pointer-events:none;filter:blur(17px);will-change:transform}
 .nf-cloud-back {top:4%;height:220px;opacity:.74;background:

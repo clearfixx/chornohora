@@ -43,3 +43,20 @@ test('comparison surfaces missing observations and input mismatches',()=>{
     assert.ok(source.includes(token),token);
   }
 });
+
+test('cache isolation, LCP attribution and monotonic ready timestamps are instrumented',()=>{
+  const source=readFileSync(script,'utf8');
+  for(const token of ['--cache=warm','Network.clearBrowserCache','Network.setCacheDisabled',
+    'lcpElement','lcpSize','lcpUrl','const now=performance.now();',
+    'first frame precedes readiness','quality={valid:','Browser.getVersion']){
+    assert.ok(source.includes(token),token);
+  }
+});
+test('comparator rejects duplicate reports and invalid GPU mode pairing',()=>{
+  const source=readFileSync(compare,'utf8');
+  for(const token of ['Comparison inputs are identical','software.gpuAllowed!==false',
+    'gpu.gpuAllowed!==true','different cache modes','gpuComparisonVerified:false',
+    'identical WebGL renderer','sample.quality?.valid===false']){
+    assert.ok(source.includes(token),token);
+  }
+});

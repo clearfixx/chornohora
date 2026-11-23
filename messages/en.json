@@ -149,5 +149,11 @@
     "bookingUnavailable": "Sending is not configured yet. You can copy the request text instead.",
     "bookingInvalid": "Please review your request details and try again.",
     "bookingSendFailed": "Could not confirm delivery. Try again or copy your request."
+  },
+  "NotFound": {
+    "eyebrow": "ERROR 404",
+    "heading": "You've lost the trail",
+    "description": "The storm washed this page off the trail map. Let's get back to the ridge.",
+    "home": "Back to home"
   }
 }

@@ -51,3 +51,19 @@ test('404 is localized and has reduced motion / mobile rules',()=>{
   assert.match(page,/NotFoundScene/);
   assert.match(page,/getTranslations/);
 });
+
+test('404 scenery preserves the hero starting crop and its forest placement', () => {
+  const source = read('src/features/not-found/not-found.css');
+  assert.match(source, /\.nf-landscape-stage \{[\s\S]*?left:0;[\s\S]*?bottom:0;[\s\S]*?transform:none;/);
+  assert.match(source, /\.nf-landscape \.tr \{left:0;bottom:88px!important;transform:none;/);
+  assert.match(source, /\.nf-landscape \.forest-foreground \{bottom:88px!important;/);
+  assert.doesNotMatch(source, /\.nf-ridge/);
+});
+
+test('404 rain uses discreet small streaks and slower seamless tiling', () => {
+  const source = read('src/features/not-found/not-found.css');
+  assert.match(source, /stroke-width='.8'/);
+  assert.match(source, /@keyframes nf-rain \{to \{transform:translateY\(190px\)\}\}/);
+  assert.match(source, /animation:nf-rain 2\.7s linear infinite/);
+  assert.doesNotMatch(source, /mask-image: repeating-linear-gradient/);
+});

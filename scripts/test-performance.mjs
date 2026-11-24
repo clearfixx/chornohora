@@ -13,8 +13,10 @@ const gpu=process.argv.includes('--gpu')||process.env.CHORNOHORA_BROWSER_GPU==='
 const repeats=Number(process.argv.find(a=>a.startsWith('--repeats='))?.split('=')[1]||'3');
 assert.ok(Number.isInteger(repeats)&&repeats>=1&&repeats<=10,'--repeats must be 1..10');
 const locales=process.argv.includes('--both-locales')?['uk','en']:['uk'];
+const cacheMode=process.argv.includes('--cache=warm')?'warm':'cold';
+assert.ok(!process.argv.some(a=>a.startsWith('--cache=')&&!['--cache=warm','--cache=cold'].includes(a)), 'Valid cache modes: cold, warm');
 const report={version:1,createdAt:new Date().toISOString(),node:process.version,platform:process.platform,
-  gpuAllowed:gpu,repeats,locales,samples:[],errors:[],
+  gpuAllowed:gpu,cacheMode,repeats,locales,samples:[],errors:[],warnings:[],
   caution:'Lab data from headless Chromium. Not field Core Web Vitals; GPU allowed does not imply hardware acceleration.'};
 const save=()=>writeFileSync(join(output,'report.json'),JSON.stringify(report,null,2)+'\n');
 const paths=windows?[
@@ -56,17 +58,53 @@ const stats=items=>{
     approximateFps:median?Math.round(1000/median):null,
     over34ms:values.filter(v=>v>34).length,over50ms:values.filter(v=>v>50).length};
 };
-// Install timing observers before any route script executes.
-const earlyObserver="(function(){var d=window.__journeyPerf={loaderReadyMs:null,lcpMs:null,cls:0};"+
-  "try{new PerformanceObserver(function(l){l.getEntries().forEach(function(e){d.lcpMs=e.startTime})}).observe({type:'largest-contentful-paint',buffered:true})}catch(e){}"+
-  "try{new PerformanceObserver(function(l){l.getEntries().forEach(function(e){if(!e.hadRecentInput)d.cls+=e.value})}).observe({type:'layout-shift',buffered:true})}catch(e){}"+
-  "var o=new MutationObserver(function(){var e=document.querySelector('[data-journey-loader]');if(e&&e.dataset.journeyLoader==='complete'&&d.loaderReadyMs===null){d.loaderReadyMs=performance.now();o.disconnect()}});"+
-  "o.observe(document,{childList:true,subtree:true,attributes:true,attributeFilter:['data-journey-loader']})})();";
+// Observers start before route code. Use performance.now() inside rAF rather than its
+// timestamp argument, which can precede MutationObserver's readiness time.
+const earlyObserver = `(() => {
+  const d=window.__journeyPerf={loaderReadyMs:null,firstReadyFrameMs:null,
+    loaderHiddenFrameMs:null,lcpMs:null,lcpElement:null,lcpSize:null,lcpUrl:null,cls:0};
+  try { new PerformanceObserver(list=>{for(const e of list.getEntries()){
+    d.lcpMs=e.startTime;
+    d.lcpElement=e.element?{tag:e.element.tagName,id:e.element.id||null,
+      className:typeof e.element.className==='string'?e.element.className.slice(0,120):null}:null;
+    d.lcpSize=e.size||null;
+    d.lcpUrl=e.url?new URL(e.url,location.href).pathname:null;
+  }}).observe({type:'largest-contentful-paint',buffered:true}); } catch {}
+  try { new PerformanceObserver(list=>{for(const e of list.getEntries())
+    if(!e.hadRecentInput)d.cls+=e.value;
+  }).observe({type:'layout-shift',buffered:true}); } catch {}
+  const observer=new MutationObserver(()=>{
+    const el=document.querySelector('[data-journey-loader]');
+    if(!el||el.dataset.journeyLoader!=='complete'||d.loaderReadyMs!==null)return;
+    d.loaderReadyMs=performance.now();observer.disconnect();
+    function check(){
+      const now=performance.now();
+      if(d.firstReadyFrameMs===null)d.firstReadyFrameMs=now;
+      const style=getComputedStyle(el);
+      if(style.visibility==='hidden'&&Number(style.opacity)<0.01){d.loaderHiddenFrameMs=now;return;}
+      if(now-d.loaderReadyMs<5000)requestAnimationFrame(check);
+    }
+    requestAnimationFrame(check);
+  });
+  observer.observe(document,{childList:true,subtree:true,attributes:true,
+    attributeFilter:['data-journey-loader']});
+})();`;
 
 async function sample(locale,width,iteration){
+  await cdp('Network.setCacheDisabled',{cacheDisabled:cacheMode==='cold'});
+  if(cacheMode==='cold')await cdp('Network.clearBrowserCache');
   await cdp('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<700});
   await cdp('Emulation.setTouchEmulationEnabled',{enabled:width<700,maxTouchPoints:1});
-  await cdp('Page.navigate',{url:'http://127.0.0.1:'+port+'/'+locale});
+  await cdp('Page.navigate',{url:'about:blank'});
+  await delay(110);
+  const target='http://127.0.0.1:'+port+'/'+locale+'?perf_run='+iteration+'_'+width;
+  if(cacheMode==='warm'){
+    await cdp('Page.navigate',{url:target+'&warmup=1'});
+    await delay(650);
+    await cdp('Page.navigate',{url:'about:blank'});
+    await delay(100);
+  }
+  await cdp('Page.navigate',{url:target});
   let initialized=false;
   for(let n=0;n<100;n++){
     try {
@@ -76,14 +114,22 @@ async function sample(locale,width,iteration){
     await delay(100);
   }
   assert.ok(initialized,'Journey was not ready');
+  await delay(600);
   const initial=await evaluate("(() => {"+
     "const p=performance, n=p.getEntriesByType('navigation')[0],paint=p.getEntriesByType('paint');"+
     "const d=window.__journeyPerf||{}, track=document.querySelector('[data-react-journey] .track'),stage=track?.querySelector('.stage');"+
     "const gl=document.createElement('canvas').getContext('webgl');const ext=gl?.getExtension('WEBGL_debug_renderer_info');"+
-    "return {loaderReadyMs:d.loaderReadyMs,lcpMs:d.lcpMs,cls:d.cls,"+
+    "return {loaderReadyMs:d.loaderReadyMs,firstReadyFrameMs:d.firstReadyFrameMs,loaderHiddenFrameMs:d.loaderHiddenFrameMs,lcpMs:d.lcpMs,lcpElement:d.lcpElement,lcpSize:d.lcpSize,lcpUrl:d.lcpUrl,cls:d.cls,"+
     "fcpMs:paint.find(e=>e.name==='first-contentful-paint')?.startTime??null,"+
     "ttfbMs:n?.responseStart??null,domContentLoadedMs:n?.domContentLoadedEventEnd??null,"+
     "resourceCount:p.getEntriesByType('resource').length,"+
+    "resourceSummary:(()=>{const entries=p.getEntriesByType('resource');"+
+    "const byType={};for(const e of entries){const kind=e.initiatorType||'other';"+
+    "const row=byType[kind]||(byType[kind]={count:0,transferBytes:0,decodedBytes:0});"+
+    "row.count++;row.transferBytes+=e.transferSize||0;row.decodedBytes+=e.decodedBodySize||0;}"+
+    "return {byType,largest:entries.map(e=>({path:new URL(e.name).pathname,kind:e.initiatorType||'other',"+
+    "transferBytes:e.transferSize||0,decodedBytes:e.decodedBodySize||0,durationMs:Math.round(e.duration)}))"+
+    ".sort((a,b)=>b.transferBytes-a.transferBytes).slice(0,12)}})(),"+
     "geometry:track&&stage?{top:track.getBoundingClientRect().top+scrollY,travel:track.offsetHeight-stage.offsetHeight}:null,"+
     "webgl:{available:!!gl,renderer:gl?String(gl.getParameter(ext?.UNMASKED_RENDERER_WEBGL||gl.RENDERER)):null,vendor:gl?String(gl.getParameter(ext?.UNMASKED_VENDOR_WEBGL||gl.VENDOR)):null}}})()");
   assert.ok(initial.geometry?.travel>500,'Journey geometry missing');
@@ -110,10 +156,25 @@ async function sample(locale,width,iteration){
       directionMatched:(capture.y-before)*point.direction>50,
       complete:capture.finished,...stats(capture.frames)});
   }
-  const entry={locale,width,iteration,initial,scenes};
+  const entry={locale,width,iteration,cacheMode,initial,scenes};
+  const issues=[];
+  for(const field of ['loaderReadyMs','firstReadyFrameMs','loaderHiddenFrameMs','fcpMs','lcpMs']){
+    if(!Number.isFinite(initial[field]))issues.push(field+' missing');
+  }
+  if(Number.isFinite(initial.firstReadyFrameMs)&&Number.isFinite(initial.loaderReadyMs)&&
+    initial.firstReadyFrameMs<initial.loaderReadyMs)issues.push('first frame precedes readiness');
+  if(Number.isFinite(initial.loaderHiddenFrameMs)&&Number.isFinite(initial.firstReadyFrameMs)&&
+    initial.loaderHiddenFrameMs<initial.firstReadyFrameMs)issues.push('loader hidden before first frame');
+  if(initial.lcpMs===initial.fcpMs)issues.push('LCP equals FCP; inspect lcpElement');
+  for(const scene of scenes){
+    if(!scene.complete||!scene.directionMatched||scene.frames<10)
+      issues.push(scene.point+' incomplete, incorrect direction or insufficient frames');
+  }
+  if(issues.length)report.warnings.push({locale,width,iteration,issues});
+  entry.quality={valid:!issues.some(x=>/missing|precedes|before first|incomplete|insufficient/.test(x)),issues};
   report.samples.push(entry);save();
   console.log('PERFORMANCE SAMPLE '+JSON.stringify({locale,width,iteration,loaderReadyMs:initial.loaderReadyMs,
-    fcpMs:initial.fcpMs,lcpMs:initial.lcpMs,renderer:initial.webgl.renderer,
+    fcpMs:initial.fcpMs,lcpMs:initial.lcpMs,firstReadyFrameMs:initial.firstReadyFrameMs,loaderHiddenFrameMs:initial.loaderHiddenFrameMs,renderer:initial.webgl.renderer,
     scenes:scenes.map(s=>({point:s.point,p95Ms:s.p95Ms,fps:s.approximateFps,directionMatched:s.directionMatched}))}));
 }
 try{
@@ -148,7 +209,10 @@ try{
     clearTimeout(task.timer);pending.delete(msg.id);
     if(msg.error)task.reject(Error(JSON.stringify(msg.error)));else task.resolve(msg);
   });
-  await cdp('Page.enable');await cdp('Runtime.enable');
+  await cdp('Page.enable');await cdp('Runtime.enable');await cdp('Network.enable');
+  const browserInfo=await cdp('Browser.getVersion');
+  report.browser={product:browserInfo.result.product,userAgent:browserInfo.result.userAgent};
+  report.launchFlags={disableGpu:!gpu};
   await cdp('Page.addScriptToEvaluateOnNewDocument',{source:earlyObserver});
   for(const locale of locales)for(const width of [1440,390])for(let run=1;run<=repeats;run++){
     try{await sample(locale,width,run);}
@@ -166,5 +230,5 @@ finally{
   if(server?.pid){if(windows)spawnSync('taskkill',['/PID',String(server.pid),'/T','/F'],{stdio:'ignore'});
     else {try{process.kill(-server.pid,'SIGTERM');}catch{server.kill('SIGTERM');}}}
   if(profile)try{rmSync(profile,{recursive:true,force:true,maxRetries:5,retryDelay:100});}catch{}
-  console.log('REPORT artifacts/performance/report.json | samples='+report.samples.length+' errors='+report.errors.length);
+  console.log('REPORT artifacts/performance/report.json | samples='+report.samples.length+' errors='+report.errors.length+' warnings='+report.warnings.length+' cache='+cacheMode);
 }

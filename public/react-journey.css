@@ -784,3 +784,9 @@ body{margin:0;background:#140B3A}
 .fx,.ly,.band,.hiker,.mouse,.stars,.anc{display:none}
 .place,.final,.herosub,.herottl,.card{position:relative;inset:auto;width:auto;opacity:1;visibility:visible;transform:none}
 }
+
+/* Petros paint experiment: the two blurred aurora surfaces animate opacity and
+   individual translate, not the transform property. Avoid the inherited generic
+   transform promotion hint on these large filtered layers. Geometry, filters,
+   keyframes and timing are deliberately unchanged. Validate p95 before merge. */
+.stage .aur { will-change: opacity, translate; }

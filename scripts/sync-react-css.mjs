@@ -78,6 +78,14 @@ for (const [before, after] of logoRules) {
   if (!expected.includes(before)) throw new Error('Expected v22 logo rule changed: ' + before);
   expected = expected.replace(before, after);
 }
+// React-only Petros experiment. Match the extracted CSS exactly while keeping
+// both frozen v22 sources untouched. Revert this addition if A/B data regresses.
+expected = expected.trimEnd() + '\n\n' +
+  '/* Petros paint experiment: the two blurred aurora surfaces animate opacity and\n' +
+  '   individual translate, not the transform property. Avoid the inherited generic\n' +
+  '   transform promotion hint on these large filtered layers. Geometry, filters,\n' +
+  '   keyframes and timing are deliberately unchanged. Validate p95 before merge. */\n' +
+  '.stage .aur { will-change: opacity, translate; }\n';
 const check = process.argv.includes('--check');
 let current = '';
 try {current = normalize(readFileSync(destination, 'utf8'));} catch (error) {

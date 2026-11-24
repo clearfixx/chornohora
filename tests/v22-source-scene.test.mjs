@@ -76,7 +76,21 @@ test('React has independent checked-in CSS with exact immutable legacy rule orde
     ['.footer-logo img{width:72px;height:auto;', '.footer-logo img{width:72px;height:38px;'],
     ['.route-drawer-brand img{width:70px;height:auto;', '.route-drawer-brand img{width:70px;height:38px;'],
   ];
-  let restored = standalone.replace(optimizedSelectors[0], originalTimeline)
+  // The Petros experiment is an explicitly allowlisted React-only appended rule.
+  // Strip only the exact suffix; preserve byte-for-byte comparison of all
+  // approved v22 CSS, rather than relaxing the original integrity check.
+  const petrosSuffix = [
+    '',
+    '/* Petros paint experiment: the two blurred aurora surfaces animate opacity and',
+    '   individual translate, not the transform property. Avoid the inherited generic',
+    '   transform promotion hint on these large filtered layers. Geometry, filters,',
+    '   keyframes and timing are deliberately unchanged. Validate p95 before merge. */',
+    '.stage .aur { will-change: opacity, translate; }',
+    '',
+  ].join('\n');
+  assert.ok(standalone.endsWith(petrosSuffix), 'Petros experiment must remain an exact trailing rule');
+  let restored = standalone.slice(0, -petrosSuffix.length)
+    .replace(optimizedSelectors[0], originalTimeline)
     .replace(compositedOrb, originalOrb);
   for (const [optimized, frozen] of logoRules) {
     assert.ok(restored.includes(optimized), 'Missing React-only logo rule: ' + optimized);
